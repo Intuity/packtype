@@ -54,9 +54,9 @@ class Constant(Base):
         if self.signed:
             assert (
                 (value >= (-1 * (1 << (self.width - 1)))) and
-                (value <  ((1 << (self.width - 1)) - 1))
+                (value <  (1 << (self.width - 1)))
             ), f"Value {value} is outside of a signed {self.width} bit range"
         else:
-            assert value >= 0 and value < ((1 << self.width) - 1), \
+            assert value >= 0 and value < (1 << self.width), \
                 f"Value {value} is outside of an unsigned {self.width} bit range"
         self.value = value
