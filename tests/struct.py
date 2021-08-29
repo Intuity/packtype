@@ -15,8 +15,7 @@
 from packtype.container import Container
 from packtype.constant import Constant
 from packtype.instance import Instance
-from random import randint, choice
-import random
+from random import randint
 
 import pytest
 
