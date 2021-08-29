@@ -13,7 +13,9 @@
 # limitations under the License.
 
 from .container import Container
+from .enum import Enum
 from .offset import Offset
+from .scalar import Scalar
 
 class Struct(Container):
     """ Packed data structure formed of scalars, enumerations, and other types """
@@ -27,7 +29,10 @@ class Struct(Container):
             width : Bit width (if omitted is calculated from sum of fields)
         """
         # Perform container construction
-        super().__init__(name, fields, width=width)
+        from .union import Union
+        super().__init__(name, fields, width=width, legal=[
+            Enum, Struct, Union, Scalar
+        ])
         # Setup the LSB for each field
         next_lsb = 0
         for field in sorted(self._pt_values(), key=lambda x: x._pt_id):
@@ -37,8 +42,8 @@ class Struct(Container):
                 field._pt_lsb = next_lsb + field._pt_lsb.value
             else:
                 assert field._pt_lsb >= next_lsb, \
-                    f"Field {field._pt_name} of {self._pt_name} specifies an " \
-                    f"LSB ({field._pt_lsb}) that's out-of-order with the struct"
+                    f"Field '{field._pt_name}' of {self._pt_name} specifies " \
+                    f"an out-of-order LSB ({field._pt_lsb})"
             next_lsb = (field._pt_lsb + field._pt_width)
         # Calculate the width of the struct
         if not self._pt_width:

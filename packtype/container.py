@@ -44,10 +44,12 @@ class Container(Base):
             for key, obj in self.__fields.items():
                 if isinstance(obj, Instance):
                     assert any(x for x in self.__legal if isinstance(obj._pt_container, x)), \
-                        f"Field '{key}' of {self.__name} must be within: {self.__legal}"
+                        f"Field '{key}' of {self.__name} must be within: " \
+                        f"{', '.join([x.__name__ for x in self.__legal])}"
                 else:
                     assert any(x for x in self.__legal if isinstance(obj, x)), \
-                        f"Field '{key}' of {self.__name} must be within: {self.__legal}"
+                        f"Field '{key}' of {self.__name} must be within: " \
+                        f"{', '.join([x.__name__ for x in self.__legal])}"
 
     def __call__(self, *args, **kwargs):
         from .instance import Instance
