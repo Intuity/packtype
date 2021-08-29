@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from .container import Container
+from .scalar import Scalar
 from .struct import Struct
 
 class Union(Container):
@@ -26,7 +27,7 @@ class Union(Container):
             fields: Dictionary of fields
         """
         # Perform container construction
-        super().__init__(name, fields, legal=[Struct, Union])
+        super().__init__(name, fields, legal=[Scalar, Struct, Union])
         # Check all fields are the same width
         widths = [x._pt_width for x in self._pt_values()]
         assert len(set(widths)) == 1, \
