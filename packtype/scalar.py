@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from .base import Base
+from .constant import Constant
 from .offset import Offset
 
 class Scalar(Base):
@@ -28,7 +29,13 @@ class Scalar(Base):
             name  : Optional name of the scalar
             desc  : Optional description of the scalar
         """
+        # Perform base construction
         super().__init__()
+        # Convert arguments from constants if required
+        if isinstance(width,  Constant): width  = width.value
+        if isinstance(signed, Constant): signed = signed.value
+        if isinstance(lsb,    Constant): lsb    = lsb.value
+        # Check arguments
         assert isinstance(width, int) and width > 0, \
             f"Width must be a positive integer: {width}"
         assert isinstance(signed, bool), \
@@ -60,6 +67,9 @@ class Scalar(Base):
         assert isinstance(lsb, int) and lsb >= 0, \
             f"LSB must be a positive integer: {lsb}"
         self.__lsb = lsb
+
+    @property
+    def _pt_msb(self): return (self.__lsb + self.__width - 1)
 
     @property
     def _pt_name(self): return self.__name
