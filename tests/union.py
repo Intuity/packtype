@@ -12,17 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from packtype.container import Container
-from packtype.constant import Constant
-from packtype.instance import Instance
 from random import randint
 
 import pytest
 
 import packtype
-from packtype import Offset, Scalar
-
-from .common import random_str
+from packtype import Scalar
 
 def test_union_scalars():
     """ Construct a basic union between equally sized scalars """
