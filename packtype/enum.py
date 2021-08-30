@@ -24,7 +24,7 @@ class Enum(Container):
     ONEHOT  = "ONEHOT"  # Assigns values 1, 2, 4, 8, ...
     GRAY    = "GRAY"    # Assigns variable sized Gray code
 
-    def __init__(self, name, fields, width=None, mode=INDEXED):
+    def __init__(self, name, fields, desc=None, width=None, mode=INDEXED):
         """ Initialise enumeration with a name and fields
 
         Args:
@@ -34,7 +34,7 @@ class Enum(Container):
             mode  : How named values should be enumerated
         """
         # Perform container construction
-        super().__init__(name, fields, width=width, legal=[Constant])
+        super().__init__(name, fields, desc=desc, width=width, legal=[Constant])
         # Check mode is acceptable
         assert mode in (Enum.INDEXED, Enum.ONEHOT, Enum.GRAY), \
             f"Enum {name} mode must be INDEXED, ONEHOT, or GRAY: {mode}"
