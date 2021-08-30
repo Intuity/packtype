@@ -16,12 +16,17 @@ from .base import Base
 from .constant import Constant
 from .enum import Enum
 from .offset import Offset
+from .package import Package
 from .scalar import Scalar
 from .struct import Struct
 from .union import Union
 
+# Linting guards
+assert Offset
+assert Scalar
+
 def __pt_dec(container):
-    def __dec__(*args, **kwargs):
+    def __dec__(*args, package=None, **kwargs):
         def __inner__(cls):
             # Run through all of the variables
             fields = {}
@@ -41,7 +46,7 @@ def __pt_dec(container):
                         continue
                 # Otherwise, assign the name and value to the annotation
                 else:
-                    anno.name = key
+                    anno._pt_name = key
                     anno.assign(obj)
                 # Take note of the field
                 fields[key] = anno
@@ -50,14 +55,25 @@ def __pt_dec(container):
                 # Skip known entries
                 if key in fields: continue
                 # Assign the name to the annotation
-                anno.name = key
+                anno._pt_name = key
                 # Attach unknown entries
                 fields[key] = anno
+            # Use a cleaned-up docstring for the description
+            desc = cls.__doc__
+            if isinstance(desc, str):
+                desc = " ".join([
+                    x.strip() for x in desc.split("\n") if len(x.strip()) > 0
+                ])
             # Form the container
-            return container(cls.__name__, fields, *args, **kwargs)
+            c_inst = container(cls.__name__, fields, desc=desc, *args, **kwargs)
+            # If a package was provided, attach the container
+            if package: package._pt_append(cls.__name__, c_inst)
+            # Return the container
+            return c_inst
         return __inner__
     return __dec__
 
-enum   = __pt_dec(Enum)
-struct = __pt_dec(Struct)
-union  = __pt_dec(Union)
+enum    = __pt_dec(Enum)
+package = __pt_dec(Package)
+struct  = __pt_dec(Struct)
+union   = __pt_dec(Union)
