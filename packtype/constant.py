@@ -38,16 +38,46 @@ class Constant(Base):
             f"Name must be None or a string: {name}"
         assert desc == None or isinstance(desc, str), \
             f"Description must be None or a string: {name}"
-        self.width  = width
-        self.signed = signed
-        self.name   = name
-        self.desc   = desc
+        self.__width  = width
+        self.__signed = signed
+        self.__name   = name
+        self.__desc   = desc
         # Assign the value (performs extra sanity checks)
         if value != None: self.assign(value)
         else: self.value = None
 
     def __int__(self):
         return self.value
+
+    @property
+    def width(self): return self.__width
+    @property
+    def _pt_width(self): return self.__width
+
+    @property
+    def signed(self): return self.__signed
+    @property
+    def _pt_signed(self): return self.__signed
+
+    @property
+    def name(self): return self.__name
+    @property
+    def _pt_name(self): return self.__name
+    @_pt_name.setter
+    def _pt_name(self, name):
+        assert not self.__name, f"Trying to override name of {self.__name}: {name}"
+        assert isinstance(name, str), f"Name must be None or a string: {name}"
+        self.__name = name
+
+    @property
+    def desc(self): return self.__desc
+    @property
+    def _pt_desc(self): return self.__desc
+    @_pt_desc.setter
+    def _pt_desc(self, desc):
+        assert not self.__desc, f"Trying to alter description of scalar {self.__name}"
+        assert isinstance(desc, str), f"Description must be a string: {desc}"
+        self.__desc = desc
 
     def assign(self, value):
         assert isinstance(value, int), f"Value must be an integer: {value}"
