@@ -20,17 +20,18 @@ from .scalar import Scalar
 class Struct(Container):
     """ Packed data structure formed of scalars, enumerations, and other types """
 
-    def __init__(self, name, fields, width=None):
+    def __init__(self, name, fields, desc=None, width=None):
         """ Initialise structure with name and fields
 
         Args:
             name  : Name of the container
             fields: Dictionary of fields
+            desc  : Optional description
             width : Bit width (if omitted is calculated from sum of fields)
         """
         # Perform container construction
         from .union import Union
-        super().__init__(name, fields, width=width, legal=[
+        super().__init__(name, fields, desc=desc, width=width, legal=[
             Enum, Struct, Union, Scalar
         ])
         # Setup the LSB for each field
