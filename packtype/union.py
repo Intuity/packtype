@@ -19,15 +19,16 @@ from .struct import Struct
 class Union(Container):
     """ Packed data structure formed of other structures or unions """
 
-    def __init__(self, name, fields):
+    def __init__(self, name, fields, desc=None):
         """ Initialise union with name and fields
 
         Args:
             name  : Name of the container
             fields: Dictionary of fields
+            desc  : Optional description
         """
         # Perform container construction
-        super().__init__(name, fields, legal=[Scalar, Struct, Union])
+        super().__init__(name, fields, desc=desc, legal=[Scalar, Struct, Union])
         # Check all fields are the same width
         widths = [x._pt_width for x in self._pt_values()]
         assert len(set(widths)) == 1, \
