@@ -72,6 +72,9 @@ class Scalar(Base):
     def _pt_msb(self): return (self.__lsb + self.__width - 1)
 
     @property
+    def _pt_mask(self): return ((1 << self.__width) - 1)
+
+    @property
     def _pt_name(self): return self.__name
     @_pt_name.setter
     def _pt_name(self, name):

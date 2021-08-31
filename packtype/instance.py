@@ -69,6 +69,9 @@ class Instance(Base):
     def _pt_msb(self): return (self.__lsb + self._pt_width - 1)
 
     @property
+    def _pt_mask(self): return ((1 << self._pt_width) - 1)
+
+    @property
     def _pt_desc(self): return self.__desc
 
     def __getattr__(self, name):
