@@ -69,5 +69,22 @@ ${blocks.section(obj, indent=4)}
     %endif
     } ${obj._pt_name | tc.snake_case}_t;
 
-%endfor ## obj in filter(lambda x: isinstance(x, Struct)), package._pt_values()):
+%endfor
+    // =========================================================================
+    // Unions
+    // =========================================================================
+
+%for obj in filter(lambda x: isinstance(x, Union), package._pt_values()):
+${blocks.section(obj, indent=4)}
+    typedef union packed {
+    %for field in obj._pt_values():
+        %if isinstance(field, Scalar):
+        logic${f" [{field._pt_width-1}:0]" if field._pt_width > 1 else ""} ${field._pt_name};
+        %elif type(field._pt_container) in (Enum, Struct):
+        ${field._pt_container._pt_name | tc.snake_case}_t ${field._pt_name | tc.snake_case};
+        %endif
+    %endfor ## field in obj._pt_values()
+    } ${obj._pt_name | tc.snake_case}_t;
+
+%endfor
 endpackage : ${name}
