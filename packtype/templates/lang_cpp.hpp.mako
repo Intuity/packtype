@@ -194,6 +194,7 @@ ${blocks.section(obj, indent=4)}
         obj.${field._pt_name} = (${field._pt_container._pt_name | tc.snake_case}_t)value_${field._pt_name | tc.snake_case};
         %endif
     %endfor
+        return obj;
     }
 
 %endfor

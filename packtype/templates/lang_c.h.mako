@@ -192,6 +192,7 @@ ${name | tc.snake_case}_${obj._pt_name | tc.snake_case}_t unpack_${name | tc.sna
     obj.${field._pt_name} = (${name | tc.snake_case}_${field._pt_container._pt_name | tc.snake_case}_t)value_${field._pt_name | tc.snake_case};
         %endif
     %endfor
+    return obj;
 }
 
 %endfor
