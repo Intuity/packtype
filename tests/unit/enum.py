@@ -21,9 +21,12 @@ def test_enum_idx_explicit():
     """ Check behaviour of an explicitly valued indexed enumeration """
     @packtype.enum()
     class DummyEnum:
+        """ Test description 12345 """
         KEY_A : Constant(desc="Description A") = 0
         KEY_B : Constant(desc="Description B") = 1
         KEY_C : Constant(desc="Description C") = 2
+    assert DummyEnum._pt_desc == "Test description 12345"
+    assert DummyEnum._pt_mode == "INDEXED"
     assert DummyEnum.KEY_A.name == "KEY_A"
     assert DummyEnum.KEY_B.name == "KEY_B"
     assert DummyEnum.KEY_C.name == "KEY_C"
@@ -39,11 +42,14 @@ def test_enum_idx_auto():
     """ Check behaviour of an auto-valued indexed enumeration """
     @packtype.enum()
     class DummyEnum:
+        """ Test description 12345 """
         KEY_A : Constant(desc="Description A") # 0
         KEY_B : Constant(desc="Description B") # 1
         KEY_C : Constant(desc="Description C") # 2
         KEY_D : Constant(desc="Description D") = 5
         KEY_E : Constant(desc="Description E") # 6
+    assert DummyEnum._pt_desc == "Test description 12345"
+    assert DummyEnum._pt_mode == "INDEXED"
     assert DummyEnum.KEY_A.name == "KEY_A"
     assert DummyEnum.KEY_B.name == "KEY_B"
     assert DummyEnum.KEY_C.name == "KEY_C"
@@ -94,9 +100,12 @@ def test_enum_1h_explicit():
     """ Check behaviour of an explicitly valued one-hot enumeration """
     @packtype.enum(mode="ONEHOT")
     class DummyEnum:
+        """ Test description 12345 """
         KEY_A : Constant(desc="Description A") = 1
         KEY_B : Constant(desc="Description B") = 2
         KEY_C : Constant(desc="Description C") = 4
+    assert DummyEnum._pt_desc == "Test description 12345"
+    assert DummyEnum._pt_mode == "ONEHOT"
     assert DummyEnum.KEY_A.name == "KEY_A"
     assert DummyEnum.KEY_B.name == "KEY_B"
     assert DummyEnum.KEY_C.name == "KEY_C"
@@ -112,11 +121,14 @@ def test_enum_1h_auto():
     """ Check behaviour of an auto-valued one-hot enumeration """
     @packtype.enum(mode="ONEHOT")
     class DummyEnum:
+        """ Test description 12345 """
         KEY_A : Constant(desc="Description A") # 1
         KEY_B : Constant(desc="Description B") # 2
         KEY_C : Constant(desc="Description C") # 4
         KEY_D : Constant(desc="Description D") = 32
         KEY_E : Constant(desc="Description E") # 64
+    assert DummyEnum._pt_desc == "Test description 12345"
+    assert DummyEnum._pt_mode == "ONEHOT"
     assert DummyEnum.KEY_A.name == "KEY_A"
     assert DummyEnum.KEY_B.name == "KEY_B"
     assert DummyEnum.KEY_C.name == "KEY_C"
@@ -156,9 +168,12 @@ def test_enum_gray_explicit():
     """ Check behaviour of an explicitly valued gray coding """
     @packtype.enum(mode="GRAY")
     class DummyEnum:
+        """ Test description 12345 """
         KEY_A : Constant(desc="Description A") = 0
         KEY_B : Constant(desc="Description B") = 1
         KEY_C : Constant(desc="Description C") = 3
+    assert DummyEnum._pt_desc == "Test description 12345"
+    assert DummyEnum._pt_mode == "GRAY"
     assert DummyEnum.KEY_A.name == "KEY_A"
     assert DummyEnum.KEY_B.name == "KEY_B"
     assert DummyEnum.KEY_C.name == "KEY_C"
@@ -174,11 +189,14 @@ def test_enum_gray_auto():
     """ Check behaviour of an auto-valued one-hot enumeration """
     @packtype.enum(mode="GRAY")
     class DummyEnum:
+        """ Test description 12345 """
         KEY_A : Constant(desc="Description A")
         KEY_B : Constant(desc="Description B")
         KEY_C : Constant(desc="Description C")
         KEY_D : Constant(desc="Description D")
         KEY_E : Constant(desc="Description E")
+    assert DummyEnum._pt_desc == "Test description 12345"
+    assert DummyEnum._pt_mode == "GRAY"
     assert DummyEnum.KEY_A.name == "KEY_A"
     assert DummyEnum.KEY_B.name == "KEY_B"
     assert DummyEnum.KEY_C.name == "KEY_C"
@@ -235,3 +253,36 @@ def test_enum_iterate():
         ("KEY_B", DummyEnum.KEY_B),
         ("KEY_C", DummyEnum.KEY_C)
     ]
+
+def test_enum_raw_values():
+    """ Test enum with raw integers """
+    @packtype.enum()
+    class DummyEnum:
+        KEY_A = 1
+        KEY_B = 2
+        KEY_C = 3
+    assert DummyEnum._pt_width == 2
+    assert DummyEnum.KEY_A.value == 1
+    assert DummyEnum.KEY_B.value == 2
+    assert DummyEnum.KEY_C.value == 3
+
+def test_enum_bad_values(capsys):
+    """ Test enum with raw integers """
+    @packtype.enum()
+    class BadValueEnum:
+        KEY_A = 1
+        KEY_B = "hello"
+        KEY_C = []
+    assert capsys.readouterr().out == (
+        "BadValueEnum ignoring field KEY_B of unknown type\n"
+        "BadValueEnum ignoring field KEY_C of unknown type\n"
+    )
+
+def test_enum_no_legal_values():
+    """ Test enum with raw integers """
+    with pytest.raises(AssertionError) as excinfo:
+        @packtype.enum()
+        class NoLegalEnum:
+            KEY_A = "hello"
+            KEY_B = []
+    assert "No legal fields found for NoLegalEnum" in str(excinfo.value)

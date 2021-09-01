@@ -40,8 +40,14 @@ def test_struct_scalar():
     assert MyStruct.field_b._pt_desc == desc_b
     assert MyStruct.field_c._pt_desc == desc_c
     assert MyStruct.field_a._pt_lsb == 0
+    assert MyStruct.field_a._pt_msb == width_a - 1
+    assert MyStruct.field_a._pt_mask == (1 << width_a) - 1
     assert MyStruct.field_b._pt_lsb == width_a
+    assert MyStruct.field_b._pt_msb == width_a + width_b - 1
+    assert MyStruct.field_b._pt_mask == (1 << width_b) - 1
     assert MyStruct.field_c._pt_lsb == width_a + width_b
+    assert MyStruct.field_c._pt_msb == width_a + width_b + width_c - 1
+    assert MyStruct.field_c._pt_mask == (1 << width_c) - 1
     assert MyStruct._pt_width == width_a + width_b + width_c
 
 def test_struct_enum():
@@ -66,6 +72,12 @@ def test_struct_enum():
     assert MyStruct.enum_b.VALUE_D.value == 1
     assert MyStruct.enum_b.VALUE_E.value == 2
     assert MyStruct.enum_b.VALUE_F.value == 4
+    assert MyStruct.enum_a._pt_lsb == 0
+    assert MyStruct.enum_a._pt_msb == EnumA._pt_width - 1
+    assert MyStruct.enum_a._pt_mask == (1 << EnumA._pt_width) - 1
+    assert MyStruct.enum_b._pt_lsb == EnumA._pt_width
+    assert MyStruct.enum_b._pt_msb == EnumA._pt_width + EnumB._pt_width - 1
+    assert MyStruct.enum_b._pt_mask == (1 << EnumB._pt_width) - 1
 
 def test_struct_nested():
     """ Struct containing other structs """
@@ -111,10 +123,25 @@ def test_struct_nested():
     assert Parent.child_b.field_b._pt_desc == descs[4]
     assert Parent.child_b.field_c._pt_desc == descs[5]
     assert Parent.field_a._pt_lsb == 0
+    assert Parent.field_a._pt_msb == widths[6] - 1
+    assert Parent.field_a._pt_mask == (1 << widths[6]) - 1
+    assert Parent.child_a._pt_lsb == widths[6]
+    assert Parent.child_a._pt_msb == widths[6] + SubStructA._pt_width - 1
+    assert Parent.child_a._pt_mask == (1 << SubStructA._pt_width) - 1
     assert Parent.field_b._pt_lsb == widths[6] + SubStructA._pt_width
+    assert Parent.field_b._pt_msb == widths[6] + SubStructA._pt_width + widths[7] - 1
+    assert Parent.field_b._pt_mask == (1 << widths[7]) - 1
+    assert Parent.child_b._pt_lsb == widths[6] + SubStructA._pt_width + widths[7]
+    assert Parent.child_b._pt_msb == widths[6] + SubStructA._pt_width + widths[7] + SubStructB._pt_width - 1
+    assert Parent.child_b._pt_mask == (1 << SubStructB._pt_width) - 1
     assert Parent.field_c._pt_lsb == (
         widths[6] + SubStructA._pt_width + widths[7] + SubStructB._pt_width
     )
+    assert Parent.field_c._pt_msb == (
+        widths[6] + SubStructA._pt_width + widths[7] + SubStructB._pt_width +
+        widths[8] - 1
+    )
+    assert Parent.field_c._pt_mask == (1 << widths[8]) - 1
     assert Parent._pt_width == (
         sum(widths[6:]) + SubStructA._pt_width + SubStructB._pt_width
     )

@@ -23,11 +23,15 @@ from .common import random_str
 def test_constant_default():
     """ Test a constants's default behaviour """
     var = Constant()
-    assert var.value  == None
-    assert var.width  == 32
-    assert var.signed == False
-    assert var.name   == None
-    assert var.desc   == None
+    assert var.value      == None
+    assert var.width      == 32
+    assert var._pt_width  == 32
+    assert var.signed     == False
+    assert var._pt_signed == False
+    assert var.name       == None
+    assert var._pt_name   == None
+    assert var.desc       == None
+    assert var._pt_desc   == None
 
 def test_constant_init():
     """ Create a constant and check the properties are registered """
@@ -40,12 +44,28 @@ def test_constant_init():
         randint(0, (1 << width) - 1)
     )
     var = Constant(value=value, width=width, signed=signed, name=name, desc=desc)
-    assert var.value  == value
-    assert int(var)   == value
-    assert var.width  == width
-    assert var.signed == signed
-    assert var.name   == name
-    assert var.desc   == desc
+    assert var.value      == value
+    assert int(var)       == value
+    assert var.width      == width
+    assert var._pt_width  == width
+    assert var.signed     == signed
+    assert var._pt_signed == signed
+    assert var.name       == name
+    assert var._pt_name   == name
+    assert var.desc       == desc
+    assert var._pt_desc   == desc
+
+def test_constant_alter_desc():
+    """ Create a constant, then alter the description """
+    name = random_str(10)
+    desc = random_str(30)
+    var  = Constant(value=randint(0, 1000), name=name)
+    var._pt_desc = desc
+    assert var._pt_desc == desc
+    with pytest.raises(AssertionError) as excinfo:
+        var._pt_desc = random_str(30)
+    assert f"Trying to alter description of constant {name}" == str(excinfo.value)
+    assert var._pt_desc == desc
 
 def test_constant_bad_value():
     """ Try creating a constant with a bad value """
@@ -71,3 +91,11 @@ def test_constant_bad_value():
     with pytest.raises(AssertionError) as excinfo:
         Constant(width=8, signed=True, value=val)
     assert f"Value {val} is outside of a signed 8 bit range" in str(excinfo.value)
+
+def test_constant_bad_desc():
+    """ Create a constant, then alter the description """
+    name = random_str(10)
+    var  = Constant(value=randint(0, 1000), name=name)
+    with pytest.raises(AssertionError) as excinfo:
+        var._pt_desc = 1234
+    assert "Description must be a string: 1234" == str(excinfo.value)
