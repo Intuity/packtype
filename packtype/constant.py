@@ -17,15 +17,15 @@ from .base import Base
 class Constant(Base):
     """ Constant value with a fixed size """
 
-    def __init__(self, value=None, width=32, signed=False, name=None, desc=None):
+    def __init__(self, desc=None, value=None, width=32, signed=False, name=None):
         """ Initialise the value
 
         Args:
+            desc  : Optional description of the constant
             value : Optional specification of the value
             width : Bit-width of the constant (default: 32)
             signed: Whether the constant takes a signed value
             name  : Optional name of the constant
-            desc  : Optional description of the constant
         """
         super().__init__()
         assert value == None or isinstance(value, int), \
@@ -83,7 +83,7 @@ class Constant(Base):
         return self.__desc
     @_pt_desc.setter
     def _pt_desc(self, desc):
-        assert not self.__desc, f"Trying to alter description of scalar {self.__name}"
+        assert not self.__desc, f"Trying to alter description of constant {self.__name}"
         assert isinstance(desc, str), f"Description must be a string: {desc}"
         self.__desc = desc
 

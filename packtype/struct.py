@@ -47,7 +47,7 @@ class Struct(Container):
                     f"an out-of-order LSB ({field._pt_lsb})"
             next_lsb = (field._pt_lsb + field._pt_width)
         # Calculate the width of the struct
-        if not self._pt_width:
+        if not self._pt_width and len(self._pt_keys()) > 0:
             self._pt_width = max((
                 (x._pt_width + x._pt_lsb) for x in self._pt_values()
             ))

@@ -95,11 +95,6 @@ class Container(Base):
     @property
     def _pt_name(self):
         return self.__name
-    @_pt_name.setter
-    def _pt_name(self, name):
-        assert not self.__name, f"Trying to alter name of scalar {self.__name}"
-        assert isinstance(name, str), f"Name must be a string: {name}"
-        self.__name = name
 
     @property
     def _pt_fields(self):
@@ -119,7 +114,7 @@ class Container(Base):
         return self.__desc
     @_pt_desc.setter
     def _pt_desc(self, desc):
-        assert not self.__desc, f"Trying to alter description of scalar {self.__name}"
+        assert not self.__desc, f"Trying to alter description of {self.__name}"
         assert isinstance(desc, str), f"Description must be a string: {desc}"
         self.__desc = desc
 
@@ -133,6 +128,3 @@ class Container(Base):
         assert isinstance(width, int) and width > 0, \
             f"Enum {width} width must be a positive integer: {width}"
         self.__width = width
-
-    def _pt_assign(self, _value):
-        raise Exception(f"{type(self).__name__} does not support assignment")

@@ -76,7 +76,7 @@ class Enum(Container):
             # Track allocated values
             allocated.append(const.value)
         # If no width was provided, calculate it
-        if not self._pt_width:
+        if not self._pt_width and len(self._pt_keys()) > 0:
             self._pt_width = int(math.ceil(math.log2(max(allocated)+1)))
 
     @property

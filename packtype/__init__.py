@@ -28,13 +28,18 @@ assert Scalar
 def __pt_dec(container):
     def __dec__(*args, package=None, **kwargs):
         def __inner__(cls):
+            # Grab the annotations (if they exist)
+            annotations = (
+                cls.__annotations__ if hasattr(cls, "__annotations__") else {}
+            )
             # Run through all of the variables
-            fields = {}
+            fields  = {}
+            ignored = 0
             for key, obj in vars(cls).items():
                 # Ignore built-in/private types
                 if key.startswith("__"): continue
                 # See if there is a matching annotation?
-                anno = cls.__annotations__.get(key, None)
+                anno = annotations.get(key, None)
                 # If there is a non-packtype object, it might need to be wrapped
                 if anno == None or not isinstance(anno, Base):
                     # If it is an integer, wrap it as a constant
@@ -43,6 +48,7 @@ def __pt_dec(container):
                     # Otherwise, just ignore this
                     else:
                         print(f"{cls.__name__} ignoring field {key} of unknown type")
+                        ignored += 1
                         continue
                 # Otherwise, assign the name and value to the annotation
                 else:
@@ -51,13 +57,16 @@ def __pt_dec(container):
                 # Take note of the field
                 fields[key] = anno
             # Run through the annotations to catch non-valued attributes
-            for key, anno in cls.__annotations__.items():
+            for key, anno in annotations.items():
                 # Skip known entries
                 if key in fields: continue
                 # Assign the name to the annotation
                 anno._pt_name = key
                 # Attach unknown entries
                 fields[key] = anno
+            # If no legal fields are present, abort
+            if ignored > 0:
+                assert len(fields.keys()) > 0, f"No legal fields found for {cls.__name__}"
             # Use a cleaned-up docstring for the description
             desc = cls.__doc__
             if isinstance(desc, str):
