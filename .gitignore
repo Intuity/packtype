@@ -133,3 +133,6 @@ dmypy.json
 
 # VSCode
 .vscode
+
+# Exclude example output directories
+examples/*/out/
