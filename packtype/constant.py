@@ -50,19 +50,25 @@ class Constant(Base):
         return self.value
 
     @property
-    def width(self): return self.__width
+    def width(self):
+        return self.__width
     @property
-    def _pt_width(self): return self.__width
+    def _pt_width(self):
+        return self.__width
 
     @property
-    def signed(self): return self.__signed
+    def signed(self):
+        return self.__signed
     @property
-    def _pt_signed(self): return self.__signed
+    def _pt_signed(self):
+        return self.__signed
 
     @property
-    def name(self): return self.__name
+    def name(self):
+        return self.__name
     @property
-    def _pt_name(self): return self.__name
+    def _pt_name(self):
+        return self.__name
     @_pt_name.setter
     def _pt_name(self, name):
         assert not self.__name, f"Trying to override name of {self.__name}: {name}"
@@ -70,9 +76,11 @@ class Constant(Base):
         self.__name = name
 
     @property
-    def desc(self): return self.__desc
+    def desc(self):
+        return self.__desc
     @property
-    def _pt_desc(self): return self.__desc
+    def _pt_desc(self):
+        return self.__desc
     @_pt_desc.setter
     def _pt_desc(self, desc):
         assert not self.__desc, f"Trying to alter description of scalar {self.__name}"

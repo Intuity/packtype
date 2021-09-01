@@ -42,13 +42,16 @@ class Instance(Base):
         self.__desc      = desc
 
     @property
-    def _pt_container(self): return self.__container
+    def _pt_container(self):
+        return self.__container
 
     @property
-    def _pt_width(self): return self.__container._pt_width
+    def _pt_width(self):
+        return self.__container._pt_width
 
     @property
-    def _pt_name(self): return self.__name
+    def _pt_name(self):
+        return self.__name
     @_pt_name.setter
     def _pt_name(self, name):
         assert not self.__name, f"Trying to change name of instance {self.__name}"
@@ -56,7 +59,8 @@ class Instance(Base):
         self.__name = name
 
     @property
-    def _pt_lsb(self): return self.__lsb
+    def _pt_lsb(self):
+        return self.__lsb
     @_pt_lsb.setter
     def _pt_lsb(self, lsb):
         assert not self.__lsb or isinstance(self.__lsb, Offset), \
@@ -66,13 +70,16 @@ class Instance(Base):
         self.__lsb = lsb
 
     @property
-    def _pt_msb(self): return (self.__lsb + self._pt_width - 1)
+    def _pt_msb(self):
+        return (self.__lsb + self._pt_width - 1)
 
     @property
-    def _pt_mask(self): return ((1 << self._pt_width) - 1)
+    def _pt_mask(self):
+        return ((1 << self._pt_width) - 1)
 
     @property
-    def _pt_desc(self): return self.__desc
+    def _pt_desc(self):
+        return self.__desc
 
     def __getattr__(self, name):
         try:

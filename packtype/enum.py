@@ -80,4 +80,5 @@ class Enum(Container):
             self._pt_width = int(math.ceil(math.log2(max(allocated)+1)))
 
     @property
-    def _pt_mode(self): return self.__mode
+    def _pt_mode(self):
+        return self.__mode

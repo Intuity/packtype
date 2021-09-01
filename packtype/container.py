@@ -93,7 +93,8 @@ class Container(Base):
                 raise e
 
     @property
-    def _pt_name(self): return self.__name
+    def _pt_name(self):
+        return self.__name
     @_pt_name.setter
     def _pt_name(self, name):
         assert not self.__name, f"Trying to alter name of scalar {self.__name}"
@@ -101,16 +102,21 @@ class Container(Base):
         self.__name = name
 
     @property
-    def _pt_fields(self): return { k: v for k, v in self.__fields.items() }
+    def _pt_fields(self):
+        return { k: v for k, v in self.__fields.items() }
     @property
-    def _pt_keys(self): return self.__fields.keys
+    def _pt_keys(self):
+        return self.__fields.keys
     @property
-    def _pt_values(self): return self.__fields.values
+    def _pt_values(self):
+        return self.__fields.values
     @property
-    def _pt_items(self): return self.__fields.items
+    def _pt_items(self):
+        return self.__fields.items
 
     @property
-    def _pt_desc(self): return self.__desc
+    def _pt_desc(self):
+        return self.__desc
     @_pt_desc.setter
     def _pt_desc(self, desc):
         assert not self.__desc, f"Trying to alter description of scalar {self.__name}"
@@ -118,7 +124,8 @@ class Container(Base):
         self.__desc = desc
 
     @property
-    def _pt_width(self): return self.__width
+    def _pt_width(self):
+        return self.__width
     @_pt_width.setter
     def _pt_width(self, width):
         assert self.__width == None, \

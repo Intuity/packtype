@@ -28,4 +28,5 @@ class Base:
         self.__id = Base.issue_id()
 
     @property
-    def _pt_id(self): return self.__id
+    def _pt_id(self):
+        return self.__id
