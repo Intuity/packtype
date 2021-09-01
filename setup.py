@@ -35,7 +35,7 @@ setup(
     include_package_data=True,
     entry_points={ },
     python_requires=">=3.6.10",
-    install_requires=[],
+    install_requires=["click", "mako"],
     setup_requires=["pytest-runner"],
     tests_require=["pytest", "pytest-cov", "pytest-mock"],
     extras_require={},
