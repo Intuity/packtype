@@ -33,7 +33,9 @@ setup(
     packages=find_packages(exclude=["tests"]),
     data_files=["LICENSE"],
     include_package_data=True,
-    entry_points={ },
+    entry_points={
+        "console_scripts": ["packtype=packtype.__main__:main"]
+    },
     python_requires=">=3.6.10",
     install_requires=["click", "mako", "rich"],
     setup_requires=["pytest-runner"],
