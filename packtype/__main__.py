@@ -37,6 +37,7 @@ logging.basicConfig(
     level="NOTSET", format="%(message)s", datefmt="[%X]", handlers=[RichHandler()]
 )
 log = logging.getLogger("packtype")
+log.setLevel(logging.INFO)
 
 # Setup exception handling
 install()
@@ -50,11 +51,14 @@ aliases = {
 
 # Handle CLI
 @click.command()
-@click.option("--render", "-r", type=str, multiple=True, help="Language to render")
+@click.option("--render", "-r", type=str, multiple=True,        help="Language to render")
+@click.option("--debug",        flag_value=True, default=False, help="Enable debug messages")
 @click.argument("spec",   type=click.Path(exists=True, dir_okay=False))
 @click.argument("outdir", type=click.Path(file_okay=False), default=".")
-def main(render, spec, outdir):
+def main(render, debug, spec, outdir):
     """ Renders packtype definitions from a SPEC into output files """
+    # Set log verbosity
+    if debug: log.setLevel(logging.DEBUG)
     # Convert spec and outdir to pathlib objects
     spec   = Path(spec)
     outdir = Path(outdir)
@@ -66,10 +70,10 @@ def main(render, spec, outdir):
     imp_spec.loader.exec_module(pt_spec)
     # Look for packtype Base objects
     pt_objs = inspect.getmembers(pt_spec, predicate=lambda x: isinstance(x, Base))
-    logging.debug(f"Discovered {len(pt_objs)} packtype objects")
+    log.debug(f"Discovered {len(pt_objs)} packtype objects")
     # Filter for packages
     pt_pkgs = list(filter(lambda x: isinstance(x[1], Package), pt_objs))
-    logging.debug(f"Discovered {len(pt_pkgs)} packtype packages")
+    log.debug(f"Discovered {len(pt_pkgs)} packtype packages")
     # Create output directory if it doesn't already exist
     if not outdir.exists(): outdir.mkdir(parents=True)
     # Render
