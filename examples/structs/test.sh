@@ -21,4 +21,4 @@ this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 export PYTHONPATH=${this_dir}/../..:$PYTHONPATH
 
 # Invoke packtype
-python3 -m packtype spec.py ${this_dir}/out --render c --render py --render sv --render cpp
+python3 -m packtype spec.py ${this_dir}/out --render c --render py --render sv --render cpp --debug
