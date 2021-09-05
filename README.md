@@ -33,6 +33,30 @@ $> python3 -m pip install git+git://github.com/Intuity/packtype
 
 ## Using Packtype
 
+Packtype provides the `packtype` command line utility which can be used in conjuction with a specification (detailed below) to generate the different language definitions:
+
+```bash
+# Render SystemVerilog and Python versions of the specification
+$> packtype path/to/spec.py path/to/output/dir --render py --render sv
+```
+
+Two positional arguments can be provided:
+
+ 1. `SPEC` - provides the path to the Packtype specification file.
+ 2. `OUTDIR` - an optional path to the output folder for generated files (defaults to the current directory).
+
+Then options are available to modify the behaviour:
+
+ * `-r py` / `--render py` - generate the code for a certain language - the supported values are `py`, `sv`, `c`, `cpp`.
+ * `--debug` - generate debug messages as the tool runs.
+ * `--help` - show the help prompt.
+
+## Examples
+
+A number of examples are provided in the `examples` folder - each of these can be run by executing the `test.sh` file within the directory.
+
+## Packtype Specifications
+
 Packtype specifications use a decorators and classes to declare the different data structures. Once a specification has been written, the Packtype utility can be used to generate code for different languages.
 
 ### Decorators
