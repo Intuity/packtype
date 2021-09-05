@@ -22,7 +22,7 @@ setup(
     name="packtype",
     version="1.0",
     license="Apache License, Version 2.0",
-    description="Specification of packed data structures, constants, and enumerations",
+    description="Packed data structure specifications for multi-language hardware projects",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Peter Birch",
