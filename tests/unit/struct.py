@@ -180,7 +180,7 @@ def test_struct_offset_lsb():
 
 def test_struct_offset_msb():
     """ Ensure structures support absolute and relative offset fields in MSB mode """
-    abs_off, rel_off = randint(15, 22), randint(1, 8)
+    abs_off, rel_off = randint(18, 22), randint(1, 8)
     width_a, width_b = randint( 1,  8), randint(1, 8)
     @packtype.struct(pack=Struct.FROM_MSB, width=32)
     class MyStruct:
