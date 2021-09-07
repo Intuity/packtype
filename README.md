@@ -169,6 +169,21 @@ class PingPongMessage:
     payload : PingPongPayload("Payload of the message")
 ```
 
+By default, fields are packed into data structures from the LSB - but this can be reversed to pack from the MSB by providing the `pack=Struct.FROM_MSB` argument to the decorator. When using this mode, the `width` of the data structure must be explicitly specified. For example:
+
+```python
+import packtype
+from packtype import Scalar, Struct
+
+@packtype.struct(package=MyPackage, pack=Struct.FROM_MSB, width=32)
+class PingPongPayload:
+    """ Payload of a ping-pong keepalive message """
+    source_id  : Scalar(width= 8, desc="Node that sent the message")
+    is_pong    : Scalar(width= 1, desc="Is this a ping or a pong")
+    ping_value : Scalar(width=15, desc="Value to include in the response")
+    timestamp  : Scalar(width= 8, desc="Timestamp message was sent")
+```
+
 ### Unions
 
 Unions allow different data structures to be overlapped on the same data - this is especially useful in protocol decoders where a bus may carry different formats and structures of data in different cycles. All components of a union must be of the same size, otherwise the tool will raise an error.
