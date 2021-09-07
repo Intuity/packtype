@@ -25,7 +25,7 @@ package ${name};
 %for obj in filter(lambda x: isinstance(x, Constant), package._pt_values()):
     // ${obj.name.upper()}${tc.opt_desc(obj, " :")}
     localparam ${obj.name.upper()} = 'h${f"{obj.value:08X}"};
-%endfor ## obj in filter(lambda x: isinstance(x, Constant), package._pt_values())
+%endfor
 
     // =========================================================================
     // Enumerations
@@ -38,10 +38,10 @@ ${blocks.section(obj, indent=4)}
     %for field in obj._pt_values():
         ${prefix} ${tc.snake_case(obj._pt_name).upper()}_${tc.snake_case(field._pt_name).upper()} = 'd${field.value}
 <%      prefix = "," %>\
-    %endfor ## field in obj._pt_values()
+    %endfor
     } ${obj._pt_name | tc.snake_case}_t;
 
-%endfor ## obj in filter(lambda x: isinstance(x, Enum), package._pt_values())
+%endfor
     // =========================================================================
     // Data Structures
     // =========================================================================
@@ -49,23 +49,28 @@ ${blocks.section(obj, indent=4)}
 %for obj in filter(lambda x: isinstance(x, Struct), package._pt_values()):
 ${blocks.section(obj, indent=4)}
     typedef struct packed {
-<%  lsb, pad = 0, 0 %>\
-    %for field in sorted(obj._pt_values(), key=lambda x: x._pt_lsb):
-        %if field._pt_lsb != lsb:
-<%          width = field._pt_lsb-lsb %>\
-        logic${f" [{width-1}:0]" if width > 1 else ""} _padding_${pad};
-<%          pad += 1 %>\
+<%
+    msb_pack = (obj._pt_pack == "FROM_MSB")
+    next_pos = obj._pt_width - 1
+    pad_idx  = 0
+    ordered  = reversed(sorted(obj._pt_values(), key=lambda x: x._pt_lsb))
+%>\
+    %for field in ordered:
+        %if field._pt_msb != next_pos:
+<%          width = (next_pos - field._pt_msb) %>\
+        logic${f" [{width-1}:0]" if width > 1 else ""} _padding_${pad_idx};
+<%          pad_idx += 1 %>\
         %endif
         %if isinstance(field, Scalar):
         logic${f" [{field._pt_width-1}:0]" if field._pt_width > 1 else ""} ${field._pt_name};
         %elif type(field._pt_container) in (Enum, Struct):
         ${field._pt_container._pt_name | tc.snake_case}_t ${field._pt_name | tc.snake_case};
         %endif
-<%      lsb = field._pt_lsb + field._pt_width %>\
-    %endfor ## field in obj._pt_values()
-    %if obj._pt_width != lsb:
-<%      width = obj._pt_width-lsb %>\
-        logic${f" [{width-1}:0]" if width > 1 else ""} _padding_${pad};
+<%      next_pos = (field._pt_lsb - 1) %>\
+    %endfor
+    %if msb_pack and next_pos >= 0:
+<%      width = next_pos %>\
+        logic${f" [{width-1}:0]" if width > 1 else ""} _padding_${pad_idx};
     %endif
     } ${obj._pt_name | tc.snake_case}_t;
 
@@ -83,7 +88,7 @@ ${blocks.section(obj, indent=4)}
         %elif type(field._pt_container) in (Enum, Struct):
         ${field._pt_container._pt_name | tc.snake_case}_t ${field._pt_name | tc.snake_case};
         %endif
-    %endfor ## field in obj._pt_values()
+    %endfor
     } ${obj._pt_name | tc.snake_case}_t;
 
 %endfor
