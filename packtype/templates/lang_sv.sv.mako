@@ -69,7 +69,7 @@ ${blocks.section(obj, indent=4)}
 <%      next_pos = (field._pt_lsb - 1) %>\
     %endfor
     %if msb_pack and next_pos >= 0:
-<%      width = next_pos %>\
+<%      width = next_pos + 1 %>\
         logic${f" [{width-1}:0]" if width > 1 else ""} _padding_${pad_idx};
     %endif
     } ${obj._pt_name | tc.snake_case}_t;
