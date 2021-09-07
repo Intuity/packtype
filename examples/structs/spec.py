@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import packtype
-from packtype import Scalar
+from packtype import Scalar, Struct
 
 @packtype.package()
 class Calendar:
@@ -25,7 +25,7 @@ class Date:
     month : Scalar(width= 4, desc="Month of year 1-12")
     year  : Scalar(width=12, desc="Year e.g. 2021"    )
 
-@packtype.struct(package=Calendar)
+@packtype.struct(package=Calendar, pack=Struct.FROM_MSB, width=17)
 class Time:
     hour   : Scalar(width=5, desc="Hour of day 0-23"     )
     minute : Scalar(width=6, desc="Minute of hour 0-59"  )

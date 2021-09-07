@@ -20,15 +20,21 @@ from random import randint
 import pytest
 
 import packtype
-from packtype import Offset, Scalar
+from packtype import Offset, Scalar, Struct
 
 from .common import random_str
 
-def test_struct_scalar():
+@pytest.mark.parametrize("pack_mode", [Struct.FROM_LSB, Struct.FROM_MSB])
+def test_struct_scalar(pack_mode):
     """ Basic struct containing scalars """
+    # Generate some random field sizes and descriptions
     width_a, width_b, width_c = randint(1, 10), randint(1, 10), randint(1, 10)
     desc_a,  desc_b,  desc_c  = random_str(30), random_str(30), random_str(30)
-    @packtype.struct()
+    # For MSB packing, calculate total width
+    msb_pack    = (pack_mode == Struct.FROM_MSB)
+    total_width = sum((width_a, width_b, width_c)) if msb_pack else None
+    # Declare the struct
+    @packtype.struct(pack=pack_mode, width=total_width)
     class MyStruct:
         field_a : Scalar(width=width_a, desc=desc_a)
         field_b : Scalar(width=width_b, desc=desc_b)
@@ -39,14 +45,28 @@ def test_struct_scalar():
     assert MyStruct.field_a._pt_desc == desc_a
     assert MyStruct.field_b._pt_desc == desc_b
     assert MyStruct.field_c._pt_desc == desc_c
-    assert MyStruct.field_a._pt_lsb == 0
-    assert MyStruct.field_a._pt_msb == width_a - 1
+    assert MyStruct.field_a._pt_lsb == (
+        (total_width - width_a) if msb_pack else 0
+    )
+    assert MyStruct.field_a._pt_msb == (
+        (total_width - 1) if msb_pack else (width_a - 1)
+    )
     assert MyStruct.field_a._pt_mask == (1 << width_a) - 1
-    assert MyStruct.field_b._pt_lsb == width_a
-    assert MyStruct.field_b._pt_msb == width_a + width_b - 1
+    assert MyStruct.field_b._pt_lsb == (
+        (total_width - width_a - width_b) if msb_pack else width_a
+    )
+    assert MyStruct.field_b._pt_msb == (
+        (total_width - width_a - 1) if msb_pack else (width_a + width_b - 1)
+    )
     assert MyStruct.field_b._pt_mask == (1 << width_b) - 1
-    assert MyStruct.field_c._pt_lsb == width_a + width_b
-    assert MyStruct.field_c._pt_msb == width_a + width_b + width_c - 1
+    assert MyStruct.field_c._pt_lsb == (
+        (total_width - width_a - width_b - width_c) if msb_pack else
+        (width_a + width_b)
+    )
+    assert MyStruct.field_c._pt_msb == (
+        (total_width - width_a - width_b - 1) if msb_pack else
+        (width_a + width_b + width_c - 1)
+    )
     assert MyStruct.field_c._pt_mask == (1 << width_c) - 1
     assert MyStruct._pt_width == width_a + width_b + width_c
 
@@ -146,8 +166,8 @@ def test_struct_nested():
         sum(widths[6:]) + SubStructA._pt_width + SubStructB._pt_width
     )
 
-def test_struct_offset():
-    """ Ensure structures support absolute and relative offset fields """
+def test_struct_offset_lsb():
+    """ Ensure structures support absolute and relative offset fields in LSB mode """
     abs_off, rel_off = randint(1, 8), randint(1, 8)
     width_a, width_b = randint(1, 8), randint(1, 8)
     @packtype.struct()
@@ -158,16 +178,48 @@ def test_struct_offset():
     assert MyStruct.field_b._pt_lsb == abs_off + width_a + rel_off
     assert MyStruct._pt_width == abs_off + width_a + rel_off + width_b
 
-def test_struct_bad_lsb():
+def test_struct_offset_msb():
+    """ Ensure structures support absolute and relative offset fields in MSB mode """
+    abs_off, rel_off = randint(15, 22), randint(1, 8)
+    width_a, width_b = randint( 1,  8), randint(1, 8)
+    @packtype.struct(pack=Struct.FROM_MSB, width=32)
+    class MyStruct:
+        field_a : Scalar(width=width_a, lsb=abs_off)
+        field_b : Scalar(width=width_b, lsb=Offset(rel_off))
+    assert MyStruct.field_a._pt_lsb == abs_off
+    assert MyStruct.field_b._pt_lsb == (abs_off - width_b - rel_off)
+
+@pytest.mark.parametrize("pack_mode", [Struct.FROM_LSB, Struct.FROM_MSB])
+def test_struct_bad_lsb(pack_mode):
     """ Attempt to create a struct with a clashing LSB value """
+    msb_pack         = (pack_mode == Struct.FROM_MSB)
     width_a, width_b = randint(2, 10), randint(1, 10)
-    lsb_b            = width_a // 2
+    total_width      = int(sum((width_a, width_b)) * 1.5)
+    lsb_b            = (width_a // 2)
+    if msb_pack: lsb_b = total_width - lsb_b
     with pytest.raises(AssertionError) as excinfo:
-        @packtype.struct()
+        @packtype.struct(pack=pack_mode, width=total_width)
         class BadStruct:
             field_a : Scalar(width=width_a)
             field_b : Scalar(width=width_b, lsb=lsb_b)
-    assert f"Field field_b of BadStruct specifies an out-of-order LSB ({lsb_b})"
+    if msb_pack:
+        assert (
+            (
+                f"Field 'field_b' of BadStruct specifies an out-of-order LSB "
+                f"({lsb_b}), was expecting a value less than or equal to "
+                f"{total_width - width_a - width_b}"
+            )
+            in str(excinfo.value)
+        )
+    else:
+        assert (
+            (
+                f"Field 'field_b' of BadStruct specifies an out-of-order LSB "
+                f"({lsb_b}), was expecting a value greater than or equal to "
+                f"{width_a}"
+            )
+            in str(excinfo.value)
+        )
 
 def test_struct_bad_field():
     """ Attempt to create a struct with a bad field type """
