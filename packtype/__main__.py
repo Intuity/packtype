@@ -96,19 +96,20 @@ def main(render, debug, spec, outdir):
         lang  = aliases.get(lang.lower(), lang.lower())
         # Locate the associated template
         found = list(tmpl_dir.glob(f"lang_{lang}.*.mako"))
-        assert len(found) == 1, f"Failed to locate template for {lang}"
-        tmpl  = mk_lkp.get_template(found[0].name)
-        # Determine the suffix
-        suffix = "".join(found[0].suffixes[:-1])
-        # Render every package against the template
-        for _, pkg in pt_pkgs:
-            with open(outdir / f"{snake_case(pkg._pt_name)}{suffix}", "w") as fh:
-                fh.write(tmpl.render(
-                    name   =pkg._pt_name,
-                    package=pkg,
-                    source =spec.absolute(),
-                    **ctx
-                ))
+        assert len(found) > 0, f"Failed to locate template for {lang}"
+        for file_name in found:
+            tmpl  = mk_lkp.get_template(file_name.name)
+            # Determine the suffix
+            suffix = "".join(file_name.suffixes[:-1])
+            # Render every package against the template
+            for _, pkg in pt_pkgs:
+                with open(outdir / f"{snake_case(pkg._pt_name)}{suffix}", "w") as fh:
+                    fh.write(tmpl.render(
+                        name   =pkg._pt_name,
+                        package=pkg,
+                        source =spec.absolute(),
+                        **ctx
+                    ))
 
 # Catch invocation
 if __name__ == "__main__":
