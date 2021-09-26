@@ -77,7 +77,7 @@ void ${name}::pack_${obj._pt_name | tc.snake_case} (
 }
 
 ${name}::${obj._pt_name | tc.snake_case}_t ${name}::unpack_${obj._pt_name | tc.snake_case} (
-        uint8_t * packed
+    uint8_t * packed
 ) {
     ${obj._pt_name | tc.snake_case}_t obj;
     // Unpack any referenced structures
