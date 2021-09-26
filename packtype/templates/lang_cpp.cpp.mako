@@ -107,9 +107,9 @@ ${name}::${obj._pt_name | tc.snake_case}_t ${name}::unpack_${obj._pt_name | tc.s
         %endwhile
     obj.${field._pt_name | tc.snake_case} = unpack_${field._pt_container._pt_name | tc.snake_case}(packed_${field._pt_name | tc.snake_case});
     %endfor
-        // Unpack any scalar or enumerated fields
+    // Unpack any scalar or enumerated fields
     %for field in filter(lambda x: isinstance(x, Scalar) or (isinstance(x, Instance) and isinstance(x._pt_container, Enum)), obj._pt_values()):
-        // - ${field._pt_name | tc.snake_case} (${field._pt_width} bits)
+    // - ${field._pt_name | tc.snake_case} (${field._pt_width} bits)
         %if isinstance(field, Scalar):
     obj.${field._pt_name | tc.snake_case} = 0;
         %else:
