@@ -20,7 +20,7 @@ with open(Path(__file__).parent / "README.md", "r") as fh:
 
 setup(
     name="packtype",
-    version="1.1.3",
+    version="1.1.4",
     license="Apache License, Version 2.0",
     description="Packed data structure specifications for multi-language hardware projects",
     long_description=long_description,
@@ -36,7 +36,7 @@ setup(
     entry_points={
         "console_scripts": ["packtype=packtype.__main__:main"]
     },
-    python_requires=">=3.6.10",
+    python_requires=">=3.7",
     install_requires=["click", "mako", "rich"],
     setup_requires=["pytest-runner"],
     tests_require=["pytest", "pytest-cov", "pytest-mock"],
