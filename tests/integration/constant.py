@@ -47,6 +47,7 @@ def test_integ_constant(tmpdir):
             "#define __TEST_PACKAGE_H__\n",
             "#include <stdint.h>\n",
             "#include <string.h>\n",
+            "typedef unsigned __int128 uint128_t;\n",
             "const uint32_t TEST_PACKAGE_CONST_A = 0x00001234;\n",
             "const uint32_t TEST_PACKAGE_CONST_B = 0x00005678;\n",
             "const uint32_t TEST_PACKAGE_CONST_C = 0x00009ABC;\n",
