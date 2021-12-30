@@ -133,7 +133,7 @@ ${name | tc.snake_case}_${obj._pt_name | tc.snake_case}_t unpack_${name | tc.sna
             %else:
     value_${field._pt_name | tc.snake_case} \
             %endif
-|= (packed[${offset_lsb // 8}] & ${f"0x{mask:02X}"}) ${"<<" if shift < 0 else ">>"} ${abs(shift)};
+|= (${tc.c_obj_type(field)})(packed[${offset_lsb // 8}] & ${f"0x{mask:02X}"}) ${"<<" if shift < 0 else ">>"} ${abs(shift)};
 <%
             field_lsb  += step
             offset_lsb += step
