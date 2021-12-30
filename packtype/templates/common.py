@@ -54,7 +54,9 @@ def c_obj_type(obj):
     signed = (hasattr(obj, "_pt_signed") and obj._pt_signed)
     if obj._pt_width <= 16:
         sizing = int(math.ceil(obj._pt_width / 8)) * 8
-    else:
+    elif obj._pt_width <= 64:
         sizing = int(math.ceil(obj._pt_width / 32)) * 32
+    elif obj._pt_width <= 128:
+        sizing = 128
     assert sizing != None, f"Failed to resolve size for: {obj}"
     return f"{'' if signed else 'u'}int{sizing}_t"
