@@ -20,7 +20,7 @@ with open(Path(__file__).parent / "README.md", "r") as fh:
 
 setup(
     name="packtype",
-    version="1.1.4",
+    version="1.1.5",
     license="Apache License, Version 2.0",
     description="Packed data structure specifications for multi-language hardware projects",
     long_description=long_description,
