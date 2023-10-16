@@ -13,11 +13,12 @@
 # limitations under the License.
 
 from .base import Base
+from .constant import Constant
 
 class Container(Base):
     """ Base type for a fixed size, multi-field container """
 
-    def __init__(self, name, fields, desc=None, width=None, legal=None, mutable=False):
+    def __init__(self, name=None, fields=None, desc=None, width=None, legal=None, mutable=False):
         """ Initialise container with a name and fields
 
         Args:
@@ -30,16 +31,16 @@ class Container(Base):
         """
         super().__init__()
         # Setup properties
-        assert isinstance(name, str), f"Name must be a string: {type(name)}"
-        assert isinstance(fields, dict), f"Fields must be a dict: {type(fields)}"
-        assert width == None or (isinstance(width, int) and width > 0), \
-            f"Enum {width} width must be a positive integer: {width}"
-        assert legal == None or type(legal) in (list, tuple), \
+        assert name is None or isinstance(name, str), f"Name must be a string: {type(name)}"
+        assert fields is None or isinstance(fields, dict), f"Fields must be a dict: {type(fields)}"
+        assert width is None or (isinstance(width, (int, Constant)) and width > 0), \
+            f"{type(self).__name__} {width} width must be a positive integer: {width}"
+        assert legal is None or type(legal) in (list, tuple), \
             f"Legal field types must be a list or tuple if provided"
         assert isinstance(mutable, bool), f"Mutable must be boolean: {type(mutable)}"
         self.__name    = name
         self.__desc    = desc
-        self.__fields  = fields
+        self.__fields  = fields or {}
         self.__width   = width
         self.__legal   = legal
         self.__mutable = mutable
@@ -96,6 +97,10 @@ class Container(Base):
     def _pt_name(self):
         return self.__name
 
+    @_pt_name.setter
+    def _pt_name(self, value):
+        self.__name = value
+
     @property
     def _pt_fields(self):
         return { k: v for k, v in self.__fields.items() }
@@ -123,8 +128,12 @@ class Container(Base):
         return self.__width
     @_pt_width.setter
     def _pt_width(self, width):
-        assert self.__width == None, \
+        assert self.__width is None, \
             f"Trying to override fixed width of {self.__name}"
-        assert isinstance(width, int) and width > 0, \
-            f"Enum {width} width must be a positive integer: {width}"
+        assert isinstance(width, (int, Constant)) and width > 0, \
+            f"{type(self).__name__} {width} width must be a positive integer: {width}"
         self.__width = width
+
+    @property
+    def _pt_mask(self):
+        return ((1 << self._pt_width) - 1)

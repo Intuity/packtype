@@ -12,28 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .constant import Constant
 from .container import Container
 from .enum import Enum
-from .instance import Instance
-from .struct import Struct
-from .typedef import Typedef
-from .union import Union
+from .offset import Offset
+from .scalar import Scalar
 
-class Package(Container):
-    """ Package of different constants, enumerations, structs, and unions """
+class Typedef(Container):
+    """ A simple named fixed-width data structure """
 
-    def __init__(self, name, fields, desc=None):
-        """ Initialise package with name and fields
+    def __init__(self, width, name=None, desc=None):
+        """ Initialise structure with name and fields
 
         Args:
-            name  : Name of the container
-            fields: Dictionary of fields
-            desc  : Optional description
+            width: Bit width
+            name : Optional name of the container
+            desc : Optional description
         """
-        # Perform container construction
-        super().__init__(
-            name, fields, desc=desc, legal=[Constant, Enum, Struct, Union, Typedef],
-            mutable=True
-        )
-
+        super().__init__(name=name, width=width)
+        # Sanity check width
+        assert (width is None) or (isinstance(width, int) or width >= 0), \
+            f"Width must be None or a positive integer, not '{width}'"

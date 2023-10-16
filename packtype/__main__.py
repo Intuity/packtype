@@ -25,11 +25,12 @@ from rich.traceback import install
 from .base import Base
 from .constant import Constant
 from .enum import Enum
-from .instance import Instance
+from .instance import Array, Instance
 from .package import Package
 from .scalar import Scalar
 from .struct import Struct
 from .templates.common import snake_case
+from .typedef import Typedef
 from .union import Union
 
 # Setup logging
@@ -87,9 +88,10 @@ def main(render, debug, spec, outdir):
             "import packtype.templates.common as tc",
         ],
     )
-    ctx      = {
+    ctx = {
         "Constant": Constant, "Enum": Enum, "Instance": Instance,
-        "Package": Package, "Scalar": Scalar, "Struct": Struct, "Union": Union,
+        "Package": Package, "Scalar": Scalar, "Struct": Struct,
+        "Typedef": Typedef, "Union": Union, "Array": Array,
     }
     for lang in render:
         # Resolve the language and any aliases

@@ -40,11 +40,11 @@ class Scalar(Base):
             f"Width must be a positive integer: {width}"
         assert isinstance(signed, bool), \
             f"Signedness must be either True or False: {signed}"
-        assert lsb == None or (isinstance(lsb, int) and lsb >= 0) or isinstance(lsb, Offset), \
+        assert lsb is None or (isinstance(lsb, int) and lsb >= 0) or isinstance(lsb, Offset), \
             f"Least significant bit must be None or an integer: {lsb}"
-        assert name == None or isinstance(name, str), \
+        assert name is None or isinstance(name, str), \
             f"Name must be None or a string: {name}"
-        assert desc == None or isinstance(desc, str), \
+        assert desc is None or isinstance(desc, str), \
             f"Description must be None or a string: {desc}"
         self.__width  = width
         self.__signed = signed
@@ -65,7 +65,7 @@ class Scalar(Base):
         return self.__lsb
     @_pt_lsb.setter
     def _pt_lsb(self, lsb):
-        assert self.__lsb == None or isinstance(self.__lsb, Offset), \
+        assert self.__lsb is None or isinstance(self.__lsb, Offset), \
             f"Trying to alter LSB of scalar {self.__name}"
         assert isinstance(lsb, int) and lsb >= 0, \
             f"LSB must be a positive integer: {lsb}"

@@ -16,6 +16,7 @@ from .container import Container
 from .enum import Enum
 from .offset import Offset
 from .scalar import Scalar
+from .typedef import Typedef
 
 class Struct(Container):
     """ Packed data structure formed of scalars, enumerations, and other types """
@@ -35,15 +36,15 @@ class Struct(Container):
         # Perform container construction
         from .union import Union
         super().__init__(name, fields, desc=desc, width=width, legal=[
-            Enum, Struct, Union, Scalar
+            Enum, Struct, Union, Scalar, Typedef
         ])
         # Sanity check width
-        assert (width == None) or (isinstance(width, int) or width >= 0), \
+        assert (width is None) or (isinstance(width, int) or width >= 0), \
             f"Width must be None or a positive integer, not '{width}'"
         # Check the packing mode
         assert pack in (Struct.FROM_LSB, Struct.FROM_MSB), \
             f"Unknown packing mode '{pack}' for {name}"
-        assert (pack == Struct.FROM_LSB) or (width != None), \
+        assert (pack == Struct.FROM_LSB) or (width is not None), \
             "When packing downwards from the MSB, the width must be specified"
         self._pt_pack = pack
         # Determine the position of each field
@@ -51,7 +52,7 @@ class Struct(Container):
             next_msb = width - 1
             for field in sorted(self._pt_values(), key=lambda x: x._pt_id):
                 base_lsb = next_msb - field._pt_width + 1
-                if field._pt_lsb == None:
+                if field._pt_lsb is None:
                     field._pt_lsb = base_lsb
                 elif isinstance(field._pt_lsb, Offset):
                     field._pt_lsb = base_lsb - field._pt_lsb.value
@@ -64,7 +65,7 @@ class Struct(Container):
         else:
             next_lsb = 0
             for field in sorted(self._pt_values(), key=lambda x: x._pt_id):
-                if field._pt_lsb == None:
+                if field._pt_lsb is None:
                     field._pt_lsb = next_lsb
                 elif isinstance(field._pt_lsb, Offset):
                     field._pt_lsb = next_lsb + field._pt_lsb.value

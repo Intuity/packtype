@@ -24,7 +24,7 @@ def opt_desc(obj, delim):
 
     Returns: A delimited comment string containing the description
     """
-    return f"{delim} {obj.desc}" if obj.desc else ""
+    return f"{delim} {obj._pt_desc}" if obj._pt_desc else ""
 
 RGX_CAMEL = re.compile(r"([A-Z]+[a-z0-9]+)")
 def snake_case(raw):
@@ -58,5 +58,5 @@ def c_obj_type(obj):
         sizing = int(math.ceil(obj._pt_width / 32)) * 32
     elif obj._pt_width <= 128:
         sizing = 128
-    assert sizing != None, f"Failed to resolve size for: {obj}"
+    assert sizing is not None, f"Failed to resolve size for: {obj}"
     return f"{'' if signed else 'u'}int{sizing}_t"
