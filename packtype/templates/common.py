@@ -36,7 +36,18 @@ def snake_case(raw):
     Returns: A snake_case string
     """
     parts = filter(lambda x: len(x) > 0, RGX_CAMEL.split(raw))
-    return "_".join([x.lower() for x in parts])
+    return "_".join((x.lower() for x in parts))
+
+def camel_case(raw):
+    """ Convert a snake case string into camel case
+
+    Args:
+        raw: The raw string to convert
+
+    Returns: A snake_case string
+    """
+    parts = sum([RGX_CAMEL.split(x) for x in raw.split("_")], [])
+    return "".join((x.capitalize() for x in parts))
 
 # ==============================================================================
 # Language Specific Helpers
