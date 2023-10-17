@@ -25,7 +25,7 @@ def width(obj):
 
 /* verilator lint_off UNUSEDPARAM */
 
-package ${name};
+package ${name | tc.snake_case};
 
 // =============================================================================
 // Constants
@@ -106,6 +106,6 @@ typedef ${type(obj).__name__.lower()} packed {
 
 %endfor
 
-endpackage : ${name}
+endpackage : ${name | tc.snake_case}
 
 /* verilator lint_on UNUSEDPARAM */
