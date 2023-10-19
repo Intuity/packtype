@@ -76,8 +76,8 @@ typedef ${type(obj).__name__.lower()} packed {
 %>\
         %for field in ordered:
             %if field._pt_msb != next_pos:
-<%              width = (next_pos - field._pt_msb) %>\
-    logic${f" [{width-1}:0]" if width > 1 else ""} _padding_${pad_idx};
+<%              pad_width = (next_pos - field._pt_msb) %>\
+    logic${f" [{pad_width-1}:0]" if pad_width > 1 else ""} _padding_${pad_idx};
 <%              pad_idx += 1 %>\
             %endif
             %if isinstance(field, Scalar):
@@ -89,13 +89,13 @@ typedef ${type(obj).__name__.lower()} packed {
 <%          next_pos = (field._pt_lsb - 1) %>\
         %endfor
         %if msb_pack and next_pos >= 0:
-<%          width = next_pos + 1 %>\
-    logic${f" [{width-1}:0]" if width > 1 else ""} _padding_${pad_idx};
+<%          pad_width = next_pos + 1 %>\
+    logic${f" [{pad_width-1}:0]" if pad_width > 1 else ""} _padding_${pad_idx};
         %endif
     %elif isinstance(obj, Union):
         %for field in obj._pt_values():
             %if isinstance(field, Scalar):
-    logic${f" [{field._pt_width-1}:0]" if field._pt_width > 1 else ""} ${field._pt_name};
+    logic${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${field._pt_name};
             %elif type(field._pt_container) in (Enum, Struct, Typedef, Union):
 <%              array_sfx = f" [{field._pt_count-1}:0]" if isinstance(field, Array) else "" %>\
     ${field._pt_container._pt_name | tc.snake_case}_t${array_sfx} ${field._pt_name | tc.snake_case};

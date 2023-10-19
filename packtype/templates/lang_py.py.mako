@@ -34,6 +34,8 @@ ${obj.name.upper()} = 0x${f"{obj.value:08X}"}
 %for obj in filter(lambda x: isinstance(x, Typedef), package._pt_values()):
 ${blocks.section(obj, delim="#", style="pascal")}
 class ${obj._pt_name | tc.camel_case}:
+    _PT_WIDTH : int = ${int(obj._pt_width)}
+
     def __init__(self, _pt_value=None, _pt_union=None, _pt_parent=None, value=0):
         # Declare fields
         self.__value = value
@@ -47,6 +49,9 @@ class ${obj._pt_name | tc.camel_case}:
     def _pt_updated(self, child):
         if self.__pt_parent:
             return self.__pt_parent._pt_updated(self)
+
+    def __int__(self) -> int:
+        return self.__value
 
     @property
     def value(self):
@@ -91,6 +96,7 @@ class ${obj._pt_name | tc.camel_case}:
 ${blocks.section(obj, delim="#", style="pascal")}
 class ${obj._pt_name | tc.camel_case}:
     _LOOKUP : dict[int, "${obj._pt_name}"] = {}
+    _PT_WIDTH : int = ${int(obj._pt_width)}
 
     def __init__(self, name: str | None, value: int) -> None:
         self.name = name
@@ -130,6 +136,7 @@ class ${obj._pt_name | tc.camel_case}:
         %endwhile
     """
     %endif
+    _PT_WIDTH : int = ${int(obj._pt_width)}
 
     def __init__(
         self,
@@ -175,6 +182,9 @@ ${field._pt_container._pt_name}.${list(field._pt_keys())[0]},
         # If a value was provided, decode it
         if _pt_value is not None:
             self.unpack(_pt_value, force=True)
+
+    def __int__(self) -> int:
+        return self.pack()
 
     def _pt_updated(self, child):
         if self.__pt_parent:
@@ -293,6 +303,7 @@ class ${obj._pt_name | tc.camel_case}:
         %endwhile
     """
     %endif
+    _PT_WIDTH : int = ${int(obj._pt_width)}
 
     def __init__(
         self,
@@ -321,6 +332,9 @@ class ${obj._pt_name | tc.camel_case}:
         # If a value was provided, decode it
         if _pt_value is not None:
             self.unpack(_pt_value)
+
+    def __int__(self) -> int:
+        return self.pack()
 
     def _pt_updated(self, child):
         if self.__pt_parent:

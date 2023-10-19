@@ -19,11 +19,11 @@ from .offset import Offset
 class Scalar(Base):
     """ Scalar type with a fixed size """
 
-    def __init__(self, width=32, signed=False, lsb=None, name=None, desc=None):
+    def __init__(self, width=1, signed=False, lsb=None, name=None, desc=None):
         """ Initialise the scalar
 
         Args:
-            width : Bit-width of the scalar (default: 32)
+            width : Bit-width of the scalar (default: 1)
             signed: Whether the scalar holds a signed value
             lsb   : Optional least-significant bit
             name  : Optional name of the scalar
