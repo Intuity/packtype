@@ -160,7 +160,7 @@ ${field._pt_container._pt_name}.${list(field._pt_keys())[0]},
         # Declare fields
     %for field in sorted(obj._pt_values(), key=lambda x: x._pt_lsb):
         %if isinstance(field, Array):
-        self.__${field._pt_name} = []
+        self.__${field._pt_name} = [None] * ${field._pt_count}
         %endif
         %for idx in range(field._pt_count if isinstance(field, Array) else 1):
 <%
