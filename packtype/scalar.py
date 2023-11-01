@@ -96,3 +96,7 @@ class Scalar(Base):
         assert not self.__desc, f"Trying to alter description of scalar {self.__name}"
         assert isinstance(desc, str), f"Description must be a string: {desc}"
         self.__desc = desc
+
+    @property
+    def _pt_signed(self):
+        return self.__signed

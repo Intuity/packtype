@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Iterable
+
 from .base import Base
 from .container import Container
 from .constant import Constant
@@ -83,6 +85,10 @@ class Instance(Base):
     def _pt_desc(self):
         return self.__desc
 
+    @property
+    def _pt_parent(self):
+        return self.__container._pt_parent
+
     def __getattr__(self, name):
         try:
             return super().__getattribute__(name)
@@ -95,6 +101,15 @@ class Instance(Base):
     def __rmul__(self, other):
         return self.__mul__(other)
 
+    def _pt_foreign(self, exclude: list["Container"] | None = None) -> Iterable["Container"]:
+        """
+        Identify all foreign types referenced by this container and any of its
+        children, excluding types that inherit from a provided list of parents.
+
+        :param exclude: Parent objects to exclude
+        :returns: The set of foreign types
+        """
+        yield from self.__container._pt_foreign(exclude)
 
 class Array(Instance):
     """

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Iterable
+
 class Base:
     """ Packtype base class """
 
@@ -30,3 +32,6 @@ class Base:
     @property
     def _pt_id(self):
         return self.__id
+
+    def _pt_foreign(self, exclude: list["Base"] | None = None) -> Iterable["Base"]:
+        return []

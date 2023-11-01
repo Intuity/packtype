@@ -15,6 +15,7 @@
 import importlib.util
 import inspect
 import logging
+import traceback
 from pathlib import Path
 
 import click
@@ -119,3 +120,4 @@ if __name__ == "__main__":
         main(prog_name="packtype")
     except AssertionError as e:
         log.error(str(e))
+        log.error(traceback.format_exc())

@@ -30,8 +30,10 @@ class Constant(Base):
             name  : Optional name of the constant
         """
         super().__init__()
-        assert value is None or isinstance(value, int), \
+        assert value is None or isinstance(value, (int, Constant)), \
             f"Value must be None or an integer: {value}"
+        if isinstance(value, Constant):
+            value = int(value)
         assert width is None or isinstance(width, (int, Constant)) and width > 0, \
             f"Width must be a positive integer: {width}"
         assert isinstance(signed, bool), \
@@ -97,7 +99,9 @@ class Constant(Base):
         self.__desc = desc
 
     def assign(self, value):
-        assert isinstance(value, int), f"Value must be an integer: {value}"
+        assert isinstance(value, (int, Constant)), f"Value must be an integer: {value}"
+        if isinstance(value, Constant):
+            value = int(value)
         if self.signed:
             assert (
                 (value >= (-1 * (1 << (self.width - 1)))) and

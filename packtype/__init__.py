@@ -78,7 +78,9 @@ def __pt_dec(container):
             # Form the container
             c_inst = container(cls.__name__, fields, desc=desc, *args, **kwargs)
             # If a package was provided, attach the container
-            if package: package._pt_append(cls.__name__, c_inst)
+            if package:
+                package._pt_append(cls.__name__, c_inst)
+                c_inst._pt_parent = package
             # Return the container
             return c_inst
         return __inner__

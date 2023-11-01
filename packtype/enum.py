@@ -41,9 +41,8 @@ class Enum(Container):
             f"Enum {name} mode must be INDEXED, ONEHOT, or GRAY: {mode}"
         self.__mode = mode
         # Check prefix is acceptable
-        self.__prefix = (prefix or name).strip()
-        assert isinstance(self.__prefix, str) and len(self.__prefix) > 0, \
-            f"Prefix {self.__prefix} must be a string of one or more characters"
+        self.__prefix = (name if prefix is None else prefix).strip()
+        assert isinstance(self.__prefix, str), f"Prefix {self.__prefix} must be a string"
         # Check enumeration and assign missing values
         consts    = sorted([_ for _ in self._pt_items()], key=lambda x: x[1]._pt_id)
         allocated = []

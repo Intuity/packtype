@@ -17,15 +17,24 @@ limitations under the License.
 <%namespace name="blocks" file="blocks.mako" />\
 <%
 def width(obj):
-    if isinstance(obj._pt_width, Constant):
-        return f"{obj._pt_width.name}-1"
-    else:
-        return obj._pt_width - 1
+    return int(obj._pt_width) - 1
 %>\
 
 /* verilator lint_off UNUSEDPARAM */
 
 package ${name | tc.snake_case};
+
+// =============================================================================
+// Imports
+// =============================================================================
+
+%for foreign in package._pt_foreign():
+<%
+if foreign is None or foreign._pt_parent is None or foreign._pt_name is None:
+    breakpoint()
+%>\
+import ${foreign._pt_parent._pt_name | tc.snake_case}::${foreign._pt_name | tc.snake_case}_t;
+%endfor ## foreign in package._pt_foreign()
 
 // =============================================================================
 // Constants
@@ -41,8 +50,8 @@ localparam ${obj.name.upper()} = 'h${f"{obj.value:08X}"};
 // =============================================================================
 
 %for obj in filter(lambda x: isinstance(x, Typedef), package._pt_values()):
-// ${obj._pt_name.upper()}${tc.opt_desc(obj, " :")}
-typedef logic [${width(obj)}:0] ${obj._pt_name}_t;
+${blocks.section(obj)}
+typedef logic [${width(obj)}:0] ${obj._pt_name | tc.snake_case}_t;
 %endfor
 
 // =============================================================================
@@ -52,10 +61,14 @@ typedef logic [${width(obj)}:0] ${obj._pt_name}_t;
 %for obj in filter(lambda x: isinstance(x, Enum), package._pt_values()):
 ${blocks.section(obj)}
 typedef enum logic [${width(obj)}:0] {
-<%  prefix = " " %>\
+<%  sep = " " %>\
     %for field in obj._pt_values():
-    ${prefix} ${tc.snake_case(obj._pt_prefix).upper()}_${tc.snake_case(field._pt_name).upper()} = 'd${field.value}
-<%      prefix = "," %>\
+<%
+        prefix = tc.snake_case(obj._pt_prefix).upper()
+        prefix += ["", "_"][len(prefix) > 0]
+%>\
+    ${sep} ${prefix}${tc.snake_case(field._pt_name).upper()} = 'd${field.value}
+<%      sep = "," %>\
     %endfor
 } ${obj._pt_name | tc.snake_case}_t;
 
@@ -81,7 +94,8 @@ typedef ${type(obj).__name__.lower()} packed {
 <%              pad_idx += 1 %>\
             %endif
             %if isinstance(field, Scalar):
-    logic${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${field._pt_name};
+<%              sign_sfx = " signed" if field._pt_signed else "" %>\
+    logic${sign_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${field._pt_name};
             %elif type(field._pt_container) in (Enum, Struct, Typedef, Union):
 <%              array_sfx = f" [{field._pt_count-1}:0]" if isinstance(field, Array) else "" %>\
     ${field._pt_container._pt_name | tc.snake_case}_t${array_sfx} ${field._pt_name | tc.snake_case};
@@ -95,7 +109,8 @@ typedef ${type(obj).__name__.lower()} packed {
     %elif isinstance(obj, Union):
         %for field in obj._pt_values():
             %if isinstance(field, Scalar):
-    logic${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${field._pt_name};
+<%              sign_sfx = " signed" if field._pt_signed else "" %>\
+    logic${sign_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${field._pt_name};
             %elif type(field._pt_container) in (Enum, Struct, Typedef, Union):
 <%              array_sfx = f" [{field._pt_count-1}:0]" if isinstance(field, Array) else "" %>\
     ${field._pt_container._pt_name | tc.snake_case}_t${array_sfx} ${field._pt_name | tc.snake_case};
