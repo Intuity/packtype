@@ -29,10 +29,6 @@ package ${name | tc.snake_case};
 // =============================================================================
 
 %for foreign in package._pt_foreign():
-<%
-if foreign is None or foreign._pt_parent is None or foreign._pt_name is None:
-    breakpoint()
-%>\
 import ${foreign._pt_parent._pt_name | tc.snake_case}::${foreign._pt_name | tc.snake_case}_t;
 %endfor ## foreign in package._pt_foreign()
 

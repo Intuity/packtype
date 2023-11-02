@@ -16,7 +16,13 @@ limitations under the License.
 <%include file="header.mako" args="delim='#'" />\
 <%namespace name="blocks" file="blocks.mako" />\
 
-from enum import IntEnum
+# ==============================================================================
+# Imports
+# ==============================================================================
+
+%for foreign in package._pt_foreign():
+from ${foreign._pt_parent._pt_name | tc.snake_case} import ${foreign._pt_name | tc.camel_case}
+%endfor ## foreign in package._pt_foreign()
 
 # ==============================================================================
 # Constants
@@ -357,7 +363,7 @@ class ${obj._pt_name | tc.camel_case}:
         return self.__${field._pt_name}
     %elif isinstance(field._pt_container, (Struct, Union, Typedef)):
         return self.__${field._pt_name}.pack()
-    %elif isinstance(field._pt_container, Enuma):
+    %elif isinstance(field._pt_container, Enum):
         return int(self.__${field._pt_name})
     %endif
 
