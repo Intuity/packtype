@@ -75,8 +75,11 @@ class Struct(Container):
                         f"an out-of-order LSB ({field._pt_lsb}), was expecting a " \
                         f"value greater than or equal to {next_lsb}"
                 next_lsb = (field._pt_lsb + field._pt_width)
+        # Check the field width
+        fwidth = max((x._pt_width + x._pt_lsb) for x in self._pt_values())
+        assert width is None or fwidth <= width, (
+            f"Total field width {fwidth} is greater than the specified width {width}"
+        )
         # Calculate the width of the struct
         if not self._pt_width and len(self._pt_keys()) > 0:
-            self._pt_width = max((
-                (x._pt_width + x._pt_lsb) for x in self._pt_values()
-            ))
+            self._pt_width = fwidth
