@@ -113,6 +113,7 @@ class ${obj._pt_name | tc.camel_case}:
 
     @classmethod
     def cast(cls, value: int) -> "${obj._pt_name}":
+        value = int(value)
         enumval = cls._LOOKUP.get(value, None)
         if enumval is None:
             enumval = cls(None, value)
