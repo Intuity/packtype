@@ -47,7 +47,11 @@ localparam ${obj.name.upper()} = 'h${f"{obj.value:08X}"};
 
 %for obj in filter(lambda x: isinstance(x, Typedef), package._pt_values()):
 ${blocks.section(obj)}
+    %if obj._pt_alias is None:
 typedef logic [${width(obj)}:0] ${obj._pt_name | tc.snake_case}_t;
+    %else:
+typedef ${obj._pt_alias._pt_name | tc.snake_case}_t ${obj._pt_name | tc.snake_case}_t;
+    %endif
 %endfor
 
 // =============================================================================

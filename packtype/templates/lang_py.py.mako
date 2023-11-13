@@ -39,6 +39,7 @@ ${obj.name.upper()} = 0x${f"{obj.value:08X}"}
 
 %for obj in filter(lambda x: isinstance(x, Typedef), package._pt_values()):
 ${blocks.section(obj, delim="#", style="pascal")}
+    %if obj._pt_alias is None:
 class ${obj._pt_name | tc.camel_case}:
     _PT_WIDTH : int = ${int(obj._pt_width)}
 
@@ -91,7 +92,9 @@ class ${obj._pt_name | tc.camel_case}:
         self.__value = scalar & 0x${f"{obj._pt_mask:X}"}
         # Return self
         return self
-
+    %else:
+${obj._pt_name | tc.camel_case} = ${obj._pt_alias._pt_name | tc.camel_case}
+    %endif
 %endfor ## obj in filter(lambda x: isinstance(x, Typedef), package._pt_values())
 
 # ==============================================================================
