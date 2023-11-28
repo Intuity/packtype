@@ -385,7 +385,7 @@ class ${obj._pt_name | tc.camel_case}:
         %elif isinstance(field._pt_container, (Struct, Union, Typedef)):
             self.__${field._pt_name}.unpack(scalar)
         %elif isinstance(field._pt_container, Enum):
-            self.__${field._pt_name} = ${field._pt_container._pt_name}(scalar)
+            self.__${field._pt_name} = ${field._pt_container._pt_name}.cast(scalar)
         %endif
     %endfor
         # Return self
