@@ -24,7 +24,7 @@ class Enum(Container):
     ONEHOT  = "ONEHOT"  # Assigns values 1, 2, 4, 8, ...
     GRAY    = "GRAY"    # Assigns variable sized Gray code
 
-    def __init__(self, name, fields, desc=None, width=None, mode=INDEXED):
+    def __init__(self, name, fields, desc=None, width=None, mode=INDEXED, prefix=None):
         """ Initialise enumeration with a name and fields
 
         Args:
@@ -32,6 +32,7 @@ class Enum(Container):
             fields: Dictionary of fields
             width : Bit width (if omitted is calculated from largest value)
             mode  : How named values should be enumerated
+            prefix: How enumerated values should be namespaced
         """
         # Perform container construction
         super().__init__(name, fields, desc=desc, width=width, legal=[Constant])
@@ -39,6 +40,9 @@ class Enum(Container):
         assert mode in (Enum.INDEXED, Enum.ONEHOT, Enum.GRAY), \
             f"Enum {name} mode must be INDEXED, ONEHOT, or GRAY: {mode}"
         self.__mode = mode
+        # Check prefix is acceptable
+        self.__prefix = (name if prefix is None else prefix).strip()
+        assert isinstance(self.__prefix, str), f"Prefix {self.__prefix} must be a string"
         # Check enumeration and assign missing values
         consts    = sorted([_ for _ in self._pt_items()], key=lambda x: x[1]._pt_id)
         allocated = []
@@ -49,7 +53,7 @@ class Enum(Container):
         }[self.__mode]
         for idx, (key, const) in enumerate(consts):
             # If value is None, assign the next in the sequence
-            if const.value == None: const.value = next_val
+            if const.value is None: const.value = next_val
             # Set the next value to follow on
             next_val = const.value
             if   self.__mode == Enum.INDEXED: next_val  += 1
@@ -66,7 +70,7 @@ class Enum(Container):
                 assert const.value == gray_val, \
                     f"Value {const.value} ({key}) at index {idx} of {name} is " \
                     f"not gray-coded"
-            if self._pt_width != None:
+            if self._pt_width is not None:
                 assert const.value < (1 << self._pt_width), \
                     f"Value {const.value} ({key}) of {name} cannot be encoded " \
                     f"within {self._pt_width} bits"
@@ -82,3 +86,7 @@ class Enum(Container):
     @property
     def _pt_mode(self):
         return self.__mode
+
+    @property
+    def _pt_prefix(self):
+        return self.__prefix

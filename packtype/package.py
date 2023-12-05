@@ -15,8 +15,8 @@
 from .constant import Constant
 from .container import Container
 from .enum import Enum
-from .instance import Instance
 from .struct import Struct
+from .typedef import Typedef
 from .union import Union
 
 class Package(Container):
@@ -32,7 +32,10 @@ class Package(Container):
         """
         # Perform container construction
         super().__init__(
-            name, fields, desc=desc, legal=[Constant, Enum, Struct, Union],
+            name, fields, desc=desc, legal=[Constant, Enum, Struct, Union, Typedef],
             mutable=True
         )
-
+        # Set parent of direct fields
+        for field in self._pt_fields.values():
+            if isinstance(field, Container):
+                field._pt_parent = self

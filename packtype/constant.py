@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import math
+
 from .base import Base
 
 class Constant(Base):
@@ -28,26 +30,35 @@ class Constant(Base):
             name  : Optional name of the constant
         """
         super().__init__()
-        assert value == None or isinstance(value, int), \
+        assert value is None or isinstance(value, (int, Constant)), \
             f"Value must be None or an integer: {value}"
-        assert isinstance(width, int) and width > 0, \
+        if isinstance(value, Constant):
+            value = int(value)
+        assert width is None or isinstance(width, (int, Constant)) and width > 0, \
             f"Width must be a positive integer: {width}"
         assert isinstance(signed, bool), \
             f"Signedness must be either True or False: {signed}"
-        assert name == None or isinstance(name, str), \
+        assert name is None or isinstance(name, str), \
             f"Name must be None or a string: {name}"
-        assert desc == None or isinstance(desc, str), \
+        assert desc is None or isinstance(desc, str), \
             f"Description must be None or a string: {name}"
-        self.__width  = width
+        self.__width  = Constant.clog2(value) if width is None else width
         self.__signed = signed
         self.__name   = name
         self.__desc   = desc
         # Assign the value (performs extra sanity checks)
-        if value != None: self.assign(value)
+        if value is not None: self.assign(value)
         else: self.value = None
 
     def __int__(self):
         return self.value
+
+    def __repr__(self):
+        return f"<{type(self).__name__}::{self.__name} value=\"{self.value}\">"
+
+    @staticmethod
+    def clog2(value : float) -> int:
+        return int(math.ceil(math.log2(value)))
 
     @property
     def width(self):
@@ -88,7 +99,9 @@ class Constant(Base):
         self.__desc = desc
 
     def assign(self, value):
-        assert isinstance(value, int), f"Value must be an integer: {value}"
+        assert isinstance(value, (int, Constant)), f"Value must be an integer: {value}"
+        if isinstance(value, Constant):
+            value = int(value)
         if self.signed:
             assert (
                 (value >= (-1 * (1 << (self.width - 1)))) and
@@ -98,3 +111,60 @@ class Constant(Base):
             assert value >= 0 and value < (1 << self.width), \
                 f"Value {value} is outside of an unsigned {self.width} bit range"
         self.value = value
+
+    def __hash__(self):
+        return hash(self.value)
+
+    def __add__(self, other):
+        return int(self.value) + other
+
+    def __sub__(self, other):
+        return int(self.value) - other
+
+    def __mul__(self, other):
+        return int(self.value) * other
+
+    def __div__(self, other):
+        return int(self.value) / other
+
+    def __lshift__(self, other):
+        return int(self.value) << other
+
+    def __rshift__(self, other):
+        return int(self.value) >> other
+
+    def __eq__(self, other):
+        return int(self.value) == other
+
+    def __ne__(self, other):
+        return int(self.value) != other
+
+    def __lt__(self, other):
+        return int(self.value) < other
+
+    def __le__(self, other):
+        return int(self.value) <= other
+
+    def __gt__(self, other):
+        return int(self.value) > other
+
+    def __ge__(self, other):
+        return int(self.value) >= other
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __rsub__(self, other):
+        return other - int(self.value)
+
+    def __rmul__(self, other):
+        return int(self.value) * other
+
+    def __rdiv__(self, other):
+        return other / int(self.value)
+
+    def __rlshift__(self, other):
+        return other << int(self.value)
+
+    def __rrshift__(self, other):
+        return other >> int(self.value)

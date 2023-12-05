@@ -19,11 +19,13 @@ from .offset import Offset
 from .package import Package
 from .scalar import Scalar
 from .struct import Struct
+from .typedef import Typedef
 from .union import Union
 
 # Linting guards
 assert Offset
 assert Scalar
+assert Typedef
 
 def __pt_dec(container):
     def __dec__(*args, package=None, **kwargs):
@@ -41,7 +43,7 @@ def __pt_dec(container):
                 # See if there is a matching annotation?
                 anno = annotations.get(key, None)
                 # If there is a non-packtype object, it might need to be wrapped
-                if anno == None or not isinstance(anno, Base):
+                if anno is None or not isinstance(anno, Base):
                     # If it is an integer, wrap it as a constant
                     if isinstance(obj, int):
                         anno = Constant(value=obj, name=key)
@@ -76,7 +78,9 @@ def __pt_dec(container):
             # Form the container
             c_inst = container(cls.__name__, fields, desc=desc, *args, **kwargs)
             # If a package was provided, attach the container
-            if package: package._pt_append(cls.__name__, c_inst)
+            if package:
+                package._pt_append(cls.__name__, c_inst)
+                c_inst._pt_parent = package
             # Return the container
             return c_inst
         return __inner__

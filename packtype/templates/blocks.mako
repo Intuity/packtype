@@ -23,7 +23,7 @@ limitations under the License.
     }[style]
     if isinstance(name, str): obj_name = tc.snake_case(name) + "_" + obj_name
 %>\
-${indent}${delim} ${type(obj).__name__}: ${obj_name} (${obj._pt_width} bits)
+${indent}${delim} ${type(obj).__name__}: ${obj_name} (${int(obj._pt_width)} bits)
 %if obj._pt_desc:
 <%  full_desc = obj._pt_desc %>\
     %while full_desc:

@@ -15,6 +15,7 @@
 import importlib.util
 import inspect
 import logging
+import traceback
 from pathlib import Path
 
 import click
@@ -25,11 +26,12 @@ from rich.traceback import install
 from .base import Base
 from .constant import Constant
 from .enum import Enum
-from .instance import Instance
+from .instance import Array, Instance
 from .package import Package
 from .scalar import Scalar
 from .struct import Struct
 from .templates.common import snake_case
+from .typedef import Typedef
 from .union import Union
 
 # Setup logging
@@ -53,9 +55,10 @@ aliases = {
 @click.command()
 @click.option("--render", "-r", type=str, multiple=True,        help="Language to render")
 @click.option("--debug",        flag_value=True, default=False, help="Enable debug messages")
+@click.option("--only",         type=str, multiple=True,        help="Packages to render")
 @click.argument("spec",   type=click.Path(exists=True, dir_okay=False))
 @click.argument("outdir", type=click.Path(file_okay=False), default=".")
-def main(render, debug, spec, outdir):
+def main(render, debug, only, spec, outdir):
     """ Renders packtype definitions from a SPEC into output files """
     # Set log verbosity
     if debug: log.setLevel(logging.DEBUG)
@@ -74,6 +77,9 @@ def main(render, debug, spec, outdir):
     # Filter for packages
     pt_pkgs = list(filter(lambda x: isinstance(x[1], Package), pt_objs))
     log.debug(f"Discovered {len(pt_pkgs)} packtype packages")
+    if only:
+        only = {str(x).lower() for x in only}
+        pt_pkgs = [x for x in pt_pkgs if x[0].lower() in only]
     # Create output directory if it doesn't already exist
     if not outdir.exists(): outdir.mkdir(parents=True)
     # Render
@@ -87,9 +93,10 @@ def main(render, debug, spec, outdir):
             "import packtype.templates.common as tc",
         ],
     )
-    ctx      = {
+    ctx = {
         "Constant": Constant, "Enum": Enum, "Instance": Instance,
-        "Package": Package, "Scalar": Scalar, "Struct": Struct, "Union": Union,
+        "Package": Package, "Scalar": Scalar, "Struct": Struct,
+        "Typedef": Typedef, "Union": Union, "Array": Array,
     }
     for lang in render:
         # Resolve the language and any aliases
@@ -117,3 +124,4 @@ if __name__ == "__main__":
         main(prog_name="packtype")
     except AssertionError as e:
         log.error(str(e))
+        log.error(traceback.format_exc())

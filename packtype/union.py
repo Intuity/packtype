@@ -13,8 +13,10 @@
 # limitations under the License.
 
 from .container import Container
+from .enum import Enum
 from .scalar import Scalar
 from .struct import Struct
+from .typedef import Typedef
 
 class Union(Container):
     """ Packed data structure formed of other structures or unions """
@@ -28,7 +30,7 @@ class Union(Container):
             desc  : Optional description
         """
         # Perform container construction
-        super().__init__(name, fields, desc=desc, legal=[Scalar, Struct, Union])
+        super().__init__(name, fields, desc=desc, legal=[Enum, Scalar, Struct, Union, Typedef])
         # Check all fields are the same width
         widths = [x._pt_width for x in self._pt_values()]
         assert len(set(widths)) == 1, \

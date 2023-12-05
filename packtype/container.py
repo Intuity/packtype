@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Iterable
+
 from .base import Base
+from .constant import Constant
 
 class Container(Base):
     """ Base type for a fixed size, multi-field container """
 
-    def __init__(self, name, fields, desc=None, width=None, legal=None, mutable=False):
+    def __init__(self, name=None, fields=None, desc=None, width=None, legal=None, mutable=False, parent=None):
         """ Initialise container with a name and fields
 
         Args:
@@ -27,22 +30,26 @@ class Container(Base):
             width  : Optional bit width (can be filled in later)
             legal  : Optional list of legal field types
             mutable: Can fields be appended after construction (default: False)
+            parent : Pointer to parent (default: None)
         """
         super().__init__()
         # Setup properties
-        assert isinstance(name, str), f"Name must be a string: {type(name)}"
-        assert isinstance(fields, dict), f"Fields must be a dict: {type(fields)}"
-        assert width == None or (isinstance(width, int) and width > 0), \
-            f"Enum {width} width must be a positive integer: {width}"
-        assert legal == None or type(legal) in (list, tuple), \
+        assert name is None or isinstance(name, str), f"Name must be a string: {type(name)}"
+        assert fields is None or isinstance(fields, dict), f"Fields must be a dict: {type(fields)}"
+        assert width is None or (isinstance(width, (int, Constant)) and width > 0), \
+            f"{type(self).__name__} {width} width must be a positive integer: {width}"
+        assert legal is None or type(legal) in (list, tuple), \
             f"Legal field types must be a list or tuple if provided"
         assert isinstance(mutable, bool), f"Mutable must be boolean: {type(mutable)}"
+        assert parent is None or isinstance(parent, Container), \
+            f"Parent must be None or inheriting from Container: {type(parent)}"
         self.__name    = name
         self.__desc    = desc
-        self.__fields  = fields
+        self.__fields  = fields or {}
         self.__width   = width
         self.__legal   = legal
         self.__mutable = mutable
+        self.__parent  = parent
         # Check that all fields obey legal types
         for key, obj in self.__fields.items():
             assert self._pt_check(obj), \
@@ -96,6 +103,10 @@ class Container(Base):
     def _pt_name(self):
         return self.__name
 
+    @_pt_name.setter
+    def _pt_name(self, value):
+        self.__name = value
+
     @property
     def _pt_fields(self):
         return { k: v for k, v in self.__fields.items() }
@@ -123,8 +134,38 @@ class Container(Base):
         return self.__width
     @_pt_width.setter
     def _pt_width(self, width):
-        assert self.__width == None, \
+        assert self.__width is None, \
             f"Trying to override fixed width of {self.__name}"
-        assert isinstance(width, int) and width > 0, \
-            f"Enum {width} width must be a positive integer: {width}"
+        assert isinstance(width, (int, Constant)) and width > 0, \
+            f"{type(self).__name__} {width} width must be a positive integer: {width}"
         self.__width = width
+
+    @property
+    def _pt_mask(self):
+        return ((1 << self._pt_width) - 1)
+
+    @property
+    def _pt_parent(self):
+        return self.__parent
+
+    @_pt_parent.setter
+    def _pt_parent(self, parent):
+        assert self.__parent is None, "Attempting to overwrite parent"
+        self.__parent = parent
+
+    def _pt_foreign(self,
+                    exclude: list["Container"] | None = None) -> Iterable["Container"]:
+        """
+        Identify all foreign types referenced by this container and any of its
+        children, excluding types that inherit from a provided list of parents.
+
+        :param exclude: Parent objects to exclude
+        :returns: The set of foreign types
+        """
+        exclude = exclude or [self]
+        if self in exclude or self._pt_parent in exclude:
+            for field in self.__fields.values():
+                if isinstance(field, Base):
+                    yield from field._pt_foreign(exclude)
+        else:
+            yield self

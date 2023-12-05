@@ -19,11 +19,11 @@ from .offset import Offset
 class Scalar(Base):
     """ Scalar type with a fixed size """
 
-    def __init__(self, width=32, signed=False, lsb=None, name=None, desc=None):
+    def __init__(self, width=1, signed=False, lsb=None, name=None, desc=None):
         """ Initialise the scalar
 
         Args:
-            width : Bit-width of the scalar (default: 32)
+            width : Bit-width of the scalar (default: 1)
             signed: Whether the scalar holds a signed value
             lsb   : Optional least-significant bit
             name  : Optional name of the scalar
@@ -40,11 +40,11 @@ class Scalar(Base):
             f"Width must be a positive integer: {width}"
         assert isinstance(signed, bool), \
             f"Signedness must be either True or False: {signed}"
-        assert lsb == None or (isinstance(lsb, int) and lsb >= 0) or isinstance(lsb, Offset), \
+        assert lsb is None or (isinstance(lsb, int) and lsb >= 0) or isinstance(lsb, Offset), \
             f"Least significant bit must be None or an integer: {lsb}"
-        assert name == None or isinstance(name, str), \
+        assert name is None or isinstance(name, str), \
             f"Name must be None or a string: {name}"
-        assert desc == None or isinstance(desc, str), \
+        assert desc is None or isinstance(desc, str), \
             f"Description must be None or a string: {desc}"
         self.__width  = width
         self.__signed = signed
@@ -65,7 +65,7 @@ class Scalar(Base):
         return self.__lsb
     @_pt_lsb.setter
     def _pt_lsb(self, lsb):
-        assert self.__lsb == None or isinstance(self.__lsb, Offset), \
+        assert self.__lsb is None or isinstance(self.__lsb, Offset), \
             f"Trying to alter LSB of scalar {self.__name}"
         assert isinstance(lsb, int) and lsb >= 0, \
             f"LSB must be a positive integer: {lsb}"
@@ -96,3 +96,7 @@ class Scalar(Base):
         assert not self.__desc, f"Trying to alter description of scalar {self.__name}"
         assert isinstance(desc, str), f"Description must be a string: {desc}"
         self.__desc = desc
+
+    @property
+    def _pt_signed(self):
+        return self.__signed
