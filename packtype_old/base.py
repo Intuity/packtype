@@ -1,4 +1,4 @@
-# Copyright 2023, Peter Birch, mailto:peter@intuity.io
+# Copyright 2021, Peter Birch, mailto:peter@lightlogic.co.uk
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,3 +11,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from typing import Iterable
+
+class Base:
+    """ Packtype base class """
+
+    ID = 0
+
+    @classmethod
+    def issue_id(cls):
+        """ Issue a unique ID to assist with ordering """
+        issued   = Base.ID
+        Base.ID += 1
+        return issued
+
+    def __init__(self):
+        self.__id = Base.issue_id()
+
+    @property
+    def _pt_id(self):
+        return self.__id
+
+    def _pt_foreign(self, exclude: list["Base"] | None = None) -> Iterable["Base"]:
+        return []

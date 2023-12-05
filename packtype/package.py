@@ -1,4 +1,4 @@
-# Copyright 2021, Peter Birch, mailto:peter@lightlogic.co.uk
+# Copyright 2023, Peter Birch, mailto:peter@intuity.io
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,30 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .constant import Constant
-from .container import Container
-from .enum import Enum
+import dataclasses
+from typing import Any
+
+from .assembly import Assembly
+from .wrap import get_wrapper
 from .struct import Struct
-from .typedef import Typedef
-from .union import Union
 
-class Package(Container):
-    """ Package of different constants, enumerations, structs, and unions """
 
-    def __init__(self, name, fields, desc=None):
-        """ Initialise package with name and fields
+class Package(Assembly):
 
-        Args:
-            name  : Name of the container
-            fields: Dictionary of fields
-            desc  : Optional description
-        """
-        # Perform container construction
-        super().__init__(
-            name, fields, desc=desc, legal=[Constant, Enum, Struct, Union, Typedef],
-            mutable=True
-        )
-        # Set parent of direct fields
-        for field in self._pt_fields.values():
-            if isinstance(field, Container):
-                field._pt_parent = self
+    @classmethod
+    def enum(cls, **kwds):
+        def _inner(ptcls: Any):
+            return ptcls
+        return _inner
+
+    @classmethod
+    def struct(cls, **kwds):
+        def _inner(ptcls: Any):
+            struct = get_wrapper(Struct)(**kwds)(ptcls)
+            cls._PT_ATTACH.append(struct)
+            return struct
+        return _inner
+
+    @classmethod
+    def union(cls, **kwds):
+        def _inner(ptcls: Any):
+            return ptcls
+        return _inner
