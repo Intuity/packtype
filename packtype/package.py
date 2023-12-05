@@ -16,6 +16,7 @@ import dataclasses
 from typing import Any
 
 from .assembly import Assembly
+from .enum import Enum
 from .wrap import get_wrapper
 from .struct import Struct
 
@@ -25,7 +26,9 @@ class Package(Assembly):
     @classmethod
     def enum(cls, **kwds):
         def _inner(ptcls: Any):
-            return ptcls
+            enum = get_wrapper(Enum)(**kwds)(ptcls)
+            cls._PT_ATTACH.append(enum)
+            return enum
         return _inner
 
     @classmethod

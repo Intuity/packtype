@@ -40,10 +40,17 @@ class Outer:
     req: Request
     other: Scalar[2]
 
+@TestPkg.enum()
+class Mode:
+    A: Constant
+    B: Constant
+    C: Constant
+
 inst = TestPkg()
 
 req = inst.Request()
 out = inst.Outer()
+mod = inst.Mode()
 print(int(out))
 
 breakpoint()

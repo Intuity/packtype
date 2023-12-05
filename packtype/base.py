@@ -17,3 +17,4 @@ from typing import Any
 class Base:
     _PT_ALLOW_DEFAULT: bool = False
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {}
+    _PT_MEMBERS: list["Base"] = []

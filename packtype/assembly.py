@@ -58,7 +58,7 @@ class Assembly(Base):
 
 
 class PackedAssembly(Assembly):
-    _PT_ATTRIBUTES: dict[str, Any] = {
+    _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {
         "packing": (Packing.FROM_LSB, [Packing.FROM_LSB, Packing.FROM_MSB]),
         "width": (-1, lambda x: x > 0),
     }

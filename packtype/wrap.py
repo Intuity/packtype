@@ -56,8 +56,11 @@ def get_wrapper(base: Any) -> Callable:
                         f"{cls.__name__}.{fname} is of an unsupported type "
                         f"{fdef.type.__name__}"
                     )
+                # Map a missing value to None
+                if isinstance(fdef.default, dataclasses._MISSING_TYPE):
+                    fdef.default = None
                 # Check if assignment allowed
-                if not isinstance(fdef.default, dataclasses._MISSING_TYPE) and not fdef.type._PT_ALLOW_DEFAULT:
+                if fdef.default is not None and not fdef.type._PT_ALLOW_DEFAULT:
                     raise BadAssignment(
                         f"{cls.__name__}.{fname} cannot be assigned an initial "
                         f"value of {fdef.default}"

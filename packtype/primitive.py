@@ -62,7 +62,7 @@ class Primitive(Base, metaclass=MetaPrimitive):
         self._pt_set(value)
 
     def _pt_set(self, value: int) -> int:
-        if value < 0 or value > self._pt_mask:
+        if value < 0 or (self._pt_width > 0 and value > self._pt_mask):
             raise ValueError(
                 f"Value {value} cannot be represented by {self._pt_width} bits"
             )
