@@ -17,6 +17,10 @@ import functools
 from .base import Base
 
 
+class ValueError(Exception):
+    pass
+
+
 class MetaPrimitive(type):
     def __new__(cls, name, bases, dct):
         return super().__new__(cls, name, bases, dct)
@@ -30,6 +34,7 @@ class MetaPrimitive(type):
         return type(prim.__name__ + f"_{width}",
                     (prim, ),
                     {"_PT_WIDTH": width})
+
 
 class Primitive(Base, metaclass=MetaPrimitive):
     _PT_WIDTH : int = -1
@@ -57,6 +62,10 @@ class Primitive(Base, metaclass=MetaPrimitive):
         self._pt_set(value)
 
     def _pt_set(self, value: int) -> int:
+        if value < 0 or value > self._pt_mask:
+            raise ValueError(
+                f"Value {value} cannot be represented by {self._pt_width} bits"
+            )
         self.__value = value
 
     def __int__(self) -> int:

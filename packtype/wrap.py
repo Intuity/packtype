@@ -68,7 +68,10 @@ def get_wrapper(base: Any) -> Callable:
                 if key not in base._PT_ATTRIBUTES:
                     raise BadAttribute(f"Unsupported attribute '{key}' for {base.__name__}")
                 _, accepted = base._PT_ATTRIBUTES[key]
-                if value not in accepted:
+                if (
+                    (callable(accepted) and not accepted(value)) or
+                    (isinstance(accepted, tuple) and value not in accepted)
+                ):
                     raise BadAttribute(
                         f"Unsupported value '{value}' for attribute '{key}' "
                         f"for {base.__name__}"

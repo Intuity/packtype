@@ -29,7 +29,7 @@ class TestPkg:
     def test_func(self, abc):
         return abc + 123
 
-@TestPkg.struct()
+@TestPkg.struct(width=64)
 class Request:
     address: Scalar[32]
     length: Scalar[19]

@@ -26,6 +26,10 @@ class Packing(Enum):
     FROM_MSB = auto()
 
 
+class WidthError(Exception):
+    pass
+
+
 class Assembly(Base):
     _PT_DEF = None
     _PT_ATTACH = None
@@ -55,13 +59,24 @@ class Assembly(Base):
 
 class PackedAssembly(Assembly):
     _PT_ATTRIBUTES: dict[str, Any] = {
-        "packing": (Packing.FROM_LSB, [Packing.FROM_LSB, Packing.FROM_MSB])
+        "packing": (Packing.FROM_LSB, [Packing.FROM_LSB, Packing.FROM_MSB]),
+        "width": (-1, lambda x: x > 0),
     }
 
     def __init__(self) -> None:
         super().__init__()
         self._pt_packing = self._PT_ATTRIBUTES["packing"]
+        self._pt_width = self._PT_ATTRIBUTES["width"]
         self._pt_ranges = {}
+        # Check for oversized fields
+        if self._pt_width < 0:
+            self._pt_width = self._pt_field_width
+        elif self._pt_width < self._pt_field_width:
+            raise WidthError(
+                f"Fields of {type(self).__name__} total {self._pt_field_width} "
+                f"bits which does not fit within the specified width of "
+                f"{self._pt_width} bits"
+            )
         # Place fields LSB -> MSB
         if self._pt_packing is Packing.FROM_LSB:
             lsb = 0
@@ -77,7 +92,7 @@ class PackedAssembly(Assembly):
 
     @property
     @functools.cache
-    def _pt_width(self) -> None:
+    def _pt_field_width(self) -> None:
         return sum(x._pt_width for _, x in self._pt_fields)
 
     @property
