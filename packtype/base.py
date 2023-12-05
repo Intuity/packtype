@@ -12,5 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any
+
 class Base:
-    _PT_ALLOW_DEFAULT : bool = False
+    _PT_ALLOW_DEFAULT: bool = False
+    _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {}

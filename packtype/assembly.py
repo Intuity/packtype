@@ -14,10 +14,16 @@
 
 import dataclasses
 import functools
+from enum import Enum, auto
 from typing import Any
 
 from .base import Base
 from .primitive import Primitive
+
+
+class Packing(Enum):
+    FROM_LSB = auto()
+    FROM_MSB = auto()
 
 
 class Assembly(Base):
@@ -48,14 +54,26 @@ class Assembly(Base):
 
 
 class PackedAssembly(Assembly):
+    _PT_ATTRIBUTES: dict[str, Any] = {
+        "packing": (Packing.FROM_LSB, [Packing.FROM_LSB, Packing.FROM_MSB])
+    }
 
     def __init__(self) -> None:
         super().__init__()
+        self._pt_packing = self._PT_ATTRIBUTES["packing"]
         self._pt_ranges = {}
-        lsb = 0
-        for fname, finst in self._pt_fields:
-            self._pt_ranges[fname] = (lsb, lsb+finst._pt_width-1)
-            lsb += finst._pt_width
+        # Place fields LSB -> MSB
+        if self._pt_packing is Packing.FROM_LSB:
+            lsb = 0
+            for fname, finst in self._pt_fields:
+                self._pt_ranges[fname] = (lsb, lsb+finst._pt_width-1)
+                lsb += finst._pt_width
+        # Place fields MSB -> LSB
+        else:
+            msb = self._pt_width - 1
+            for fname, finst in self._pt_fields:
+                self._pt_ranges[fname] = (msb-finst._pt_width+1, msb)
+                msb -= finst._pt_width
 
     @property
     @functools.cache

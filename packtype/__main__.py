@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from .assembly import Packing
 from .package import Package
 from .wrap import get_wrapper
 from .constant import Constant
@@ -34,7 +35,7 @@ class Request:
     length: Scalar[19]
     mode: Scalar[3]
 
-@TestPkg.struct()
+@TestPkg.struct(packing=Packing.FROM_MSB)
 class Outer:
     req: Request
     other: Scalar[2]

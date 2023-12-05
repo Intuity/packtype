@@ -28,6 +28,9 @@ class BadFieldType(Exception):
 class BadAssignment(Exception):
     pass
 
+class BadAttribute(Exception):
+    pass
+
 @functools.cache
 def get_wrapper(base: Any) -> Callable:
     def _wrapper(**kwds) -> Callable:
@@ -40,7 +43,7 @@ def get_wrapper(base: Any) -> Callable:
             cls_funcs = { x for x in cls_fields if callable(getattr(cls, x)) }
             cls_fields = cls_fields.difference(cls_funcs)
             # Process class with dataclass
-            dc = dataclasses.dataclass(**kwds)(cls)
+            dc = dataclasses.dataclass()(cls)
             dc_fields = {x.name: x for x in dataclasses.fields(dc)}
             # Check for missing fields
             for field in cls_fields.difference(dc_fields.keys()):
@@ -59,17 +62,34 @@ def get_wrapper(base: Any) -> Callable:
                         f"{cls.__name__}.{fname} cannot be assigned an initial "
                         f"value of {fdef.default}"
                     )
+            # Check for supported attributes
+            attrs = {}
+            for key, value in kwds.items():
+                if key not in base._PT_ATTRIBUTES:
+                    raise BadAttribute(f"Unsupported attribute '{key}' for {base.__name__}")
+                _, accepted = base._PT_ATTRIBUTES[key]
+                if value not in accepted:
+                    raise BadAttribute(
+                        f"Unsupported value '{value}' for attribute '{key}' "
+                        f"for {base.__name__}"
+                    )
+                attrs[key] = value
+            # Fill in default attributes
+            for key, (default, _) in base._PT_ATTRIBUTES.items():
+                if key not in attrs:
+                    attrs[key] = default
             # Create imposter class
-            pkg = type(
+            imposter = type(
                 cls.__name__,
                 (base, ),
                 { "__doc__": cls.__doc__,
                 "_PT_DEF": dc,
-                "_PT_ATTACH": [] }
+                "_PT_ATTACH": [],
+                "_PT_ATTRIBUTES": attrs }
             )
             # Reattach functions
             for fname in cls_funcs:
-                setattr(pkg, fname, getattr(cls, fname))
-            return pkg
+                setattr(imposter, fname, getattr(cls, fname))
+            return imposter
         return _inner
     return _wrapper
