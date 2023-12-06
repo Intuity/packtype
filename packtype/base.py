@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import dataclasses
-from typing import Any
+from typing import Any, Optional
 
 from .array import ArraySpec
 
@@ -33,10 +33,13 @@ class Base(metaclass=MetaBase):
     _PT_DEF = None
     _PT_MEMBERS: list["Base"] = []
 
-    def __init__(self) -> None:
-        for attach in (self._PT_ATTACH or []):
-            setattr(self, attach.__name__, attach)
+    def __init__(self, parent: Optional["Base"] = None) -> None:
+        self._pt_parent = parent
 
     @property
     def _pt_definitions(self) -> list[str, Any]:
         yield from ((x.name, x.type, x.default) for x in dataclasses.fields(self._PT_DEF))
+
+    def _pt_updated(self, *path: "Base"):
+        if self._pt_parent is not None:
+            self._pt_parent._pt_updated(self, *path)

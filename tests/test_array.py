@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
 import packtype
 from packtype import Packing, Scalar
-from packtype.assembly import WidthError
 
 def test_array():
     @packtype.package()

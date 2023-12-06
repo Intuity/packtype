@@ -32,19 +32,19 @@ class WidthError(Exception):
 
 class Assembly(Base):
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, parent: Base | None = None) -> None:
+        super().__init__(parent)
         self._pt_fields = []
         for fname, ftype, fval in self._pt_definitions:
             if isinstance(ftype, ArraySpec):
                 if isinstance(ftype.base, Primitive):
-                    finst = Array(ftype, default=fval)
+                    finst = Array(ftype, parent=self, default=fval)
                 else:
-                    finst = Array(ftype)
+                    finst = Array(ftype, parent=self)
             elif issubclass(ftype, Primitive):
-                finst = ftype(default=fval)
+                finst = ftype(parent=self, default=fval)
             else:
-                finst = ftype()
+                finst = ftype(parent=self)
             setattr(self, fname, finst)
             self._pt_fields.append((fname, finst))
 
@@ -61,8 +61,8 @@ class PackedAssembly(Assembly):
         "width": (-1, lambda x: x > 0),
     }
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, parent: Base | None = None) -> None:
+        super().__init__(parent)
         self._pt_packing = self._PT_ATTRIBUTES["packing"]
         self._pt_width = self._PT_ATTRIBUTES["width"]
         self._pt_ranges = {}

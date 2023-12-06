@@ -19,12 +19,13 @@ from .constant import Constant
 from .enum import Enum
 from .wrap import get_wrapper
 from .struct import Struct
+from .union import Union
 
 
 class Package(Base):
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, parent: Base | None = None) -> None:
+        super().__init__(parent)
         self._pt_fields = []
         for fname, ftype, fval in self._pt_definitions:
             if issubclass(ftype, Constant):
@@ -54,5 +55,7 @@ class Package(Base):
     @classmethod
     def union(cls, **kwds):
         def _inner(ptcls: Any):
-            return ptcls
+            union = get_wrapper(Union)(**kwds)(ptcls)
+            cls._PT_ATTACH.append(union)
+            return union
         return _inner

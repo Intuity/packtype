@@ -17,6 +17,7 @@ import math
 from typing import Any
 
 from .assembly import Assembly
+from .base import Base
 
 class EnumMode(enum.Enum):
     INDEXED = enum.auto()
@@ -34,8 +35,8 @@ class Enum(Assembly):
         "width": (-1, lambda x: x > 0),
     }
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, parent: Base | None = None) -> None:
+        super().__init__(parent)
         self._pt_mode = self._PT_ATTRIBUTES["mode"]
         self._pt_width = self._PT_ATTRIBUTES["width"]
         self._pt_lookup = {}

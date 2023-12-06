@@ -12,8 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .assembly import PackedAssembly
+import pytest
+import packtype
+from packtype import Packing, Scalar
+from packtype.assembly import WidthError
 
+def test_union():
+    @packtype.package()
+    class TestPkg:
+        pass
 
-class Struct(PackedAssembly):
-    pass
+    @TestPkg.union()
+    class TestUnion:
+        a: Scalar[13]
+        b: Scalar[13]
+        c: Scalar[13]
+
+    inst = TestUnion()
+    inst.a = 123
+    assert int(inst.a) == 123
+    assert int(inst.b) == 123
+    assert int(inst.c) == 123
+    inst.c = 62
+    assert int(inst.a) == 62
+    assert int(inst.b) == 62
+    assert int(inst.c) == 62

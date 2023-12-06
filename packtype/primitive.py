@@ -36,7 +36,10 @@ class MetaPrimitive(MetaBase):
 class Primitive(Base, metaclass=MetaPrimitive):
     _PT_WIDTH : int = -1
 
-    def __init__(self, default: int | None = None) -> None:
+    def __init__(self,
+                 parent: Base | None = None,
+                 default: int | None = None) -> None:
+        super().__init__(parent)
         if type(self)._PT_ALLOW_DEFAULT:
             self.__value = default
         else:
@@ -64,6 +67,7 @@ class Primitive(Base, metaclass=MetaPrimitive):
                 f"Value {value} cannot be represented by {self._pt_width} bits"
             )
         self.__value = value
+        self._pt_updated()
 
     def __int__(self) -> int:
         return self.__value
