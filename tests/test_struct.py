@@ -16,6 +16,8 @@ import pytest
 import packtype
 from packtype import Packing, Scalar
 from packtype.assembly import WidthError
+from packtype.primitive import ValueError
+from packtype.wrap import BadAssignment, BadAttribute
 
 
 def test_struct():
@@ -136,6 +138,24 @@ def test_struct_oversized():
     )
 
 
+def test_struct_oversized_value():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.struct()
+    class TestStruct:
+        ab: Scalar[12]
+        cd: Scalar[3]
+        ef: Scalar[9]
+
+    with pytest.raises(ValueError) as e:
+        inst = TestStruct()
+        inst.ab = 0x1234
+
+    assert str(e.value) == "Value 4660 cannot be represented by 12 bits"
+
+
 def test_struct_nested():
     @packtype.package()
     class TestPkg:
@@ -167,3 +187,31 @@ def test_struct_nested():
     assert unpacked.inner.cd.value == 4
     assert unpacked.inner.ef.value == 41
     assert unpacked.other.value == 17
+
+
+def test_struct_bad_assign():
+
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    with pytest.raises(BadAssignment) as e:
+        @TestPkg.struct()
+        class TestStruct:
+            ab: Scalar[12] = 123
+
+    assert str(e.value) == "TestStruct.ab cannot be assigned an initial value of 123"
+
+
+def test_struct_bad_width():
+
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    with pytest.raises(BadAttribute) as e:
+        @TestPkg.struct(width=-5)
+        class TestStruct:
+            ab: Scalar[12]
+
+    assert str(e.value) == "Unsupported value '-5' for attribute 'width' for Struct"
