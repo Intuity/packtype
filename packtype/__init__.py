@@ -11,3 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from .enum import EnumMode
+from .package import Package
+from .wrap import get_wrapper
+from .constant import Constant
+from .scalar import Scalar
+
+package = get_wrapper(Package)

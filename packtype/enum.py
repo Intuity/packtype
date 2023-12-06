@@ -38,6 +38,7 @@ class Enum(Assembly):
         super().__init__()
         self._pt_mode = self._PT_ATTRIBUTES["mode"]
         self._pt_width = self._PT_ATTRIBUTES["width"]
+        self._pt_lookup = {}
         # Indexed
         if self._pt_mode is EnumMode.INDEXED:
             next_val = 0
@@ -54,12 +55,12 @@ class Enum(Assembly):
                 if (math.log2(fval.value) % 1) != 0:
                     raise EnumError(
                         f"Enum entry {fname} has value {fval.value} that is not "
-                        f"one-hot encoded"
+                        f"one-hot"
                     )
                 next_val = (fval.value << 1)
         # Gray code
         elif self._pt_mode is EnumMode.GRAY:
-            for idx, (fname, fval) in self._pt_fields:
+            for idx, (fname, fval) in enumerate(self._pt_fields):
                 gray_val = (idx ^ (idx >> 1))
                 if fval.value is None:
                     fval.value = gray_val
@@ -71,17 +72,22 @@ class Enum(Assembly):
         # Determine width
         if self._pt_width < 0:
             self._pt_width = int(math.ceil(math.log2(max(x[1].value for x in self._pt_fields)+1)))
-        # Check for oversized or repeated values
+        # Final checks
         used = []
         max_val = (1 << self._pt_width) - 1
         for fname, fval in self._pt_fields:
+            # Check for oversized values
             if fval.value > max_val:
                 raise EnumError(
                     f"Enum entry {fname} has value {fval.value} that cannot be "
                     f"encoded in a bit width of {self._pt_width}"
                 )
-            elif fval.value in used:
+            # Check for repeated values
+            if fval.value in used:
                 raise EnumError(
                     f"Enum entry {fname} has value {fval.value} that appears "
                     f"more than once in the enumeration"
                 )
+            used.append(fval.value)
+            # Create a lookup table
+            self._pt_lookup[fval.value] = (fname, fval)
