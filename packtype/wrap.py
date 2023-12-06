@@ -88,10 +88,12 @@ def get_wrapper(base: Any) -> Callable:
             imposter = type(
                 cls.__name__,
                 (base, ),
-                { "__doc__": cls.__doc__,
-                "_PT_DEF": dc,
-                "_PT_ATTACH": [],
-                "_PT_ATTRIBUTES": attrs }
+                {
+                    "__doc__": cls.__doc__,
+                    "_PT_DEF": dc,
+                    "_PT_ATTACH": [],
+                    "_PT_ATTRIBUTES": attrs
+                }
             )
             # Reattach functions
             for fname in cls_funcs:

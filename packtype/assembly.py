@@ -114,9 +114,13 @@ class PackedAssembly(Assembly):
     @classmethod
     def _pt_unpack(cls, packed: int) -> "PackedAssembly":
         inst = cls()
-        for fname, field in inst._pt_fields:
-            field._pt_set((packed >> inst._pt_lsb(fname)) & field._pt_mask)
+        inst._pt_set(packed)
         return inst
 
     def __int__(self) -> int:
         return self._pt_pack()
+
+    def _pt_set(self, value: int) -> None:
+        for fname, field in self._pt_fields:
+            field._pt_set((value >> self._pt_lsb(fname)) & field._pt_mask)
+

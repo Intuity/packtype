@@ -134,3 +134,36 @@ def test_struct_oversized():
         "Fields of TestStruct total 24 bits which does not fit within the "
         "specified width of 17 bits"
     )
+
+
+def test_struct_nested():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.struct()
+    class Inner:
+        ab: Scalar[12]
+        cd: Scalar[3]
+        ef: Scalar[9]
+
+    @TestPkg.struct()
+    class Outer:
+        inner: Inner
+        other: Scalar[7]
+
+    # Packing
+    packed = Outer()
+    packed.inner.ab = 943
+    packed.inner.cd = 1
+    packed.inner.ef = 67
+    packed.other = 29
+
+    assert packed._pt_pack() == (29 << 24) | (67 << 15) | (1 << 12) | 943
+
+    # Unpacking
+    unpacked = Outer._pt_unpack((17 << 24) | (41 << 15) | (4 << 12) | 435)
+    assert unpacked.inner.ab.value == 435
+    assert unpacked.inner.cd.value == 4
+    assert unpacked.inner.ef.value == 41
+    assert unpacked.other.value == 17
