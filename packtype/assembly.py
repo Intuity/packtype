@@ -16,7 +16,7 @@ import functools
 from enum import Enum, auto
 from typing import Any
 
-from .array import Array
+from .array import Array, ArraySpec
 from .base import Base
 from .primitive import Primitive
 
@@ -36,12 +36,11 @@ class Assembly(Base):
         super().__init__()
         self._pt_fields = []
         for fname, ftype, fval in self._pt_definitions:
-            if isinstance(ftype, Array):
-                base_type = ftype.base
-                if isinstance(base_type, Primitive):
-                    finst = [base_type(default=fval) for _ in range(ftype.dimension)]
+            if isinstance(ftype, ArraySpec):
+                if isinstance(ftype.base, Primitive):
+                    finst = Array(ftype, default=fval)
                 else:
-                    finst = [base_type() for _ in range(ftype.dimension)]
+                    finst = Array(ftype)
             elif issubclass(ftype, Primitive):
                 finst = ftype(default=fval)
             else:
@@ -80,7 +79,7 @@ class PackedAssembly(Assembly):
         if self._pt_packing is Packing.FROM_LSB:
             lsb = 0
             for fname, finst in self._pt_fields:
-                if isinstance(finst, list):
+                if isinstance(finst, Array):
                     for idx, entry in enumerate(finst):
                         self._pt_ranges[fname, idx] = (lsb, lsb+entry._pt_width-1)
                         lsb += entry._pt_width
@@ -91,7 +90,7 @@ class PackedAssembly(Assembly):
         else:
             msb = self._pt_width - 1
             for fname, finst in self._pt_fields:
-                if isinstance(finst, list):
+                if isinstance(finst, Array):
                     for idx, entry in enumerate(finst):
                         self._pt_ranges[fname, idx] = (msb-entry._pt_width+1, msb)
                         msb -= entry._pt_width
@@ -104,7 +103,7 @@ class PackedAssembly(Assembly):
     def _pt_field_width(self) -> None:
         total_width = 0
         for _, field in self._pt_fields:
-            if isinstance(field, list):
+            if isinstance(field, Array):
                 total_width += sum(x._pt_width for x in field)
             else:
                 total_width += field._pt_width
@@ -123,7 +122,7 @@ class PackedAssembly(Assembly):
     def _pt_pack(self) -> int:
         packed = 0
         for fname, field in self._pt_fields:
-            if isinstance(field, list):
+            if isinstance(field, Array):
                 for idx, entry in enumerate(field):
                     packed |= (int(entry) & entry._pt_mask) << self._pt_lsb((fname, idx))
             else:
@@ -141,7 +140,7 @@ class PackedAssembly(Assembly):
 
     def _pt_set(self, value: int) -> None:
         for fname, field in self._pt_fields:
-            if isinstance(field, list):
+            if isinstance(field, Array):
                 for idx, entry in enumerate(field):
                     entry._pt_set((value >> self._pt_lsb((fname, idx))) & entry._pt_mask)
             else:

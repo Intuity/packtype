@@ -15,12 +15,12 @@
 import dataclasses
 from typing import Any
 
-from .array import Array
+from .array import ArraySpec
 
 
 class MetaBase(type):
     def __mul__(cls, other: int):
-        return Array(cls, other)
+        return ArraySpec(cls, other)
 
     def __rmul__(cls, other: int):
         return cls.__mul__(other)

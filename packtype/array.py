@@ -12,9 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any
+from typing import Any, Iterable
 
-class Array:
+class ArraySpec:
     def __init__(self, base: Any, dimension: int) -> None:
         self.base = base
         self.dimension = dimension
+
+
+class Array:
+    def __init__(self, spec: ArraySpec, *args, **kwds):
+        self._pt_entries = [spec.base(*args, **kwds) for _ in range(spec.dimension)]
+
+    def __getitem__(self, key: int) -> Any:
+        return self._pt_entries[key]
+
+    def __setitem__(self, key: int, value: Any) -> Any:
+        self._pt_entries[key]._pt_set(value)
+
+    def __iter__(self) -> Iterable[Any]:
+        yield from self._pt_entries

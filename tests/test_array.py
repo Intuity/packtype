@@ -35,3 +35,95 @@ def test_array():
     assert inst.cd[1]._pt_width == 3
     assert inst.cd[2]._pt_width == 3
     assert inst.ef._pt_width == 9
+
+
+def test_array_pack():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.struct()
+    class TestStruct:
+        ab: Scalar[12]
+        cd: 3 * Scalar[3]
+        ef: Scalar[9]
+
+    inst = TestStruct()
+    inst.ab = 123
+    inst.cd[0] = 1
+    inst.cd[1] = 2
+    inst.cd[2] = 3
+    inst.ef = 53
+    assert inst._pt_pack() == (
+        (53 << 21) | (3 << 18) | (2 << 15) | (1 << 12) | 123
+    )
+    assert int(inst) == (
+        (53 << 21) | (3 << 18) | (2 << 15) | (1 << 12) | 123
+    )
+
+
+def test_array_pack_from_msb():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.struct(packing=Packing.FROM_MSB)
+    class TestStruct:
+        ab: Scalar[12]
+        cd: 3 * Scalar[3]
+        ef: Scalar[9]
+
+    inst = TestStruct()
+    inst.ab = 123
+    inst.cd[0] = 1
+    inst.cd[1] = 2
+    inst.cd[2] = 3
+    inst.ef = 53
+    assert inst._pt_pack() == (
+        (123 << 18) | (1 << 15) | (2 << 12) | (3 << 9) | 53
+    )
+    assert int(inst) == (
+        (123 << 18) | (1 << 15) | (2 << 12) | (3 << 9) | 53
+    )
+
+
+def test_array_unpack():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.struct()
+    class TestStruct:
+        ab: Scalar[12]
+        cd: 3 * Scalar[3]
+        ef: Scalar[9]
+
+    inst = TestStruct._pt_unpack(
+        (53 << 21) | (3 << 18) | (2 << 15) | (1 << 12) | 123
+    )
+    assert int(inst.ab) == 123
+    assert int(inst.cd[0]) == 1
+    assert int(inst.cd[1]) == 2
+    assert int(inst.cd[2]) == 3
+    assert int(inst.ef) == 53
+
+
+def test_array_unpack_from_msb():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.struct(packing=Packing.FROM_MSB)
+    class TestStruct:
+        ab: Scalar[12]
+        cd: 3 * Scalar[3]
+        ef: Scalar[9]
+
+    inst = TestStruct._pt_unpack(
+        (123 << 18) | (1 << 15) | (2 << 12) | (3 << 9) | 53
+    )
+    assert int(inst.ab) == 123
+    assert int(inst.cd[0]) == 1
+    assert int(inst.cd[1]) == 2
+    assert int(inst.cd[2]) == 3
+    assert int(inst.ef) == 53

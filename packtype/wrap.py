@@ -16,7 +16,7 @@ import dataclasses
 import functools
 from typing import Any, Callable
 
-from .array import Array
+from .array import ArraySpec
 from .assembly import Base
 from .primitive import Primitive
 
@@ -52,7 +52,7 @@ def get_wrapper(base: Any) -> Callable:
             # Check fields
             for fname, fdef in dc_fields.items():
                 base_type = fdef.type
-                if isinstance(base_type, Array):
+                if isinstance(base_type, ArraySpec):
                     base_type = base_type.base
                 # Check for acceptable base type
                 if (
