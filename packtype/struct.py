@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from .assembly import PackedAssembly
-from .base import Base
 
 class Struct(PackedAssembly):
     pass

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from .assembly import Packing
 from .constant import Constant
 from .enum import EnumMode
 from .package import Package
@@ -21,4 +22,4 @@ from .scalar import Scalar
 package = get_wrapper(Package)
 
 # Guards
-assert all((Constant, EnumMode, Package, Scalar, package))
+assert all((Constant, EnumMode, Package, Packing, Scalar, package))
