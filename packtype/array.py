@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
+
 
 class ArraySpec:
     def __init__(self, base: Any, dimension: int) -> None:

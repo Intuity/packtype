@@ -99,7 +99,7 @@ class PackedAssembly(Assembly):
                     msb -= finst._pt_width
 
     @property
-    @functools.cache
+    @functools.cache # noqa: B019
     def _pt_field_width(self) -> None:
         total_width = 0
         for _, field in self._pt_fields:
@@ -124,7 +124,9 @@ class PackedAssembly(Assembly):
         for fname, field in self._pt_fields:
             if isinstance(field, Array):
                 for idx, entry in enumerate(field):
-                    packed |= (int(entry) & entry._pt_mask) << self._pt_lsb((fname, idx))
+                    packed |= (
+                        (int(entry) & entry._pt_mask) << self._pt_lsb((fname, idx))
+                    )
             else:
                 packed |= (int(field) & field._pt_mask) << self._pt_lsb(fname)
         return packed
@@ -142,7 +144,9 @@ class PackedAssembly(Assembly):
         for fname, field in self._pt_fields:
             if isinstance(field, Array):
                 for idx, entry in enumerate(field):
-                    entry._pt_set((value >> self._pt_lsb((fname, idx))) & entry._pt_mask)
+                    entry._pt_set(
+                        (value >> self._pt_lsb((fname, idx))) & entry._pt_mask
+                    )
             else:
                 field._pt_set((value >> self._pt_lsb(fname)) & field._pt_mask)
 

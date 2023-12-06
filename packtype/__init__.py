@@ -17,8 +17,8 @@ from .assembly import Packing
 from .constant import Constant
 from .enum import EnumMode
 from .package import Package
-from .wrap import get_wrapper
 from .scalar import Scalar
+from .wrap import get_wrapper
 
 package = get_wrapper(Package)
 

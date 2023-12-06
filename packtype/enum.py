@@ -19,6 +19,7 @@ from typing import Any
 from .assembly import Assembly
 from .base import Base
 
+
 class EnumMode(enum.Enum):
     INDEXED = enum.auto()
     ONE_HOT = enum.auto()
@@ -72,7 +73,9 @@ class Enum(Assembly):
                     )
         # Determine width
         if self._pt_width < 0:
-            self._pt_width = int(math.ceil(math.log2(max(x[1].value for x in self._pt_fields)+1)))
+            self._pt_width = int(math.ceil(math.log2(
+                max(x[1].value for x in self._pt_fields)+1)
+            ))
         # Final checks
         used = []
         max_val = (1 << self._pt_width) - 1

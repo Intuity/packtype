@@ -23,9 +23,6 @@ pytest-mock = "^3.12.0"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.ruff]
-line-length = 120
-
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--cov=packtype --cov-branch --cov-report html --cov-report term -x"
@@ -35,4 +32,16 @@ testpaths = ["tests"]
 shell = "poetry run pytest"
 
 [tool.poe.tasks.lint]
-shell = "poetry run ruff check packtype"
+shell = "poetry run ruff check packtype --fix"
+
+[tool.ruff]
+# See https://beta.ruff.rs/docs/rules
+select = ["E", "F", "B", "UP", "N", "W", "I", "A", "C4", "PTH", "RUF"]
+ignore = [
+    "RUF012" # Mutable class attributes should be annotated with `typing.ClassVar`
+]
+fixable = ["ALL"]
+unfixable = []
+target-version = "py311"
+# Character length of 88 is compatible with Black
+line-length = 88

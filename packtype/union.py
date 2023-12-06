@@ -42,7 +42,7 @@ class Union(Assembly):
         return self._pt_pack()
 
     def _pt_pack(self) -> int:
-        values = list(set(int(x) for _, x in self._pt_fields))
+        values = list({int(x) for _, x in self._pt_fields})
         if len(values) != 1 or values[0] != self._pt_raw:
             raise UnionError(
                 f"Multiple member values were discovered when packing a "
@@ -65,18 +65,18 @@ class Union(Assembly):
         for _, field in self._pt_fields:
             field._pt_set(self._pt_raw)
 
-    def _pt_updated(self, object: Base, *path: Base):
+    def _pt_updated(self, obj: Base, *path: Base):
         # Block nested updates to avoid an infinite loop
         if self._pt_updating:
             return
         # Set the lock
         self._pt_updating = True
-        # Update the raw value and all members (except the 'object')
-        self._pt_raw = int(object)
+        # Update the raw value and all members (except the 'obj')
+        self._pt_raw = int(obj)
         for _, field in self._pt_fields:
-            if field is not object:
+            if field is not obj:
                 field._pt_set(self._pt_raw)
         # Clear the lock
         self._pt_updating = False
         # Propagate update to the parent
-        super()._pt_updated(self, object, *path)
+        super()._pt_updated(self, obj, *path)

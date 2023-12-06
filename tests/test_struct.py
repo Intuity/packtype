@@ -16,8 +16,8 @@ import pytest
 import packtype
 from packtype import Packing, Scalar
 from packtype.assembly import WidthError
-from packtype.primitive import ValueError
-from packtype.wrap import BadAssignment, BadAttribute
+from packtype.primitive import PrimitiveValueError
+from packtype.wrap import BadAssignmentError, BadAttributeError
 
 
 def test_struct():
@@ -149,7 +149,7 @@ def test_struct_oversized_value():
         cd: Scalar[3]
         ef: Scalar[9]
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(PrimitiveValueError) as e:
         inst = TestStruct()
         inst.ab = 0x1234
 
@@ -195,7 +195,7 @@ def test_struct_bad_assign():
     class TestPkg:
         pass
 
-    with pytest.raises(BadAssignment) as e:
+    with pytest.raises(BadAssignmentError) as e:
         @TestPkg.struct()
         class TestStruct:
             ab: Scalar[12] = 123
@@ -209,7 +209,7 @@ def test_struct_bad_width():
     class TestPkg:
         pass
 
-    with pytest.raises(BadAttribute) as e:
+    with pytest.raises(BadAttributeError) as e:
         @TestPkg.struct(width=-5)
         class TestStruct:
             ab: Scalar[12]

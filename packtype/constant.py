@@ -14,5 +14,6 @@
 
 from .primitive import Primitive
 
+
 class Constant(Primitive):
     _PT_ALLOW_DEFAULT: bool = True

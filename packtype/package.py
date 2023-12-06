@@ -17,9 +17,9 @@ from typing import Any
 from .base import Base
 from .constant import Constant
 from .enum import Enum
-from .wrap import get_wrapper
 from .struct import Struct
 from .union import Union
+from .wrap import get_wrapper
 
 
 class Package(Base):

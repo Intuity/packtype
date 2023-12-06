@@ -38,7 +38,9 @@ class Base(metaclass=MetaBase):
 
     @property
     def _pt_definitions(self) -> list[str, Any]:
-        yield from ((x.name, x.type, x.default) for x in dataclasses.fields(self._PT_DEF))
+        yield from (
+            (x.name, x.type, x.default) for x in dataclasses.fields(self._PT_DEF)
+        )
 
     def _pt_updated(self, *path: "Base"):
         if self._pt_parent is not None:

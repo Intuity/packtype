@@ -14,19 +14,20 @@
 
 import functools
 
-from .base import MetaBase, Base
+from .base import Base, MetaBase
 
 
-class ValueError(Exception):
+class PrimitiveValueError(Exception):
     pass
 
 
 class MetaPrimitive(MetaBase):
-    def __getitem__(cls, width):
+    def __getitem__(self, width):
         assert isinstance(width, int), "Width must be an integer"
-        return MetaPrimitive.get_variant(cls, width)
+        return MetaPrimitive.get_variant(self, width)
 
-    @functools.cache
+    @functools.lru_cache
+    @staticmethod
     def get_variant(prim: "Primitive", width: int):
         return type(prim.__name__ + f"_{width}",
                     (prim, ),
@@ -63,7 +64,7 @@ class Primitive(Base, metaclass=MetaPrimitive):
 
     def _pt_set(self, value: int) -> int:
         if value < 0 or (self._pt_width > 0 and value > self._pt_mask):
-            raise ValueError(
+            raise PrimitiveValueError(
                 f"Value {value} cannot be represented by {self._pt_width} bits"
             )
         self.__value = value

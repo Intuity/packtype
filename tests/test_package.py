@@ -16,7 +16,7 @@ import pytest
 import packtype
 from packtype import Constant
 from packtype.package import Package
-from packtype.wrap import BadAttribute, BadFieldType, MissingAnnotation
+from packtype.wrap import BadAttributeError, BadFieldTypeError, MissingAnnotationError
 
 
 def test_package_decl():
@@ -42,7 +42,7 @@ def test_package_constants():
 
 
 def test_package_unannotated():
-    with pytest.raises(MissingAnnotation) as e:
+    with pytest.raises(MissingAnnotationError) as e:
         @packtype.package()
         class TestPkg:
             A: Constant = 123
@@ -52,7 +52,7 @@ def test_package_unannotated():
 
 
 def test_package_unsupported_annotation():
-    with pytest.raises(BadFieldType) as e:
+    with pytest.raises(BadFieldTypeError) as e:
         @packtype.package()
         class TestPkg:
             A: Constant = 123
@@ -62,7 +62,7 @@ def test_package_unsupported_annotation():
 
 
 def test_package_unsupported_attribute():
-    with pytest.raises(BadAttribute) as e:
+    with pytest.raises(BadAttributeError) as e:
         @packtype.package(blah=True)
         class TestPkg:
             pass

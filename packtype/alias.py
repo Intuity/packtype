@@ -14,18 +14,19 @@
 
 import functools
 
-from .base import MetaBase, Base
+from .base import Base, MetaBase
 
 
 class MetaAlias(MetaBase):
-    def __call__(cls, *args, **kwds):
-        return cls._PT_ALIAS(*args, **kwds)
+    def __call__(self, *args, **kwds):
+        return self._PT_ALIAS(*args, **kwds)
 
-    def __getitem__(cls, to_alias: Base):
+    def __getitem__(self, to_alias: Base):
         assert issubclass(to_alias, Base), "Can only alias a Packtype type"
-        return MetaAlias.get_variant(cls, to_alias)
+        return MetaAlias.get_variant(self, to_alias)
 
-    @functools.cache
+    @functools.lru_cache
+    @staticmethod
     def get_variant(alias: "Alias", to_alias: Base):
         return type(alias.__name__ + f"_{to_alias.__name__}",
                     (alias, ),

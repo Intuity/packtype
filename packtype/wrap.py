@@ -14,22 +14,24 @@
 
 import dataclasses
 import functools
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from .array import ArraySpec
 from .assembly import Base
 from .primitive import Primitive
 
-class MissingAnnotation(Exception):
+
+class MissingAnnotationError(Exception):
     pass
 
-class BadFieldType(Exception):
+class BadFieldTypeError(Exception):
     pass
 
-class BadAssignment(Exception):
+class BadAssignmentError(Exception):
     pass
 
-class BadAttribute(Exception):
+class BadAttributeError(Exception):
     pass
 
 @functools.cache
@@ -48,7 +50,7 @@ def get_wrapper(base: Any) -> Callable:
             dc_fields = {x.name: x for x in dataclasses.fields(dc)}
             # Check for missing fields
             for field in cls_fields.difference(dc_fields.keys()):
-                raise MissingAnnotation(f"{cls.__name__}.{field} is not annotated")
+                raise MissingAnnotationError(f"{cls.__name__}.{field} is not annotated")
             # Check fields
             for fname, fdef in dc_fields.items():
                 base_type = fdef.type
@@ -57,9 +59,9 @@ def get_wrapper(base: Any) -> Callable:
                 # Check for acceptable base type
                 if (
                     not isinstance(base_type, Primitive) and
-                    not issubclass(base_type, (Base, Primitive))
+                    not issubclass(base_type, Base | Primitive)
                 ):
-                    raise BadFieldType(
+                    raise BadFieldTypeError(
                         f"{cls.__name__}.{fname} is of an unsupported type "
                         f"{base_type.__name__}"
                     )
@@ -68,7 +70,7 @@ def get_wrapper(base: Any) -> Callable:
                     fdef.default = None
                 # Check if assignment allowed
                 if fdef.default is not None and not fdef.type._PT_ALLOW_DEFAULT:
-                    raise BadAssignment(
+                    raise BadAssignmentError(
                         f"{cls.__name__}.{fname} cannot be assigned an initial "
                         f"value of {fdef.default}"
                     )
@@ -76,13 +78,15 @@ def get_wrapper(base: Any) -> Callable:
             attrs = {}
             for key, value in kwds.items():
                 if key not in base._PT_ATTRIBUTES:
-                    raise BadAttribute(f"Unsupported attribute '{key}' for {base.__name__}")
+                    raise BadAttributeError(
+                        f"Unsupported attribute '{key}' for {base.__name__}"
+                    )
                 _, accepted = base._PT_ATTRIBUTES[key]
                 if (
                     (callable(accepted) and not accepted(value)) or
                     (isinstance(accepted, tuple) and value not in accepted)
                 ):
-                    raise BadAttribute(
+                    raise BadAttributeError(
                         f"Unsupported value '{value}' for attribute '{key}' "
                         f"for {base.__name__}"
                     )
