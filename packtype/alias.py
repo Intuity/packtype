@@ -14,10 +14,10 @@
 
 import functools
 
-from .base import Base
+from .base import MetaBase, Base
 
 
-class MetaAlias(type):
+class MetaAlias(MetaBase):
     def __call__(cls, *args, **kwds):
         return cls._PT_ALIAS(*args, **kwds)
 

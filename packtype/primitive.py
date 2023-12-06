@@ -14,14 +14,14 @@
 
 import functools
 
-from .base import Base
+from .base import MetaBase, Base
 
 
 class ValueError(Exception):
     pass
 
 
-class MetaPrimitive(type):
+class MetaPrimitive(MetaBase):
     def __getitem__(cls, width):
         assert isinstance(width, int), "Width must be an integer"
         return MetaPrimitive.get_variant(cls, width)

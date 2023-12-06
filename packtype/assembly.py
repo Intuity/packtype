@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import dataclasses
 import functools
 from enum import Enum, auto
 from typing import Any
 
+from .array import Array
 from .base import Base
 from .primitive import Primitive
 
@@ -36,7 +36,13 @@ class Assembly(Base):
         super().__init__()
         self._pt_fields = []
         for fname, ftype, fval in self._pt_definitions:
-            if issubclass(ftype, Primitive):
+            if isinstance(ftype, Array):
+                base_type = ftype.base
+                if isinstance(base_type, Primitive):
+                    finst = [base_type(default=fval) for _ in range(ftype.dimension)]
+                else:
+                    finst = [base_type() for _ in range(ftype.dimension)]
+            elif issubclass(ftype, Primitive):
                 finst = ftype(default=fval)
             else:
                 finst = ftype()
@@ -74,19 +80,35 @@ class PackedAssembly(Assembly):
         if self._pt_packing is Packing.FROM_LSB:
             lsb = 0
             for fname, finst in self._pt_fields:
-                self._pt_ranges[fname] = (lsb, lsb+finst._pt_width-1)
-                lsb += finst._pt_width
+                if isinstance(finst, list):
+                    for idx, entry in enumerate(finst):
+                        self._pt_ranges[fname, idx] = (lsb, lsb+entry._pt_width-1)
+                        lsb += entry._pt_width
+                else:
+                    self._pt_ranges[fname] = (lsb, lsb+finst._pt_width-1)
+                    lsb += finst._pt_width
         # Place fields MSB -> LSB
         else:
             msb = self._pt_width - 1
             for fname, finst in self._pt_fields:
-                self._pt_ranges[fname] = (msb-finst._pt_width+1, msb)
-                msb -= finst._pt_width
+                if isinstance(finst, list):
+                    for idx, entry in enumerate(finst):
+                        self._pt_ranges[fname, idx] = (msb-entry._pt_width+1, msb)
+                        msb -= entry._pt_width
+                else:
+                    self._pt_ranges[fname] = (msb-finst._pt_width+1, msb)
+                    msb -= finst._pt_width
 
     @property
     @functools.cache
     def _pt_field_width(self) -> None:
-        return sum(x._pt_width for _, x in self._pt_fields)
+        total_width = 0
+        for _, field in self._pt_fields:
+            if isinstance(field, list):
+                total_width += sum(x._pt_width for x in field)
+            else:
+                total_width += field._pt_width
+        return total_width
 
     @property
     def _pt_mask(self) -> None:
@@ -101,7 +123,11 @@ class PackedAssembly(Assembly):
     def _pt_pack(self) -> int:
         packed = 0
         for fname, field in self._pt_fields:
-            packed |= (int(field) & field._pt_mask) << self._pt_lsb(fname)
+            if isinstance(field, list):
+                for idx, entry in enumerate(field):
+                    packed |= (int(entry) & entry._pt_mask) << self._pt_lsb((fname, idx))
+            else:
+                packed |= (int(field) & field._pt_mask) << self._pt_lsb(fname)
         return packed
 
     @classmethod
@@ -115,5 +141,9 @@ class PackedAssembly(Assembly):
 
     def _pt_set(self, value: int) -> None:
         for fname, field in self._pt_fields:
-            field._pt_set((value >> self._pt_lsb(fname)) & field._pt_mask)
+            if isinstance(field, list):
+                for idx, entry in enumerate(field):
+                    entry._pt_set((value >> self._pt_lsb((fname, idx))) & entry._pt_mask)
+            else:
+                field._pt_set((value >> self._pt_lsb(fname)) & field._pt_mask)
 

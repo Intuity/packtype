@@ -16,6 +16,7 @@ import dataclasses
 import functools
 from typing import Any, Callable
 
+from .array import Array
 from .assembly import Base
 from .primitive import Primitive
 
@@ -50,11 +51,17 @@ def get_wrapper(base: Any) -> Callable:
                 raise MissingAnnotation(f"{cls.__name__}.{field} is not annotated")
             # Check fields
             for fname, fdef in dc_fields.items():
+                base_type = fdef.type
+                if isinstance(base_type, Array):
+                    base_type = base_type.base
                 # Check for acceptable base type
-                if not isinstance(fdef.type, Primitive) and not issubclass(fdef.type, (Base, Primitive)):
+                if (
+                    not isinstance(base_type, Primitive) and
+                    not issubclass(base_type, (Base, Primitive))
+                ):
                     raise BadFieldType(
                         f"{cls.__name__}.{fname} is of an unsupported type "
-                        f"{fdef.type.__name__}"
+                        f"{base_type.__name__}"
                     )
                 # Map a missing value to None
                 if isinstance(fdef.default, dataclasses._MISSING_TYPE):

@@ -15,7 +15,18 @@
 import dataclasses
 from typing import Any
 
-class Base:
+from .array import Array
+
+
+class MetaBase(type):
+    def __mul__(cls, other: int):
+        return Array(cls, other)
+
+    def __rmul__(cls, other: int):
+        return cls.__mul__(other)
+
+
+class Base(metaclass=MetaBase):
     _PT_ALLOW_DEFAULT: bool = False
     _PT_ATTACH = None
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {}
@@ -29,4 +40,3 @@ class Base:
     @property
     def _pt_definitions(self) -> list[str, Any]:
         yield from ((x.name, x.type, x.default) for x in dataclasses.fields(self._PT_DEF))
-
