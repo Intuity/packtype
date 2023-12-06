@@ -159,3 +159,44 @@ def test_enum_bad_gray():
         "Enum entry C has value 2 that does not conform to the expected Gray "
         "code value of 3"
     )
+
+
+def test_enum_bad_repeated():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.enum(mode=EnumMode.INDEXED)
+    class TestEnum:
+        A: Constant = 0
+        B: Constant = 1
+        C: Constant = 2
+        D: Constant = 2
+
+    with pytest.raises(EnumError) as e:
+        TestEnum()
+
+    assert str(e.value) == (
+        "Enum entry D has value 2 that appears more than once in the enumeration"
+    )
+
+
+def test_enum_bad_oversized():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.enum(mode=EnumMode.INDEXED, width=2)
+    class TestEnum:
+        A: Constant
+        B: Constant
+        C: Constant
+        D: Constant
+        E: Constant
+
+    with pytest.raises(EnumError) as e:
+        TestEnum()
+
+    assert str(e.value) == (
+        "Enum entry E has value 4 that cannot be encoded in a bit width of 2"
+    )

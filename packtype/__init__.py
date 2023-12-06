@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from .constant import Constant
 from .enum import EnumMode
 from .package import Package
 from .wrap import get_wrapper
-from .constant import Constant
 from .scalar import Scalar
 
 package = get_wrapper(Package)
+
+# Guards
+assert all((Constant, EnumMode, Package, Scalar, package))
