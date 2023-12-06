@@ -15,13 +15,26 @@
 import dataclasses
 from typing import Any
 
-from .assembly import Assembly
+from .base import Base
+from .constant import Constant
 from .enum import Enum
 from .wrap import get_wrapper
 from .struct import Struct
 
 
-class Package(Assembly):
+class Package(Base):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._pt_fields = []
+        for fname, ftype, fval in self._pt_definitions:
+            if issubclass(ftype, Constant):
+                finst = ftype(default=fval)
+                setattr(self, fname, finst)
+                self._pt_fields.append((fname, finst))
+            else:
+                setattr(self, fname, ftype)
+                self._pt_fields.append((fname, ftype))
 
     @classmethod
     def enum(cls, **kwds):

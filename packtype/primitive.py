@@ -22,9 +22,6 @@ class ValueError(Exception):
 
 
 class MetaPrimitive(type):
-    def __new__(cls, name, bases, dct):
-        return super().__new__(cls, name, bases, dct)
-
     def __getitem__(cls, width):
         assert isinstance(width, int), "Width must be an integer"
         return MetaPrimitive.get_variant(cls, width)

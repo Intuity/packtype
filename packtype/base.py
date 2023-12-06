@@ -12,9 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import dataclasses
 from typing import Any
 
 class Base:
     _PT_ALLOW_DEFAULT: bool = False
+    _PT_ATTACH = None
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {}
+    _PT_DEF = None
     _PT_MEMBERS: list["Base"] = []
+
+    def __init__(self) -> None:
+        for attach in (self._PT_ATTACH or []):
+            setattr(self, attach.__name__, attach)
+
+    @property
+    def _pt_definitions(self) -> list[str, Any]:
+        yield from ((x.name, x.type, x.default) for x in dataclasses.fields(self._PT_DEF))
+

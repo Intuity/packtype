@@ -31,10 +31,9 @@ class WidthError(Exception):
 
 
 class Assembly(Base):
-    _PT_DEF = None
-    _PT_ATTACH = None
 
     def __init__(self) -> None:
+        super().__init__()
         self._pt_fields = []
         for fname, ftype, fval in self._pt_definitions:
             if issubclass(ftype, Primitive):
@@ -43,12 +42,6 @@ class Assembly(Base):
                 finst = ftype()
             setattr(self, fname, finst)
             self._pt_fields.append((fname, finst))
-        for attach in self._PT_ATTACH:
-            setattr(self, attach.__name__, attach)
-
-    @property
-    def _pt_definitions(self) -> list[str, Any]:
-        yield from ((x.name, x.type, x.default) for x in dataclasses.fields(self._PT_DEF))
 
     def __setattr__(self, name: str, value: Any) -> None:
         if hasattr(self, name) and isinstance(obj := getattr(self, name), Base):
