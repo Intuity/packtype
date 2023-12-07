@@ -14,8 +14,9 @@
 
 import dataclasses
 import functools
-from collections.abc import Callable
-from typing import Any
+import inspect
+from collections import defaultdict
+from typing import Any, Callable, Type
 
 from .array import ArraySpec
 from .assembly import Base
@@ -34,8 +35,23 @@ class BadAssignmentError(Exception):
 class BadAttributeError(Exception):
     pass
 
+class Registry:
+    ENTRIES: dict[Type[Base], list[Type[Base] | Base]] = defaultdict(list)
+
+    @classmethod
+    def register(cls, root: Type[Base], item: Base) -> None:
+        cls.ENTRIES[root].append(item)
+
+    @classmethod
+    def query(cls, root: Type[Base]) -> Base:
+        yield from cls.ENTRIES[root]
+
+    @classmethod
+    def reset(cls) -> None:
+        cls.ENTRIES.clear()
+
 @functools.cache
-def get_wrapper(base: Any) -> Callable:
+def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
     def _wrapper(**kwds) -> Callable:
         def _inner(cls):
             # Work out the fields defined within the class
@@ -46,7 +62,7 @@ def get_wrapper(base: Any) -> Callable:
             cls_funcs = { x for x in cls_fields if callable(getattr(cls, x)) }
             cls_fields = cls_fields.difference(cls_funcs)
             # Process class with dataclass
-            dc = dataclasses.dataclass()(cls)
+            dc = dataclasses.dataclass(init=False)(cls)
             dc_fields = {x.name: x for x in dataclasses.fields(dc)}
             # Check for missing fields
             for field in cls_fields.difference(dc_fields.keys()):
@@ -95,6 +111,10 @@ def get_wrapper(base: Any) -> Callable:
             for key, (default, _) in base._PT_ATTRIBUTES.items():
                 if key not in attrs:
                     attrs[key] = default
+            # Determine source
+            frame = inspect.currentframe()
+            for _ in range(frame_depth):
+                frame = frame.f_back
             # Create imposter class
             imposter = type(
                 cls.__name__,
@@ -103,12 +123,20 @@ def get_wrapper(base: Any) -> Callable:
                     "__doc__": cls.__doc__,
                     "_PT_DEF": dc,
                     "_PT_ATTACH": [],
-                    "_PT_ATTRIBUTES": attrs
+                    "_PT_ATTRIBUTES": attrs,
+                    "_PT_SOURCE": (frame.f_code.co_filename, frame.f_lineno),
                 }
             )
             # Reattach functions
             for fname in cls_funcs:
                 setattr(imposter, fname, getattr(cls, fname))
+            # If this is a 'shared' object then the imposter is replaced by an
+            # instance rather than the definition
+            if base._PT_SHARED:
+                imposter = imposter()
+            # Register the imposter
+            Registry.register(base, imposter)
+            # Return the imposter as a substitute
             return imposter
         return _inner
     return _wrapper

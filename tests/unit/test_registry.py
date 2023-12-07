@@ -12,36 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
 import packtype
-from packtype import Alias, Packing, Scalar
-from packtype.assembly import WidthError
+from packtype import Package
+from packtype.wrap import Registry
+
+from ..fixtures import reset_registry
+assert reset_registry
 
 
-def test_typedef_scalar():
-    @packtype.package()
-    class TestPkg:
-        MyType: Scalar[15]
-
-    inst = TestPkg().MyType()
-    assert inst._pt_width == 15
-
-
-def test_typedef_alias():
+def test_registry():
+    # Check that registry is empty
+    assert len(list(Registry.query(Package))) == 0
+    # Create a package
     @packtype.package()
     class PkgA:
         pass
-
-    @PkgA.struct()
-    class Header:
-        address: Scalar[16]
-        length: Scalar[8]
-
+    # Check that registry has one entry
+    assert len(list(Registry.query(Package))) == 1
+    assert list(Registry.query(Package))[0] is PkgA
+    # Create a second package
     @packtype.package()
     class PkgB:
-        MyAlias: Alias[Header]
-
-    assert PkgB().MyAlias._PT_ALIAS is Header
-    assert issubclass(PkgB().MyAlias, Alias)
-    inst = PkgB().MyAlias()
-    assert isinstance(inst, Header)
+        pass
+    # Check that registry has one entry
+    assert len(list(Registry.query(Package))) == 2
+    assert list(Registry.query(Package))[0] is PkgA
+    assert list(Registry.query(Package))[1] is PkgB

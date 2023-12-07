@@ -58,13 +58,13 @@ class Assembly(Base):
 class PackedAssembly(Assembly):
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {
         "packing": (Packing.FROM_LSB, [Packing.FROM_LSB, Packing.FROM_MSB]),
-        "width": (-1, lambda x: x > 0),
+        "width": (-1, lambda x: int(x) > 0),
     }
 
     def __init__(self, parent: Base | None = None) -> None:
         super().__init__(parent)
         self._pt_packing = self._PT_ATTRIBUTES["packing"]
-        self._pt_width = self._PT_ATTRIBUTES["width"]
+        self._pt_width = int(self._PT_ATTRIBUTES["width"])
         self._pt_ranges = {}
         # Check for oversized fields
         if self._pt_width < 0:
@@ -113,6 +113,24 @@ class PackedAssembly(Assembly):
     def _pt_mask(self) -> None:
         return (1 << self._pt_width) - 1
 
+    @property
+    def _pt_fields_lsb_asc(self) -> list[Base]:
+        pairs = []
+        for name, inst in self._pt_fields:
+            key = (name, 0) if isinstance(inst, Array) else name
+            lsb, msb = self._pt_ranges[key]
+            pairs.append((lsb, msb, (name, inst)))
+        return sorted(pairs, key=lambda x: x[0])
+
+    @property
+    def _pt_fields_msb_desc(self) -> list[Base]:
+        pairs = []
+        for name, inst in self._pt_fields:
+            key = (name, 0) if isinstance(inst, Array) else name
+            lsb, msb = self._pt_ranges[key]
+            pairs.append((lsb, msb, (name, inst)))
+        return sorted(pairs, key=lambda x: x[1], reverse=True)
+
     def _pt_lsb(self, field: str) -> int:
         return self._pt_ranges[field][0]
 
@@ -149,4 +167,3 @@ class PackedAssembly(Assembly):
                     )
             else:
                 field._pt_set((value >> self._pt_lsb(fname)) & field._pt_mask)
-

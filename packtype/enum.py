@@ -33,13 +33,17 @@ class EnumError(Exception):
 class Enum(Assembly):
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {
         "mode": (EnumMode.INDEXED, list(EnumMode)),
-        "width": (-1, lambda x: x > 0),
+        "width": (-1, lambda x: int(x) > 0),
+        "prefix": (None, lambda x: isinstance(x, str)),
     }
 
     def __init__(self, parent: Base | None = None) -> None:
         super().__init__(parent)
         self._pt_mode = self._PT_ATTRIBUTES["mode"]
         self._pt_width = self._PT_ATTRIBUTES["width"]
+        self._pt_prefix = self._PT_ATTRIBUTES["prefix"]
+        if self._pt_prefix is None:
+            self._pt_prefix = self._pt_name()
         self._pt_lookup = {}
         # Indexed
         if self._pt_mode is EnumMode.INDEXED:

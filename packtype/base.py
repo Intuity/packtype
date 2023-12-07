@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import dataclasses
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 from .array import ArraySpec
 
@@ -27,14 +27,28 @@ class MetaBase(type):
 
 
 class Base(metaclass=MetaBase):
+    # Whether a default value can be assigned (e.g. constant value)
     _PT_ALLOW_DEFAULT: bool = False
-    _PT_ATTACH = None
+    # Any other types to be attached to this one (e.g. struct to a package)
+    _PT_ATTACH: list[Type["Base"]] | None = None
+    # Points upwards from an attached type to what it's attached to
+    _PT_ATTACHED_TO: Type["Base"] | None = None
+    # Attributes specific to a type (e.g. width of a struct)
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {}
+    # The dataclass definition
     _PT_DEF = None
-    _PT_MEMBERS: list["Base"] = []
+    # A shared instance will be created as the imposter rather than a class, this
+    # is used for defining packages
+    _PT_SHARED: bool = False
+    # Tuple of source file and line number where the type is defined
+    _PT_SOURCE: tuple[str, int] = ("?", 0)
 
     def __init__(self, parent: Optional["Base"] = None) -> None:
         self._pt_parent = parent
+
+    @classmethod
+    def _pt_name(cls):
+        return cls.__name__
 
     @property
     def _pt_definitions(self) -> list[str, Any]:
@@ -45,3 +59,26 @@ class Base(metaclass=MetaBase):
     def _pt_updated(self, *path: "Base"):
         if self._pt_parent is not None:
             self._pt_parent._pt_updated(self, *path)
+
+    @classmethod
+    def _pt_field_types(cls) -> list[Type["Base"]]:
+        if cls._PT_DEF:
+            return {x.type for x in dataclasses.fields(cls._PT_DEF)}
+        else:
+            return set()
+
+    @classmethod
+    def _pt_references(cls) -> list[Type["Base"]]:
+        # If no definition, return early
+        if not cls._PT_DEF:
+            return set()
+        # Else iterate through core fields
+        collect = set()
+        for ftype in cls._pt_field_types():
+            collect.update(ftype._pt_references())
+            collect.add(ftype)
+        # ...and through attached fields
+        for field in (cls._PT_ATTACH or []):
+            collect.update(field._pt_references())
+            collect.add(field)
+        return collect

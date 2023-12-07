@@ -17,6 +17,10 @@ import packtype
 from packtype import Constant, EnumMode
 from packtype.enum import EnumError
 
+from ..fixtures import reset_registry
+assert reset_registry
+
+
 def test_enum_auto_indexed():
     @packtype.package()
     class TestPkg:

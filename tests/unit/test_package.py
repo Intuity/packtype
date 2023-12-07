@@ -18,14 +18,15 @@ from packtype import Constant
 from packtype.package import Package
 from packtype.wrap import BadAttributeError, BadFieldTypeError, MissingAnnotationError
 
+from ..fixtures import reset_registry
+assert reset_registry
+
 
 def test_package_decl():
     @packtype.package()
     class TestPkg:
         pass
-    assert issubclass(TestPkg, Package)
-    inst = TestPkg()
-    assert isinstance(inst, TestPkg)
+    assert isinstance(TestPkg, Package)
 
 
 def test_package_constants():
@@ -34,11 +35,10 @@ def test_package_constants():
         A: Constant = 123
         B: Constant = 234
 
-    inst = TestPkg()
-    assert inst.A.value == 123
-    assert int(inst.A) == 123
-    assert inst.B.value == 234
-    assert int(inst.B) == 234
+    assert TestPkg.A.value == 123
+    assert int(TestPkg.A) == 123
+    assert TestPkg.B.value == 234
+    assert int(TestPkg.B) == 234
 
 
 def test_package_unannotated():

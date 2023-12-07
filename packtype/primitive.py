@@ -22,20 +22,22 @@ class PrimitiveValueError(Exception):
 
 
 class MetaPrimitive(MetaBase):
-    def __getitem__(self, width):
+    def __getitem__(self, width: int, signed: bool = False):
         assert isinstance(width, int), "Width must be an integer"
-        return MetaPrimitive.get_variant(self, width)
+        return MetaPrimitive.get_variant(self, width, signed)
 
     @functools.lru_cache
     @staticmethod
-    def get_variant(prim: "Primitive", width: int):
+    def get_variant(prim: "Primitive", width: int, signed: bool):
         return type(prim.__name__ + f"_{width}",
                     (prim, ),
-                    {"_PT_WIDTH": width})
+                    {"_PT_WIDTH": width,
+                     "_PT_SIGNED": signed})
 
 
 class Primitive(Base, metaclass=MetaPrimitive):
     _PT_WIDTH : int = -1
+    _PT_SIGNED : bool = False
 
     def __init__(self,
                  parent: Base | None = None,
@@ -49,6 +51,10 @@ class Primitive(Base, metaclass=MetaPrimitive):
     @property
     def _pt_width(self) -> int:
         return type(self)._PT_WIDTH
+
+    @property
+    def _pt_signed(self) -> int:
+        return type(self)._PT_SIGNED
 
     @property
     def _pt_mask(self) -> int:

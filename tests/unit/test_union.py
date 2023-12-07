@@ -17,6 +17,9 @@ import packtype
 from packtype import Scalar
 from packtype.union import UnionError
 
+from ..fixtures import reset_registry
+assert reset_registry
+
 
 def test_union():
     @packtype.package()
@@ -200,4 +203,3 @@ def test_union_functions():
     assert int(inst_0.get_b()) == 0x73
     assert int(inst_1.get_a()) == 0x51
     assert int(inst_1.get_b()) == 0x9
-

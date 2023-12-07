@@ -15,6 +15,9 @@
 import packtype
 from packtype import Packing, Scalar
 
+from ..fixtures import reset_registry
+assert reset_registry
+
 def test_array():
     @packtype.package()
     class TestPkg:

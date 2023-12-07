@@ -19,6 +19,9 @@ from packtype.assembly import WidthError
 from packtype.primitive import PrimitiveValueError
 from packtype.wrap import BadAssignmentError, BadAttributeError
 
+from ..fixtures import reset_registry
+assert reset_registry
+
 
 def test_struct():
     @packtype.package()
