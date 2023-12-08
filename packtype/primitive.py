@@ -29,7 +29,7 @@ class MetaPrimitive(MetaBase):
     UNIQUE_ID: dict[tuple[int, bool], int] = defaultdict(lambda: 0)
 
     def __getitem__(self, width: int, signed: bool = False):
-        assert isinstance(width, int), "Width must be an integer"
+        width = int(width)
         return MetaPrimitive.get_variant(self, width, signed)
 
     @staticmethod
