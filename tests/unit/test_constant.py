@@ -121,3 +121,16 @@ def test_constant_arithmetic():
     assert (TestPkg.A != TestPkg.B) == (35 != 17)
     assert (TestPkg.A > TestPkg.B) == (35 > 17)
     assert (TestPkg.A >= TestPkg.B) == (35 >= 17)
+
+
+def test_constant_reference():
+    @packtype.package()
+    class PkgA:
+        A: Constant = 123
+    @packtype.package()
+    class PkgB:
+        B: Constant = PkgA.A
+
+    assert isinstance(PkgB.B.value, int)
+    assert PkgB.B.value == 123
+    assert int(PkgB.B) == 123
