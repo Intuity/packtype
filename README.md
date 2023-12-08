@@ -1,6 +1,6 @@
 # Packtype
 
-![Tests](https://github.com/Intuity/packtype/workflows/Python%20package/badge.svg)
+![Tests](https://github.com/Intuity/packtype/workflows/Pull%20request%20tests/badge.svg)
 
 Packtype is a Python framework for describing packed data structures for use in low-level hardware design, verification, and firmware development. From this single specification, equivalent implementations for different languages can be generated (for example SystemVerilog).
 
