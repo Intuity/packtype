@@ -17,7 +17,7 @@ from collections import defaultdict
 try:
     from typing import Self
 except ImportError:
-    from typing import Self
+    from typing_extensions import Self  # noqa: UP035
 
 from .base import Base, MetaBase
 

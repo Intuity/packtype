@@ -24,14 +24,6 @@ class ArraySpec:
     def _pt_references(self) -> Iterable[Any]:
         return self.base._pt_references()
 
-    @property
-    def _PT_ATTACHED_TO(self) -> Any:
-        return self.base._PT_ATTACHED_TO
-
-    @_PT_ATTACHED_TO.setter
-    def _PT_ATTACHED_TO(self, value: Any) -> None:
-        self.base._PT_ATTACHED_TO = value
-
 
 class Array:
     def __init__(self, spec: ArraySpec, *args, **kwds):

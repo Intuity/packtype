@@ -84,6 +84,7 @@ class Package(Base):
         all_refs = cls._pt_references()
         # Exclude directly attached types
         foreign = all_refs.difference(set(cls._PT_ATTACH).union(cls._pt_field_types()))
+
         # Exclude non-typedef primitives
         def _is_a_type(obj: Any) -> bool:
             # If this is an ArraySpec, refer to the encapsulated type
