@@ -19,6 +19,7 @@ from ..fixtures import reset_registry
 
 assert reset_registry
 
+
 def test_constant_arithmetic():
     @packtype.package()
     class TestPkg:
@@ -33,7 +34,7 @@ def test_constant_arithmetic():
     assert TestPkg.A // TestPkg.B == (35 // 17)
     assert TestPkg.A % TestPkg.B == (35 % 17)
     assert divmod(TestPkg.A, TestPkg.B) == divmod(35, 17)
-    assert TestPkg.A ** TestPkg.B == (35 ** 17)
+    assert TestPkg.A**TestPkg.B == (35**17)
     assert TestPkg.A << TestPkg.B == (35 << 17)
     assert TestPkg.A >> TestPkg.B == (35 >> 17)
     assert TestPkg.A & TestPkg.B == (35 & 17)
@@ -48,7 +49,7 @@ def test_constant_arithmetic():
     assert TestPkg.A // 17 == (35 // 17)
     assert TestPkg.A % 17 == (35 % 17)
     assert divmod(TestPkg.A, 17) == divmod(35, 17)
-    assert TestPkg.A ** 17 == (35 ** 17)
+    assert TestPkg.A**17 == (35**17)
     assert TestPkg.A << 17 == (35 << 17)
     assert TestPkg.A >> 17 == (35 >> 17)
     assert TestPkg.A & 17 == (35 & 17)
@@ -63,7 +64,7 @@ def test_constant_arithmetic():
     assert 35 // TestPkg.B == (35 // 17)
     assert 35 % TestPkg.B == (35 % 17)
     assert divmod(35, TestPkg.B) == divmod(35, 17)
-    assert 35 ** TestPkg.B == (35 ** 17)
+    assert 35**TestPkg.B == (35**17)
     assert 35 << TestPkg.B == (35 << 17)
     assert 35 >> TestPkg.B == (35 >> 17)
     assert 35 & TestPkg.B == (35 & 17)
@@ -91,7 +92,7 @@ def test_constant_arithmetic():
     assert val == (35 % 17)
     val = TestPkg.A
     val **= TestPkg.B
-    assert val == (35 ** 17)
+    assert val == (35**17)
     val = TestPkg.A
     val <<= TestPkg.B
     assert val == (35 << 17)
@@ -127,6 +128,7 @@ def test_constant_reference():
     @packtype.package()
     class PkgA:
         A: Constant = 123
+
     @packtype.package()
     class PkgB:
         B: Constant = PkgA.A

@@ -13,11 +13,11 @@
 # limitations under the License.
 
 from collections import defaultdict
-from typing import Any
+
 try:
     from typing import Self
 except ImportError:
-    from typing_extensions import Self
+    from typing import Self
 
 from .base import Base, MetaBase
 
