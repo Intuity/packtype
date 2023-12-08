@@ -104,7 +104,10 @@ class Primitive(Base, metaclass=MetaPrimitive):
         return int(self) - int(other)
 
     def __mul__(self, other: int | Self) -> int:
-        return int(self) * int(other)
+        if isinstance(other, MetaBase):
+            return int(self) * other
+        else:
+            return int(self) * int(other)
 
     def __truediv__(self, other: int | Self) -> int:
         return int(self) / int(other)
