@@ -30,4 +30,4 @@ jobs:
         poe test
     - name: Run examples
       run: |
-        bash ./examples/tests.sh
+        poetry run ./examples/tests.sh
