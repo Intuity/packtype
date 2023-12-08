@@ -1,4 +1,4 @@
-# Copyright 2021, Peter Birch, mailto:peter@lightlogic.co.uk
+# Copyright 2023, Peter Birch, mailto:peter@intuity.io
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from packtype import scalar
 import packtype
 from packtype import Constant, Scalar
 
@@ -22,40 +21,40 @@ class Encodings:
     pass
 
 
-@packtype.enum(package=Encodings)
+@Encodings.enum()
 class Operation:
-    ADD: Constant("Add two numbers")
-    SUB: Constant("Subtract two numbers")
-    MUL: Constant("Multiply two numbers")
-    DIV: Constant("Divide two numbers")
+    ADD: Constant
+    SUB: Constant
+    MUL: Constant
+    DIV: Constant
 
 
-@packtype.struct(width=32, package=Encodings)
+@Encodings.struct(width=32)
 class Add:
-    op: Operation(desc="Operation to perform")
-    tgt: Scalar(width=5, desc="Target register")
-    src_a: Scalar(width=5, desc="Input register A")
-    src_b: Scalar(width=5, desc="Input register B")
+    op: Operation
+    tgt: Scalar[5]
+    src_a: Scalar[5]
+    src_b: Scalar[5]
 
 
-@packtype.struct(width=32, package=Encodings)
+@Encodings.struct(width=32)
 class AddImm:
-    op: Operation(desc="Operation to perform")
-    tgt: Scalar(width=5, desc="Target register")
-    src: Scalar(width=5, desc="Input register A")
-    imm: Scalar(width=20, desc="Immediate value")
+    op: Operation
+    tgt: Scalar[5]
+    src: Scalar[5]
+    imm: Scalar[20]
 
 
-@packtype.struct(width=32, package=Encodings)
+@Encodings.struct(width=32)
 class Sub:
-    op: Operation(desc="Operation to perform")
-    tgt: Scalar(width=5, desc="Target register")
-    src_a: Scalar(width=5, desc="Input register A")
-    src_b: Scalar(width=5, desc="Input register B")
+    op: Operation
+    tgt: Scalar[5]
+    src_a: Scalar[5]
+    src_b: Scalar[5]
 
 
-@packtype.union(package=Encodings)
+@Encodings.union()
 class Instruction:
-    raw: Scalar(width=32, desc="Raw instruction value")
-    add: Add(desc="Add instruction")
-    add_imm: Add(desc="Add immediate instruction")
+    raw: Scalar[32]
+    add: Add
+    add_imm: Add

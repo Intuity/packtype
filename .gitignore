@@ -134,5 +134,8 @@ dmypy.json
 # VSCode
 .vscode
 
+# Ruff
+.ruff_cache
+
 # Exclude example output directories
 examples/*/out/

@@ -2,14 +2,14 @@
 
 ![Tests](https://github.com/Intuity/packtype/workflows/Python%20package/badge.svg)
 
-Packtype is a Python framework for describing packed data structures for use in low-level hardware design, verification, and firmware development. From this single specification, equivalent implementations for different languages can be generated (for example C, C++, SystemVerilog).
+Packtype is a Python framework for describing packed data structures for use in low-level hardware design, verification, and firmware development. From this single specification, equivalent implementations for different languages can be generated (for example SystemVerilog).
 
 The support matrix below shows the current support:
 
-| Language      | Constants | Enumerations | Structures | Unions | Packages |
-|---------------|:---------:|:------------:|:----------:|:------:|:--------:|
-| Python        | Yes       | Yes          | Yes        | Yes    | Yes      |
-| SystemVerilog | Yes       | Yes          | Yes        | Yes    | Yes      |
+| Language      | Constants | Enums | Structs | Unions | Packages |
+|---------------|:---------:|:-----:|:-------:|:------:|:--------:|
+| Python        | Yes       | Yes   | Yes     | Yes    | Yes      |
+| SystemVerilog | Yes       | Yes   | Yes     | Yes    | Yes      |
 
 **NOTE** Support for C and C++ is currently missing from version 2, but was present in version 1 - this regression will be addressed in a future revision.
 

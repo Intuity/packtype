@@ -1,4 +1,4 @@
-# Copyright 2021, Peter Birch, mailto:peter@lightlogic.co.uk
+# Copyright 2023, Peter Birch, mailto:peter@intuity.io
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import packtype
-from packtype import Constant
-from packtype.enum import Enum
+from packtype import Constant, EnumMode
 
 
 @packtype.package()
@@ -22,33 +21,33 @@ class Types:
     pass
 
 
-@packtype.enum(package=Types, mode=Enum.INDEXED)
+@Types.enum(mode=EnumMode.INDEXED)
 class IndexedExplicit:
-    VALUE_A: Constant("First value") = 0
-    VALUE_B: Constant("Second value") = 1
-    VALUE_C: Constant("Third value") = 2
-    VALUE_D: Constant("Fourth value") = 3
+    VALUE_A: Constant = 0
+    VALUE_B: Constant = 1
+    VALUE_C: Constant = 2
+    VALUE_D: Constant = 3
 
 
-@packtype.enum(package=Types, mode=Enum.INDEXED)
+@Types.enum(mode=EnumMode.INDEXED)
 class IndexedAutomatic:
-    VALUE_A: Constant("First value")
-    VALUE_B: Constant("Second value")
-    VALUE_C: Constant("Third value")
-    VALUE_D: Constant("Fourth value")
+    VALUE_A: Constant
+    VALUE_B: Constant
+    VALUE_C: Constant
+    VALUE_D: Constant
 
 
-@packtype.enum(package=Types, mode=Enum.ONEHOT)
+@Types.enum(mode=EnumMode.ONE_HOT)
 class OneHot:
-    VALUE_A: Constant("First value")
-    VALUE_B: Constant("Second value")
-    VALUE_C: Constant("Third value")
-    VALUE_D: Constant("Fourth value")
+    VALUE_A: Constant
+    VALUE_B: Constant
+    VALUE_C: Constant
+    VALUE_D: Constant
 
 
-@packtype.enum(package=Types, mode=Enum.GRAY)
+@Types.enum(mode=EnumMode.GRAY)
 class GrayCode:
-    VALUE_A: Constant("First value")
-    VALUE_B: Constant("Second value")
-    VALUE_C: Constant("Third value")
-    VALUE_D: Constant("Fourth value")
+    VALUE_A: Constant
+    VALUE_B: Constant
+    VALUE_C: Constant
+    VALUE_D: Constant

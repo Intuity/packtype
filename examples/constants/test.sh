@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2021, Peter Birch, mailto:peter@lightlogic.co.uk
+# Copyright 2023, Peter Birch, mailto:peter@intuity.io
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,4 +21,4 @@ this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 export PYTHONPATH=${this_dir}/../..:$PYTHONPATH
 
 # Invoke packtype
-python3 -m packtype spec.py ${this_dir}/out --render c --render py --render sv --render cpp --render html --debug
+python3 -m packtype spec.py ${this_dir}/out --render sv --debug
