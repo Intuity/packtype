@@ -1,4 +1,4 @@
-# Copyright 2021, Peter Birch, mailto:peter@lightlogic.co.uk
+# Copyright 2023, Peter Birch, mailto:peter@intuity.io
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,26 +13,25 @@
 # limitations under the License.
 
 import importlib.util
-import inspect
 import logging
 import traceback
 from pathlib import Path
 
 import click
+from mako import exceptions
 from mako.lookup import TemplateLookup
 from rich.logging import RichHandler
 from rich.traceback import install
 
-from .base import Base
-from .constant import Constant
+from .alias import Alias
+from .array import Array
 from .enum import Enum
-from .instance import Array, Instance
 from .package import Package
 from .scalar import Scalar
 from .struct import Struct
 from .templates.common import snake_case
-from .typedef import Typedef
 from .union import Union
+from .wrap import Registry
 
 # Setup logging
 logging.basicConfig(
@@ -44,82 +43,83 @@ log.setLevel(logging.INFO)
 # Setup exception handling
 install()
 
-# Language aliases
-aliases = {
-    "python"       : "py",
-    "c++"          : "cpp",
-    "systemverilog": "sv",
+# Template map
+tmpl_list = {
+    "systemverilog": ("package.sv.mako", ".sv"),
+    "sv": ("package.sv.mako", ".sv"),
 }
+
 
 # Handle CLI
 @click.command()
-@click.option("--render", "-r", type=str, multiple=True,        help="Language to render")
-@click.option("--debug",        flag_value=True, default=False, help="Enable debug messages")
-@click.option("--only",         type=str, multiple=True,        help="Packages to render")
-@click.argument("spec",   type=click.Path(exists=True, dir_okay=False))
+@click.option("--render", "-r", type=str, multiple=True, help="Language to render")
+@click.option("--debug", flag_value=True, default=False, help="Enable debug messages")
+@click.option("--only", type=str, multiple=True, help="Packages to render")
+@click.argument("spec", type=click.Path(exists=True, dir_okay=False))
 @click.argument("outdir", type=click.Path(file_okay=False), default=".")
-def main(render, debug, only, spec, outdir):
-    """ Renders packtype definitions from a SPEC into output files """
+def main(render: list[str], debug: bool, only: list[str], spec: str, outdir: str):
+    """Renders packtype definitions into different forms"""
     # Set log verbosity
-    if debug: log.setLevel(logging.DEBUG)
+    if debug:
+        log.setLevel(logging.DEBUG)
+    # Check render requests
+    render = {x.lower() for x in render}
+    unknown = render.difference(tmpl_list.keys())
+    assert not unknown, f"No template registered to render {', '.join(render)}"
     # Convert spec and outdir to pathlib objects
-    spec   = Path(spec)
+    spec = Path(spec)
     outdir = Path(outdir)
     log.debug(f"Using specification   : {spec.absolute()}")
     log.debug(f"Using output directory: {outdir.absolute()}")
     # Import library
     imp_spec = importlib.util.spec_from_file_location(spec.stem, spec.absolute())
-    pt_spec  = importlib.util.module_from_spec(imp_spec)
-    imp_spec.loader.exec_module(pt_spec)
-    # Look for packtype Base objects
-    pt_objs = inspect.getmembers(pt_spec, predicate=lambda x: isinstance(x, Base))
-    log.debug(f"Discovered {len(pt_objs)} packtype objects")
-    # Filter for packages
-    pt_pkgs = list(filter(lambda x: isinstance(x[1], Package), pt_objs))
-    log.debug(f"Discovered {len(pt_pkgs)} packtype packages")
+    imp_spec.loader.exec_module(importlib.util.module_from_spec(imp_spec))
+    # Query the registry for packages
+    pkgs = list(Registry.query(Package))
+    log.debug(f"Discovered {len(pkgs)} package definitions")
+    # Filter out just those that were selected
     if only:
         only = {str(x).lower() for x in only}
-        pt_pkgs = [x for x in pt_pkgs if x[0].lower() in only]
+        pkgs = [x for x in pkgs if type(x).__name__.lower() in only]
     # Create output directory if it doesn't already exist
-    if not outdir.exists(): outdir.mkdir(parents=True)
+    outdir.mkdir(parents=True, exist_ok=True)
     # Render
     tmpl_dir = Path(__file__).absolute().parent / "templates"
-    mk_lkp   = TemplateLookup(
+    lookup = TemplateLookup(
         directories=[tmpl_dir],
-        imports    =[
+        imports=[
             "from datetime import datetime",
             "import math",
             "import re",
             "import packtype.templates.common as tc",
         ],
     )
-    ctx = {
-        "Constant": Constant, "Enum": Enum, "Instance": Instance,
-        "Package": Package, "Scalar": Scalar, "Struct": Struct,
-        "Typedef": Typedef, "Union": Union, "Array": Array,
+    context = {
+        "Alias": Alias,
+        "Array": Array,
+        "Enum": Enum,
+        "Scalar": Scalar,
+        "Struct": Struct,
+        "Union": Union,
     }
-    for lang in render:
-        # Resolve the language and any aliases
-        lang  = aliases.get(lang.lower(), lang.lower())
-        # Locate the associated template
-        found = list(tmpl_dir.glob(f"lang_{lang}.*.mako"))
-        assert len(found) > 0, f"Failed to locate template for {lang}"
-        for file_name in found:
-            tmpl  = mk_lkp.get_template(file_name.name)
-            # Determine the suffix
-            suffix = "".join(file_name.suffixes[:-1])
-            # Render every package against the template
-            for _, pkg in pt_pkgs:
-                with open(outdir / f"{snake_case(pkg._pt_name)}{suffix}", "w") as fh:
-                    fh.write(tmpl.render(
-                        name   =pkg._pt_name,
-                        package=pkg,
-                        source =spec.absolute(),
-                        **ctx
-                    ))
+    # Iterate packages to render
+    for pkg in pkgs:
+        pkg_name = type(pkg).__name__
+        # Iterate outputs to render
+        for lang in render:
+            tmpl_name, suffix = tmpl_list[lang]
+            out_path = outdir / f"{snake_case(pkg_name)}{suffix}"
+            log.debug(f"Rendering {pkg_name} as {lang} to {out_path}")
+            with out_path.open("w", encoding="utf-8") as fh:
+                try:
+                    fh.write(lookup.get_template(tmpl_name).render(pkg=pkg, **context))
+                except:
+                    log.error(exceptions.text_error_template().render())
+                    raise
+
 
 # Catch invocation
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     try:
         main(prog_name="packtype")
     except AssertionError as e:

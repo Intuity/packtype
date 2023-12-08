@@ -17,44 +17,41 @@ from packtype import Constant, Scalar
 
 
 @packtype.package()
-class Encodings:
+class OtherPkg:
     pass
 
 
-@Encodings.enum()
-class Operation:
-    ADD: Constant
-    SUB: Constant
-    MUL: Constant
-    DIV: Constant
+@OtherPkg.enum()
+class Access:
+    NOP: Constant
+    READ: Constant
+    WRITE: Constant
 
 
-@Encodings.struct(width=32)
-class Add:
-    op: Operation
-    tgt: Scalar[5]
-    src_a: Scalar[5]
-    src_b: Scalar[5]
+@packtype.package()
+class TestPkg:
+    """Testing a complete package definition"""
+
+    # Constants
+    DATA_W: Constant = 32
+    ADDR_W: Constant = 16
+    SIZE_W: Constant = 8
+
+    # Typedefs
+    Data: Scalar[DATA_W]
+    Addr: Scalar[ADDR_W]
+    Size: Scalar[SIZE_W]
 
 
-@Encodings.struct(width=32)
-class AddImm:
-    op: Operation
-    tgt: Scalar[5]
-    src: Scalar[5]
-    imm: Scalar[20]
+@TestPkg.struct(width=TestPkg.DATA_W)
+class Header:
+    address: TestPkg.Addr
+    length: TestPkg.Size
+    access: Access
+    misc: Scalar[2]
 
 
-@Encodings.struct(width=32)
-class Sub:
-    op: Operation
-    tgt: Scalar[5]
-    src_a: Scalar[5]
-    src_b: Scalar[5]
-
-
-@Encodings.union()
-class Instruction:
-    raw: Scalar[32]
-    add: Add
-    add_imm: Add
+@TestPkg.union()
+class Packet:
+    header: Header
+    payload: TestPkg.Data

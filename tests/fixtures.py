@@ -1,4 +1,4 @@
-# Copyright 2021, Peter Birch, mailto:peter@lightlogic.co.uk
+# Copyright 2023, Peter Birch, mailto:peter@intuity.io
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,3 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import pytest
+
+from packtype.wrap import Registry
+
+
+@pytest.fixture(autouse=True)
+def reset_registry():
+    """Reset the contents of the registry before every test"""
+    Registry.reset()
+    yield

@@ -2,20 +2,16 @@
 
 ![Tests](https://github.com/Intuity/packtype/workflows/Python%20package/badge.svg)
 
-Packtype is a Python framework for describing packed data structures for use in low-level hardware design, verification, and firmware development. From this single specification, equivalent implementations for different languages can be generated (for example C, C++, SystemVerilog).
+Packtype is a Python framework for describing packed data structures for use in low-level hardware design, verification, and firmware development. From this single specification, equivalent implementations for different languages can be generated (for example SystemVerilog).
 
 The support matrix below shows the current support:
 
-| Language      | Constants | Enumerations | Structures | Unions | Packages |
-|---------------|:---------:|:------------:|:----------:|:------:|:--------:|
-| Python        | Yes       | Yes          | Yes        | Yes    | Yes      |
-| SystemVerilog | Yes       | Yes          | Yes        | Yes    | Yes      |
-| C             | Yes       | Yes          | Yes        | No [1] | No [2]   |
-| C++           | Yes       | Yes          | Yes        | No [1] | Yes      |
+| Language      | Constants | Enums | Structs | Unions | Packages |
+|---------------|:---------:|:-----:|:-------:|:------:|:--------:|
+| Python        | Yes       | Yes   | Yes     | Yes    | Yes      |
+| SystemVerilog | Yes       | Yes   | Yes     | Yes    | Yes      |
 
-[1] While C and C++ have native support for unions, this is not used by Packtype. This is because support for true packed data structures is inconsistent across compilers, so instead Packtype uses non-packed data structures and provides methods for packing/unpacking into byte arrays.
-
-[2] C++ uses a `namespace` construct to represent a package, but this doesn't exist in C. Instead the names of each construct are just prefixed with the name of the packag.
+**NOTE** Support for C and C++ is currently missing from version 2, but was present in version 1 - this regression will be addressed in a future revision.
 
 ## Installation
 
@@ -37,7 +33,7 @@ Packtype provides the `packtype` command line utility which can be used in conju
 
 ```bash
 # Render SystemVerilog and Python versions of the specification
-$> packtype path/to/spec.py path/to/output/dir --render py --render sv
+$> packtype path/to/spec.py path/to/output/dir --render sv
 ```
 
 Two positional arguments can be provided:
@@ -47,7 +43,7 @@ Two positional arguments can be provided:
 
 Then options are available to modify the behaviour:
 
- * `-r py` / `--render py` - generate the code for a certain language - the supported values are `py`, `sv`, `c`, `cpp`.
+ * `-r sv` / `--render sv` - generate the code for a certain language - only `sv` is currently supported, further languages will be added in due course.
  * `--debug` - generate debug messages as the tool runs.
  * `--help` - show the help prompt.
 
@@ -59,33 +55,19 @@ A number of examples are provided in the `examples` folder - each of these can b
 
 Packtype specifications use a decorators and classes to declare the different data structures. Once a specification has been written, the Packtype utility can be used to generate code for different languages.
 
-### Decorators
+### Package Declaration
 
-The following decorators are available:
-
- * `@packtype.package()` - signifies a package (collection of types).
- * `@packtype.enum()` - signifies an enumeration is declared by the following class.
- * `@packtype.struct()` - signifies a structure is declared by the following class.
- * `@packtype.union()` - signifies a union is declared by the following class.
-
-The `@packtype.enum()`, `@packtype.struct()`, and `@packtype.union()` decorators all accept the following arguments:
-
- * `package=MyPackage` - associates the enum, struct, or union with the named package.
- * `width=32` - declares the bit width of the enum, struct, or union - if omitted this is determined automatically.
-
-These decorators and arguments are demonstrated in the examples below.
-
-### Package
-
-Constants, enumerations, structures, and unions must be associated to a named package - this helps to cleanly namespace the generated types as a project grows.
+Packages are signified using the ``@packtype.package()`` decorator, this declares
+a root object onto which constants, typedefs, enums, structs, and unions can be
+bound.
 
 ```python
 import packtype
 
 @packtype.package()
-class MyPackage:
-    """ My package of constants, enumerations, and data structures """
-    pass
+class SomeProtocolPkg:
+    """Contains definitions for some protocol"""
+    ...
 ```
 
 ### Constants
@@ -97,107 +79,145 @@ import packtype
 from packtype import Constant
 
 @packtype.package()
-class MyPackage:
-    """ My package of constants, enumerations, and data structures """
-    # Sizing
-    GRID_WIDTH : Constant("Number of cells wide") = 9
-    GRID_DEPTH : Constant("Number of cells deep") = 7
-    # Identity
-    HW_IDENTIFIER : Constant("Identifier for the device"   ) = 0x4D594857 # MYHW
-    HW_MAJOR_VERS : Constant("Major revision of the device") = 3
-    HW_MINOR_VERS : Constant("Major revision of the device") = 1
+class SomeProtocolPkg:
+    """Contains definitions for some protocol"""
+    ADDRESS_WIDTH : Constant = 16
+    DATA_WIDTH    : Constant = 32
+    SIZE_WIDTH    : Constant = 8
+```
+
+### Typedefs
+
+Simple bitvector types can be declared within a package using the `Scalar` type,
+the parameterisation determines the bit-width of the structure:
+
+```python
+import packtype
+from packtype import Constant, Scalar
+
+@packtype.package()
+class SomeProtocolPkg:
+    """Contains definitions for some protocol"""
+    # Constants
+    ADDRESS_WIDTH : Constant = 16
+    # Simple Types
+    Address : Scalar[ADDRESS_WIDTH]
 ```
 
 ### Enumerations
 
-Enumerations can be declared with explicit or automatically incrementing values. Different modes of enumeration are provided for convenience, which are selected using the `mode=Enum.INDEXED` argument to the `@packtype.enum()` decorator:
+Enumerations are declared using the `@<PKG>.enum()` decorator and can accept the
+following two attributes:
 
- * `INDEXED` - Each value increments by one, starting at zero.
- * `ONEHOT` - Each value sets exactly one bit position high (e.g. `1`, `2`, `4`, `8`).
- * `GRAY` - Values form a Gray code where only one bit flips between any two consecutive values.
+ * `width` - sets a fixed bit-width of the enumeration, this must be a positive integer;
+ * `mode` - sets how entries of the enumeration are assigned values, the supported modes are:
+
+   * `EnumMode.INDEXED` - Each value increments by one, starting at zero.
+   * `EnumMode.ONE_HOT` - Each value sets exactly one bit position high (e.g. `1`, `2`, `4`, `8`).
+   * `EnumMode.GRAY` - Values form a Gray code where only one bit flips between any two consecutive values.
+
+Enumerations can either be declared with explicit or automatically incrementing
+values, or a mix of the two.
 
 ```python
 import packtype
-from packtype import Enum
+from packtype import EnumMode
 
-# ...declaration of package...
+@packtype.package()
+class DecoderPkg:
+    ...
 
-@packtype.enum(package=MyPackage, mode=Enum.ONEHOT)
-class DecoderState:
-    """ Gray-coded states of the decoder FSM """
-    DISABLED : Constant("FSM disabled"        )
-    IDLE     : Constant("Waiting for stimulus")
-    HEADER   : Constant("Header received"     )
-    PAYLOAD  : Constant("Payload received"    )
-
-@packtype.enum(package=MyPackage, width=12)
+@DecoderPkg.enum(width=12)
 class MessageType:
     """ Different message types with explicit values """
-    PINGPONG : Constant("Ping-pong keepalive"    ) = 0x123
-    SHUTDOWN : Constant("Request system shutdown") = 0x439
-    POWERUP  : Constant("Request system power-up") = 0x752
+    PINGPONG : Constant = 0x123
+    SHUTDOWN : Constant = 0x439
+    POWERUP  : Constant = 0x752
+
+@DecoderPkg.enum(mode=Enum.GRAY)
+class DecoderState:
+    """ Gray-coded states of the decoder FSM """
+    DISABLED : Constant
+    IDLE     : Constant
+    HEADER   : Constant
+    PAYLOAD  : Constant
 ```
 
 ### Structs
 
-Packed data structures can be declared with fixed size scalar fields, or with references to other data structures and enumerated values.
+Structs are declared using the `@<PKG>.struct()` decorator and can contain any
+number of fields that are simple scalar values, enumerations, or nested structs
+or unions. The decorator supports the following attributes:
+
+ * `width` - sets a fixed bit-width of the struct, this must be a positive integer;
+ * `packing` - determines the order in which declared fields are placed in the packed version:
+    * `Packing.FROM_LSB` - place fields starting at the least-significant bit;
+    * `Packing.FROM_MSB` - place fields starting from the most-significant bit.
 
 ```python
 import packtype
 from packtype import Scalar
 
-# ...declaration of package...
+@packtype.package()
+class DecoderPkg:
+    ...
 
-@packtype.struct(package=MyPackage, width=32)
+@DecoderPkg.struct(width=32)
 class MessageHeader:
     """ Common header for all messages """
-    target_id : Scalar(width=8, desc="Target node for the message")
-    msg_type  : MessageType(desc="Encoded message type")
+    target_id : Scalar[8]
+    msg_type  : MessageType
 
-@packtype.struct(package=MyPackage) # Width calculated from field sizes
+@DecoderPkg.struct() # Width calculated from field sizes
 class PingPongPayload:
     """ Payload of a ping-pong keepalive message """
-    source_id  : Scalar(width= 8, desc="Node that sent the message")
-    is_pong    : Scalar(width= 1, desc="Is this a ping or a pong")
-    ping_value : Scalar(width=15, desc="Value to include in the response")
-    timestamp  : Scalar(width= 8, desc="Timestamp message was sent")
+    source_id  : Scalar[ 8]
+    is_pong    : Scalar[ 1]
+    ping_value : Scalar[15]
+    timestamp  : Scalar[ 8]
 
-@packtype.struct(package=MyPackage)
+@DecoderPkg.struct()
 class PingPongMessage:
     """ Full message including header and payload """
-    header  : MessageHeader("Header of the message")
-    payload : PingPongPayload("Payload of the message")
+    header  : MessageHeader
+    payload : PingPongPayload
 ```
 
-By default, fields are packed into data structures from the LSB - but this can be reversed to pack from the MSB by providing the `pack=Struct.FROM_MSB` argument to the decorator. When using this mode, the `width` of the data structure must be explicitly specified. For example:
+By default, fields are packed into data structures from the LSB - but this can be reversed to pack from the MSB by providing the `packing=Packing.FROM_MSB` argument to the decorator. For example:
 
 ```python
 import packtype
-from packtype import Scalar, Struct
+from packtype import Packing, Scalar
 
-@packtype.struct(package=MyPackage, pack=Struct.FROM_MSB, width=32)
+@packtype.package()
+class DecoderPkg:
+    ...
+
+@DecoderPkg.struct(package=MyPackage, packing=Packing.FROM_MSB, width=32)
 class PingPongPayload:
     """ Payload of a ping-pong keepalive message """
-    source_id  : Scalar(width= 8, desc="Node that sent the message")
-    is_pong    : Scalar(width= 1, desc="Is this a ping or a pong")
-    ping_value : Scalar(width=15, desc="Value to include in the response")
-    timestamp  : Scalar(width= 8, desc="Timestamp message was sent")
+    source_id  : Scalar[ 8]
+    is_pong    : Scalar[ 1]
+    ping_value : Scalar[15]
+    timestamp  : Scalar[ 8]
 ```
 
 ### Unions
 
-Unions allow different data structures to be overlapped on the same data - this is especially useful in protocol decoders where a bus may carry different formats and structures of data in different cycles. All components of a union must be of the same size, otherwise the tool will raise an error.
-
-**NOTE:** It is not possible to support unions in all languages due to their poor native support for packed data types, check the compatibility matrix above for details.
+Unions allow different data structures to form different projections over the same raw bits - this is especially useful in protocol decoders where a bus may carry different formats and structures of data in different cycles. All components of a union must be of the same size, otherwise the tool will raise an error.
 
 ```python
 import packtype
 from packtype import Scalar
 
-@packtype.union(package=MyPackage)
+@packtype.package()
+class DecoderPkg:
+    ...
+
+@DecoderPkg.union()
 class MessageBus:
     """ Union of the different message phases of the bus """
-    raw       : Scalar(desc="Raw bus value", width=32)
-    header    : MessageHeader(desc="Header phase")
-    ping_pong : PingPongPayload(desc="Payload of the ping-pong request")
+    raw       : Scalar[32]
+    header    : MessageHeader
+    ping_pong : PingPongPayload
 ```

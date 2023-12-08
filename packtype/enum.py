@@ -1,4 +1,4 @@
-# Copyright 2021, Peter Birch, mailto:peter@lightlogic.co.uk
+# Copyright 2023, Peter Birch, mailto:peter@intuity.io
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,81 +12,90 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import enum
 import math
+from typing import Any
 
-from .constant import Constant
-from .container import Container
+from .assembly import Assembly
+from .base import Base
 
-class Enum(Container):
-    """ Enumerated value made up of constants """
 
-    INDEXED = "INDEXED" # Assigns values 0, 1, 2, 3, ...
-    ONEHOT  = "ONEHOT"  # Assigns values 1, 2, 4, 8, ...
-    GRAY    = "GRAY"    # Assigns variable sized Gray code
+class EnumMode(enum.Enum):
+    INDEXED = enum.auto()
+    ONE_HOT = enum.auto()
+    GRAY = enum.auto()
 
-    def __init__(self, name, fields, desc=None, width=None, mode=INDEXED, prefix=None):
-        """ Initialise enumeration with a name and fields
 
-        Args:
-            name  : Name of the container
-            fields: Dictionary of fields
-            width : Bit width (if omitted is calculated from largest value)
-            mode  : How named values should be enumerated
-            prefix: How enumerated values should be namespaced
-        """
-        # Perform container construction
-        super().__init__(name, fields, desc=desc, width=width, legal=[Constant])
-        # Check mode is acceptable
-        assert mode in (Enum.INDEXED, Enum.ONEHOT, Enum.GRAY), \
-            f"Enum {name} mode must be INDEXED, ONEHOT, or GRAY: {mode}"
-        self.__mode = mode
-        # Check prefix is acceptable
-        self.__prefix = (name if prefix is None else prefix).strip()
-        assert isinstance(self.__prefix, str), f"Prefix {self.__prefix} must be a string"
-        # Check enumeration and assign missing values
-        consts    = sorted([_ for _ in self._pt_items()], key=lambda x: x[1]._pt_id)
-        allocated = []
-        next_val  = {
-            Enum.ONEHOT : 1,
-            Enum.INDEXED: 0,
-            Enum.GRAY   : 0,
-        }[self.__mode]
-        for idx, (key, const) in enumerate(consts):
-            # If value is None, assign the next in the sequence
-            if const.value is None: const.value = next_val
-            # Set the next value to follow on
-            next_val = const.value
-            if   self.__mode == Enum.INDEXED: next_val  += 1
-            elif self.__mode == Enum.ONEHOT : next_val <<= 1
-            elif self.__mode == Enum.GRAY   : next_val   = ((idx + 1) ^ ((idx + 1) >> 1))
-            # Check the value is legal
-            assert const.value >= 0, \
-                f"Enumeration {name} contains negative value {const.value} ({key})"
-            if self.__mode == Enum.ONEHOT:
-                assert const.value > 0 and ((math.log2(const.value) % 1) == 0), \
-                    f"Value {const.value} ({key}) of {name} is not one-hot"
-            elif self.__mode == Enum.GRAY:
-                gray_val = (idx ^ (idx >> 1))
-                assert const.value == gray_val, \
-                    f"Value {const.value} ({key}) at index {idx} of {name} is " \
-                    f"not gray-coded"
-            if self._pt_width is not None:
-                assert const.value < (1 << self._pt_width), \
-                    f"Value {const.value} ({key}) of {name} cannot be encoded " \
-                    f"within {self._pt_width} bits"
-            # Check the value isn't repeated
-            assert const.value not in allocated, \
-                f"Value {const.value} ({key}) appears twice in {name}"
-            # Track allocated values
-            allocated.append(const.value)
-        # If no width was provided, calculate it
-        if not self._pt_width and len(self._pt_keys()) > 0:
-            self._pt_width = int(math.ceil(math.log2(max(allocated)+1)))
+class EnumError(Exception):
+    pass
 
-    @property
-    def _pt_mode(self):
-        return self.__mode
 
-    @property
-    def _pt_prefix(self):
-        return self.__prefix
+class Enum(Assembly):
+    _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {
+        "mode": (EnumMode.INDEXED, list(EnumMode)),
+        "width": (-1, lambda x: int(x) > 0),
+        "prefix": (None, lambda x: isinstance(x, str)),
+    }
+
+    def __init__(self, parent: Base | None = None) -> None:
+        super().__init__(parent)
+        self._pt_mode = self._PT_ATTRIBUTES["mode"]
+        self._pt_width = self._PT_ATTRIBUTES["width"]
+        self._pt_prefix = self._PT_ATTRIBUTES["prefix"]
+        if self._pt_prefix is None:
+            self._pt_prefix = self._pt_name()
+        self._pt_lookup = {}
+        # Indexed
+        if self._pt_mode is EnumMode.INDEXED:
+            next_val = 0
+            for fval in self._pt_fields.keys():
+                if fval.value is None:
+                    fval.value = next_val
+                next_val = fval.value + 1
+        # One-hot
+        elif self._pt_mode is EnumMode.ONE_HOT:
+            next_val = 1
+            for fval, fname in self._pt_fields.items():
+                if fval.value is None:
+                    fval.value = next_val
+                if (math.log2(fval.value) % 1) != 0:
+                    raise EnumError(
+                        f"Enum entry {fname} has value {fval.value} that is not "
+                        f"one-hot"
+                    )
+                next_val = fval.value << 1
+        # Gray code
+        elif self._pt_mode is EnumMode.GRAY:
+            for idx, (fval, fname) in enumerate(self._pt_fields.items()):
+                gray_val = idx ^ (idx >> 1)
+                if fval.value is None:
+                    fval.value = gray_val
+                elif fval.value != gray_val:
+                    raise EnumError(
+                        f"Enum entry {fname} has value {fval.value} that does "
+                        f"not conform to the expected Gray code value of {gray_val}"
+                    )
+        # Determine width
+        if self._pt_width < 0:
+            self._pt_width = int(
+                math.ceil(math.log2(max(x.value for x in self._pt_fields.keys()) + 1))
+            )
+        # Final checks
+        used = []
+        max_val = (1 << self._pt_width) - 1
+        for fval, fname in self._pt_fields.items():
+            # Check for oversized values
+            if fval.value > max_val:
+                raise EnumError(
+                    f"Enum entry {fname} has value {fval.value} that cannot be "
+                    f"encoded in a bit width of {self._pt_width}"
+                )
+            # Check for repeated values
+            if fval.value in used:
+                raise EnumError(
+                    f"Enum entry {fname} has value {fval.value} that appears "
+                    f"more than once in the enumeration"
+                )
+            used.append(fval.value)
+            # Create a lookup table
+            self._pt_lookup[fval.value] = (fname, fval)

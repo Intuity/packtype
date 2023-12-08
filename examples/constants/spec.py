@@ -1,4 +1,4 @@
-# Copyright 2021, Peter Birch, mailto:peter@lightlogic.co.uk
+# Copyright 2023, Peter Birch, mailto:peter@intuity.io
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,10 +15,12 @@
 import packtype
 from packtype import Constant
 
+
 @packtype.package()
 class DateConsts:
-    """ Constants to do with date and time """
-    DAYS_PER_YEAR : Constant("Number of days in a year") = 365
-    DAYS_PER_WEEK : Constant("Number of days in a week") = 7
-    HOURS_PER_DAY : Constant("Hours in a day") = 24
-    MINS_PER_HOUR : Constant("Minutes in an hour") = 60
+    """Constants to do with date and time"""
+
+    DAYS_PER_YEAR: Constant = 365
+    DAYS_PER_WEEK: Constant = 7
+    HOURS_PER_DAY: Constant = 24
+    MINS_PER_HOUR: Constant = 60

@@ -1,6 +1,67 @@
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
+requires = ["poetry"]
+build-backend = "poetry.masonry.api"
+
+[tool.poetry]
+name = "packtype"
+version = "2.0.0"
+description = "Packed data structure specifications for multi-language hardware projects"
+authors = ["Peter Birch <peter@intuity.io>"]
+license = "Apache-2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+click = "^8.1.7"
+Mako = "^1.3.0"
+rich = "^13.7.0"
+ruff = "^0.1.7"
+black = "^23.11.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+pytest-runner = "^6.0.1"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.12.0"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = ["tests"]
+norecursedirs = ["resources"]
+addopts = [
+    "--cov=packtype",
+    "--cov-branch",
+    "--cov-report=html",
+    "--cov-report=term",
+    "-x",
+    "--import-mode=importlib",
 ]
-build-backend = "setuptools.build_meta"
+
+[tool.poe.tasks]
+lint = ["black", "ruff"]
+
+[tool.poe.tasks.test]
+shell = "poetry run pytest"
+
+[tool.poe.tasks.ruff]
+shell = "poetry run ruff check packtype --fix"
+
+[tool.poe.tasks.black]
+shell = "poetry run black ."
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+include = '\.pyi?$'
+
+[tool.ruff]
+# See https://beta.ruff.rs/docs/rules
+select = ["E", "F", "B", "UP", "N", "W", "I", "A", "C4", "PTH", "RUF"]
+ignore = [
+    "RUF012" # Mutable class attributes should be annotated with `typing.ClassVar`
+]
+fixable = ["ALL"]
+unfixable = []
+target-version = "py311"
+# Character length of 88 is compatible with Black
+line-length = 88

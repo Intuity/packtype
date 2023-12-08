@@ -1,4 +1,4 @@
-# Copyright 2021, Peter Birch, mailto:peter@lightlogic.co.uk
+# Copyright 2023, Peter Birch, mailto:peter@intuity.io
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,25 +13,29 @@
 # limitations under the License.
 
 import packtype
-from packtype import Scalar, Struct
+from packtype import Packing, Scalar
+
 
 @packtype.package()
 class Calendar:
     pass
 
-@packtype.struct(package=Calendar)
+
+@Calendar.struct()
 class Date:
-    day   : Scalar(width= 5, desc="Day of month 1-31" )
-    month : Scalar(width= 4, desc="Month of year 1-12")
-    year  : Scalar(width=12, desc="Year e.g. 2021"    )
+    day: Scalar[5]
+    month: Scalar[4]
+    year: Scalar[12]
 
-@packtype.struct(package=Calendar, pack=Struct.FROM_MSB, width=17)
+
+@Calendar.struct(packing=Packing.FROM_MSB, width=17)
 class Time:
-    hour   : Scalar(width=5, desc="Hour of day 0-23"     )
-    minute : Scalar(width=6, desc="Minute of hour 0-59"  )
-    second : Scalar(width=6, desc="Second of minute 0-59")
+    hour: Scalar[5]
+    minute: Scalar[6]
+    second: Scalar[6]
 
-@packtype.struct(package=Calendar)
+
+@Calendar.struct()
 class DateTime:
-    date : Date(desc="Full date"        )
-    time : Time(desc="Full 24 hour time")
+    date: Date
+    time: Time
