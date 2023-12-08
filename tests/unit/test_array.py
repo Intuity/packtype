@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import packtype
-from packtype import Packing, Scalar
+from packtype import Constant, Packing, Scalar
 
 from ..fixtures import reset_registry
 
@@ -23,21 +23,22 @@ assert reset_registry
 def test_array():
     @packtype.package()
     class TestPkg:
-        pass
+        EF_NUM: Constant = 2
 
     @TestPkg.struct()
     class TestStruct:
         ab: Scalar[12]
         cd: 3 * Scalar[3]
-        ef: Scalar[9]
+        ef: TestPkg.EF_NUM * Scalar[9]
 
     inst = TestStruct()
-    assert inst._pt_width == 12 + (3 * 3) + 9
+    assert inst._pt_width == 12 + (3 * 3) + (2 * 9)
     assert inst.ab._pt_width == 12
     assert inst.cd[0]._pt_width == 3
     assert inst.cd[1]._pt_width == 3
     assert inst.cd[2]._pt_width == 3
-    assert inst.ef._pt_width == 9
+    assert inst.ef[0]._pt_width == 9
+    assert inst.ef[1]._pt_width == 9
 
 
 def test_array_pack():

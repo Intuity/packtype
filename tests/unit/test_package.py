@@ -91,7 +91,7 @@ def test_package_foreign():
     @OuterPkg.struct()
     class OuterStruct:
         ref_td: InnerPkg.InnerType
-        ref_st: InnerStruct
+        ref_st: 2 * InnerStruct
 
     assert OuterStruct
     assert InnerPkg._pt_foreign() == set()

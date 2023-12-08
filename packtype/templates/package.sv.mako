@@ -29,7 +29,12 @@ package ${pkg._pt_name() | tc.snake_case};
 // =============================================================================
 
 %for foreign in pkg._pt_foreign():
+    %if foreign._PT_ATTACHED_TO:
+<%      refers_to = foreign._PT_ATTACHED_TO._pt_lookup(foreign) %>\
+import ${foreign._PT_ATTACHED_TO._pt_name() | tc.snake_case}::${refers_to | tc.snake_case}_t;
+    %else:
 import ${foreign._PT_ATTACHED_TO._pt_name() | tc.snake_case}::${foreign._pt_name() | tc.snake_case}_t;
+    %endif
 %endfor ## foreign in pkg._pt_foreign()
 
 // =============================================================================
@@ -64,12 +69,12 @@ typedef ${obj._PT_ALIAS._pt_name() | tc.snake_case}_t ${name | tc.snake_case}_t;
 // ${name}
 typedef enum logic [${width(obj)}:0] {
 <%  sep = " " %>\
-    %for field, name in obj._pt_fields.items():
+    %for field, fname in obj._pt_fields.items():
 <%
         prefix = tc.snake_case(obj._pt_prefix).upper()
         prefix += ["", "_"][len(prefix) > 0]
 %>\
-    ${sep} ${prefix}${tc.snake_case(name).upper()} = 'd${field.value}
+    ${sep} ${prefix}${tc.snake_case(fname).upper()} = 'd${field.value}
 <%      sep = "," %>\
     %endfor
 } ${name | tc.snake_case}_t;
@@ -85,27 +90,30 @@ typedef enum logic [${width(obj)}:0] {
     %if isinstance(obj, Struct):
 typedef struct packed {
 <%
-        msb_pack = (obj._pt_pack == "FROM_MSB")
+        msb_pack = (obj._pt_packing == Packing.FROM_MSB)
         next_pos = obj._pt_width - 1
         pad_idx  = 0
 %>\
-        %for flsb, fmsb, (name, field) in obj._pt_fields_msb_desc:
+        %for flsb, fmsb, (fname, field) in obj._pt_fields_msb_desc:
             %if fmsb != next_pos:
 <%              pad_width = (next_pos - fmsb) %>\
     logic${f" [{pad_width-1}:0]" if pad_width > 1 else ""} _padding_${pad_idx};
 <%              pad_idx += 1 %>\
             %endif
+<%
+            array_sfx = f" [{len(field)-1}:0]" if isinstance(field, Array) else ""
+            field = field[0] if isinstance(field, Array) else field
+%>\
             %if isinstance(field, Scalar):
                 %if field._PT_ATTACHED_TO:
 <%                  refers_to = field._PT_ATTACHED_TO._pt_lookup(type(field)) %>\
-    ${refers_to | tc.snake_case}_t ${name | tc.snake_case};
+    ${refers_to | tc.snake_case}_t ${fname | tc.snake_case};
                 %else:
 <%                  sign_sfx = " signed" if field._pt_signed else "" %>\
-    logic${sign_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${name | tc.snake_case};
+    logic${sign_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${fname | tc.snake_case};
                 %endif
             %elif isinstance(field, Alias | Enum | Struct | Union):
-<%              array_sfx = f" [{field._pt_count-1}:0]" if isinstance(field, Array) else "" %>\
-    ${field._pt_name() | tc.snake_case}_t${array_sfx} ${name | tc.snake_case};
+    ${field._pt_name() | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
             %endif
 <%          next_pos = (flsb - 1) %>\
         %endfor
@@ -116,18 +124,21 @@ typedef struct packed {
 } ${obj._pt_name() | tc.snake_case}_t;
     %elif isinstance(obj, Union):
 typedef union packed {
-        %for field, name in obj._pt_fields.items():
+        %for field, fname in obj._pt_fields.items():
+<%
+            array_sfx = f" [{len(field)-1}:0]" if isinstance(field, Array) else ""
+            field = field[0] if isinstance(field, Array) else field
+%>\
             %if isinstance(field, Scalar):
                 %if field._PT_ATTACHED_TO:
 <%                  refers_to = field._PT_ATTACHED_TO._pt_lookup(type(field)) %>\
-    ${refers_to | tc.snake_case}_t ${name | tc.snake_case};
+    ${refers_to | tc.snake_case}_t ${fname | tc.snake_case};
                 %else:
 <%                  sign_sfx = " signed" if field._pt_signed else "" %>\
-    logic${sign_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${name | tc.snake_case};
+    logic${sign_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${fname | tc.snake_case};
                 %endif
             %elif isinstance(field, Enum | Struct | Alias | Union):
-<%              array_sfx = f" [{field._pt_count-1}:0]" if isinstance(field, Array) else "" %>\
-    ${field._pt_name() | tc.snake_case}_t${array_sfx} ${name | tc.snake_case};
+    ${field._pt_name() | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
             %endif
         %endfor
 } ${obj._pt_name() | tc.snake_case}_t;

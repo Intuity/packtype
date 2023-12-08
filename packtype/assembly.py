@@ -119,8 +119,11 @@ class PackedAssembly(Assembly):
     def _pt_fields_lsb_asc(self) -> list[Base]:
         pairs = []
         for finst, fname in self._pt_fields.items():
-            key = (fname, 0) if isinstance(finst, Array) else fname
-            lsb, msb = self._pt_ranges[key]
+            if isinstance(finst, Array):
+                lsb = min(self._pt_ranges[(fname, x)][0] for x in range(len(finst)))
+                msb = max(self._pt_ranges[(fname, x)][1] for x in range(len(finst)))
+            else:
+                lsb, msb = self._pt_ranges[fname]
             pairs.append((lsb, msb, (fname, finst)))
         return sorted(pairs, key=lambda x: x[0])
 
@@ -128,8 +131,11 @@ class PackedAssembly(Assembly):
     def _pt_fields_msb_desc(self) -> list[Base]:
         pairs = []
         for finst, fname in self._pt_fields.items():
-            key = (fname, 0) if isinstance(finst, Array) else fname
-            lsb, msb = self._pt_ranges[key]
+            if isinstance(finst, Array):
+                lsb = min(self._pt_ranges[(fname, x)][0] for x in range(len(finst)))
+                msb = max(self._pt_ranges[(fname, x)][1] for x in range(len(finst)))
+            else:
+                lsb, msb = self._pt_ranges[fname]
             pairs.append((lsb, msb, (fname, finst)))
         return sorted(pairs, key=lambda x: x[1], reverse=True)
 

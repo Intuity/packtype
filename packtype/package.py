@@ -17,6 +17,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from .alias import Alias
+from .array import ArraySpec
 from .base import Base
 from .constant import Constant
 from .enum import Enum
@@ -53,6 +54,7 @@ class Package(Base):
             type(self)._PT_ATTACH.append(enum)
             enum._PT_ATTACHED_TO = self
             setattr(self, enum.__name__, enum)
+            self._pt_fields[enum] = enum.__name__
             return enum
 
         return _inner
@@ -63,6 +65,7 @@ class Package(Base):
             type(self)._PT_ATTACH.append(struct)
             struct._PT_ATTACHED_TO = self
             setattr(self, struct.__name__, struct)
+            self._pt_fields[struct] = struct.__name__
             return struct
 
         return _inner
@@ -73,6 +76,7 @@ class Package(Base):
             type(self)._PT_ATTACH.append(union)
             union._PT_ATTACHED_TO = self
             setattr(self, union.__name__, union)
+            self._pt_fields[union] = union.__name__
             return union
 
         return _inner
@@ -86,8 +90,11 @@ class Package(Base):
 
         # Exclude non-typedef primitives
         def _is_a_type(obj: Any) -> bool:
+            # If this is an ArraySpec, refer to the encapsulated type
+            if isinstance(obj, ArraySpec):
+                obj = obj.base
             # If it's not a primitive, immediately accept
-            if not issubclass(obj, Primitive):
+            if inspect.isclass(obj) and not issubclass(obj, Primitive):
                 return True
             # If not attached to a different package, accept
             return (
@@ -110,7 +117,11 @@ class Package(Base):
 
     @property
     def _pt_aliases(self) -> Iterable[Alias]:
-        return ((y, x) for x, y in self._pt_fields.items() if isinstance(x, Alias))
+        return (
+            (y, x)
+            for x, y in self._pt_fields.items()
+            if inspect.isclass(x) and issubclass(x, Alias)
+        )
 
     @property
     def _pt_enums(self) -> Iterable[Enum]:

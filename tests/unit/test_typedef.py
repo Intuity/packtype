@@ -23,10 +23,15 @@ assert reset_registry
 def test_typedef_scalar():
     @packtype.package()
     class TestPkg:
-        MyType: Scalar[15]
+        Unsigned: Scalar[15]
+        Signed: Scalar[12, True]
 
-    inst = TestPkg.MyType()
-    assert inst._pt_width == 15
+    unsigned = TestPkg.Unsigned()
+    assert unsigned._pt_width == 15
+    assert not unsigned._pt_signed
+    signed = TestPkg.Signed()
+    assert signed._pt_width == 12
+    assert signed._pt_signed
 
 
 def test_typedef_alias():

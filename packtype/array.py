@@ -21,6 +21,9 @@ class ArraySpec:
         self.base = base
         self.dimension = dimension
 
+    def _pt_references(self) -> Iterable[Any]:
+        return self.base._pt_references()
+
 
 class Array:
     def __init__(self, spec: ArraySpec, *args, **kwds):
@@ -34,3 +37,6 @@ class Array:
 
     def __iter__(self) -> Iterable[Any]:
         yield from self._pt_entries
+
+    def __len__(self) -> int:
+        return len(self._pt_entries)
