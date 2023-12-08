@@ -23,7 +23,7 @@ class MetaBase(type):
         return ArraySpec(cls, other)
 
     def __rmul__(cls, other: int):
-        return cls.__mul__(other)
+        return ArraySpec(cls, other)
 
 
 class Base(metaclass=MetaBase):
