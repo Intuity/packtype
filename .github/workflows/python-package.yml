@@ -26,8 +26,11 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install poetry poe
+        pip install poetry poethepoet
         poetry install
-    - name: Run tests
+    - name: Run unit and integration tests
       run: |
         poe test
+    - name: Run examples
+      run: |
+        bash ./examples/tests.sh
