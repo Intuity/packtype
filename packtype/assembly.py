@@ -19,6 +19,7 @@ from typing import Any
 from .array import Array, ArraySpec
 from .base import Base
 from .primitive import Primitive
+from .scalar import Scalar
 
 
 class Packing(Enum):
@@ -48,7 +49,7 @@ class Assembly(Base):
             self._pt_fields[finst] = fname
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if hasattr(self, name) and isinstance(obj := getattr(self, name), Base):
+        if not name.startswith("_") and hasattr(self, name) and isinstance(obj := getattr(self, name), Base):
             obj._pt_set(value)
         else:
             return super().__setattr__(name, value)
@@ -88,6 +89,11 @@ class PackedAssembly(Assembly):
                 else:
                     self._pt_ranges[fname] = (lsb, lsb + finst._pt_width - 1)
                     lsb += finst._pt_width
+            # Insert padding
+            if lsb < self._pt_width:
+                padding = Scalar[self._pt_width-lsb]()
+                self._pt_fields[padding] = "_padding"
+                self._pt_ranges["_padding"] = (lsb, self._pt_width - 1)
         # Place fields MSB -> LSB
         else:
             msb = self._pt_width - 1
@@ -99,6 +105,11 @@ class PackedAssembly(Assembly):
                 else:
                     self._pt_ranges[fname] = (msb - finst._pt_width + 1, msb)
                     msb -= finst._pt_width
+            # Insert padding
+            if msb >= 0:
+                padding = Scalar[msb+1]()
+                self._pt_fields[padding] = "_padding"
+                self._pt_ranges["_padding"] = (0, msb)
 
     @property
     @functools.cache  # noqa: B019
@@ -166,12 +177,18 @@ class PackedAssembly(Assembly):
     def __int__(self) -> int:
         return self._pt_pack()
 
-    def _pt_set(self, value: int) -> None:
+    def _pt_set(self, value: int, force: bool = False) -> None:
         for finst, fname in self._pt_fields.items():
             if isinstance(finst, Array):
                 for idx, entry in enumerate(finst):
                     entry._pt_set(
-                        (value >> self._pt_lsb((fname, idx))) & entry._pt_mask
+                        (value >> self._pt_lsb((fname, idx))) & entry._pt_mask,
+                        force=True
                     )
             else:
-                finst._pt_set((value >> self._pt_lsb(fname)) & finst._pt_mask)
+                finst._pt_set(
+                    (value >> self._pt_lsb(fname)) & finst._pt_mask,
+                    force=True
+                )
+        if not force:
+            self._pt_updated(self)

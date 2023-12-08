@@ -82,13 +82,14 @@ class Primitive(Base, metaclass=MetaPrimitive):
     def value(self, value: int) -> int:
         self._pt_set(value)
 
-    def _pt_set(self, value: int) -> int:
+    def _pt_set(self, value: int, force: bool = False) -> int:
         if value < 0 or (self._pt_width > 0 and value > self._pt_mask):
             raise PrimitiveValueError(
                 f"Value {value} cannot be represented by {self._pt_width} bits"
             )
-        self.__value = value
-        self._pt_updated()
+        self.__value = int(value)
+        if not force:
+            self._pt_updated()
 
     def __int__(self) -> int:
         return self.__value

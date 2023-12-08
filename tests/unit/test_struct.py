@@ -14,7 +14,7 @@
 
 import pytest
 import packtype
-from packtype import Packing, Scalar
+from packtype import Constant, Packing, Scalar
 from packtype.assembly import WidthError
 from packtype.primitive import PrimitiveValueError
 from packtype.wrap import BadAssignmentError, BadAttributeError
@@ -270,3 +270,38 @@ def test_struct_fields_listing():
         (12, 14, ("cd", inst.cd)),
         (0, 11, ("ab", inst.ab)),
     ]
+
+
+def test_struct_enum():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.enum(width=16)
+    class TestEnum:
+        A: Constant = 0x1234
+        B: Constant = 0x2345
+        C: Constant = 0x3456
+
+    @TestPkg.struct()
+    class TestStruct:
+        a: Scalar[2]
+        b: TestEnum
+        c: Scalar[3]
+
+    # Packing
+    inst = TestStruct()
+    inst.a = 2
+    inst.b = 0x1234
+    inst.c = 7
+    assert int(inst.a) == 2
+    assert int(inst.b) == 0x1234
+    assert int(inst.c) == 7
+    assert inst._pt_pack() == ((7 << 18) | (0x1234 << 2) | 2)
+    assert int(inst) == ((7 << 18) | (0x1234 << 2) | 2)
+
+    # Unpacking
+    inst = TestStruct._pt_unpack((7 << 18) | (0x1234 << 2) | 2)
+    assert int(inst.a) == 2
+    assert int(inst.b) == 0x1234
+    assert int(inst.c) == 7

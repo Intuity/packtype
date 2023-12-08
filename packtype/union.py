@@ -57,12 +57,15 @@ class Union(Assembly):
         inst._pt_set(packed)
         return inst
 
-    def _pt_set(self, value: int) -> None:
+    def _pt_set(self, value: int, force: bool = False) -> None:
         # Capture raw value
         self._pt_raw = value & self._pt_mask
         # Broadcast to all members
         for field in self._pt_fields.keys():
-            field._pt_set(self._pt_raw)
+            field._pt_set(self._pt_raw, force=True)
+        # Flag update
+        if not force:
+            self._pt_updated(self)
 
     def _pt_updated(self, obj: Base, *path: Base):
         # Block nested updates to avoid an infinite loop
@@ -74,7 +77,7 @@ class Union(Assembly):
         self._pt_raw = int(obj)
         for field in self._pt_fields.keys():
             if field is not obj:
-                field._pt_set(self._pt_raw)
+                field._pt_set(self._pt_raw, force=True)
         # Clear the lock
         self._pt_updating = False
         # Propagate update to the parent

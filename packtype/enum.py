@@ -99,3 +99,25 @@ class Enum(Assembly):
             used.append(fval.value)
             # Create a lookup table
             self._pt_lookup[fval.value] = (fname, fval)
+        # Set initial value
+        self._pt_set(0)
+
+    @property
+    def _pt_mask(self) -> int:
+        return (1 << self._pt_width) - 1
+
+    @property
+    def value(self) -> int:
+        return self.__value
+
+    @value.setter
+    def value(self, value: int) -> int:
+        self._pt_set(value)
+
+    def _pt_set(self, value: int, force: bool = False) -> None:
+        _, self.__value = self._pt_lookup.get(value, (None, int(value)))
+        if not force:
+            self._pt_updated()
+
+    def __int__(self) -> int:
+        return int(self.__value)
