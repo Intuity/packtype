@@ -14,7 +14,7 @@
 
 import functools
 from enum import Enum, auto
-from typing import Any
+from typing import Any, Type
 
 from .array import Array, ArraySpec
 from .base import Base
@@ -34,7 +34,7 @@ class Assembly(Base):
 
     def __init__(self, parent: Base | None = None) -> None:
         super().__init__(parent)
-        self._pt_fields = []
+        self._pt_fields = {}
         for fname, ftype, fval in self._pt_definitions:
             if isinstance(ftype, ArraySpec):
                 if isinstance(ftype.base, Primitive):
@@ -46,13 +46,16 @@ class Assembly(Base):
             else:
                 finst = ftype(parent=self)
             setattr(self, fname, finst)
-            self._pt_fields.append((fname, finst))
+            self._pt_fields[finst] = fname
 
     def __setattr__(self, name: str, value: Any) -> None:
         if hasattr(self, name) and isinstance(obj := getattr(self, name), Base):
             obj._pt_set(value)
         else:
             return super().__setattr__(name, value)
+
+    def _pt_lookup(self, field: Type[Base] | Base) -> str:
+        return self._pt_fields[field]
 
 
 class PackedAssembly(Assembly):
@@ -78,7 +81,7 @@ class PackedAssembly(Assembly):
         # Place fields LSB -> MSB
         if self._pt_packing is Packing.FROM_LSB:
             lsb = 0
-            for fname, finst in self._pt_fields:
+            for finst, fname in self._pt_fields.items():
                 if isinstance(finst, Array):
                     for idx, entry in enumerate(finst):
                         self._pt_ranges[fname, idx] = (lsb, lsb+entry._pt_width-1)
@@ -89,7 +92,7 @@ class PackedAssembly(Assembly):
         # Place fields MSB -> LSB
         else:
             msb = self._pt_width - 1
-            for fname, finst in self._pt_fields:
+            for finst, fname in self._pt_fields.items():
                 if isinstance(finst, Array):
                     for idx, entry in enumerate(finst):
                         self._pt_ranges[fname, idx] = (msb-entry._pt_width+1, msb)
@@ -102,7 +105,7 @@ class PackedAssembly(Assembly):
     @functools.cache # noqa: B019
     def _pt_field_width(self) -> None:
         total_width = 0
-        for _, field in self._pt_fields:
+        for field in self._pt_fields.keys():
             if isinstance(field, Array):
                 total_width += sum(x._pt_width for x in field)
             else:
@@ -116,19 +119,19 @@ class PackedAssembly(Assembly):
     @property
     def _pt_fields_lsb_asc(self) -> list[Base]:
         pairs = []
-        for name, inst in self._pt_fields:
-            key = (name, 0) if isinstance(inst, Array) else name
+        for finst, fname in self._pt_fields.items():
+            key = (fname, 0) if isinstance(finst, Array) else fname
             lsb, msb = self._pt_ranges[key]
-            pairs.append((lsb, msb, (name, inst)))
+            pairs.append((lsb, msb, (fname, finst)))
         return sorted(pairs, key=lambda x: x[0])
 
     @property
     def _pt_fields_msb_desc(self) -> list[Base]:
         pairs = []
-        for name, inst in self._pt_fields:
-            key = (name, 0) if isinstance(inst, Array) else name
+        for finst, fname in self._pt_fields.items():
+            key = (fname, 0) if isinstance(finst, Array) else fname
             lsb, msb = self._pt_ranges[key]
-            pairs.append((lsb, msb, (name, inst)))
+            pairs.append((lsb, msb, (fname, finst)))
         return sorted(pairs, key=lambda x: x[1], reverse=True)
 
     def _pt_lsb(self, field: str) -> int:
@@ -139,14 +142,14 @@ class PackedAssembly(Assembly):
 
     def _pt_pack(self) -> int:
         packed = 0
-        for fname, field in self._pt_fields:
-            if isinstance(field, Array):
-                for idx, entry in enumerate(field):
+        for finst, fname in self._pt_fields.items():
+            if isinstance(finst, Array):
+                for idx, entry in enumerate(finst):
                     packed |= (
                         (int(entry) & entry._pt_mask) << self._pt_lsb((fname, idx))
                     )
             else:
-                packed |= (int(field) & field._pt_mask) << self._pt_lsb(fname)
+                packed |= (int(finst) & finst._pt_mask) << self._pt_lsb(fname)
         return packed
 
     @classmethod
@@ -159,11 +162,11 @@ class PackedAssembly(Assembly):
         return self._pt_pack()
 
     def _pt_set(self, value: int) -> None:
-        for fname, field in self._pt_fields:
-            if isinstance(field, Array):
-                for idx, entry in enumerate(field):
+        for finst, fname in self._pt_fields.items():
+            if isinstance(finst, Array):
+                for idx, entry in enumerate(finst):
                     entry._pt_set(
                         (value >> self._pt_lsb((fname, idx))) & entry._pt_mask
                     )
             else:
-                field._pt_set((value >> self._pt_lsb(fname)) & field._pt_mask)
+                finst._pt_set((value >> self._pt_lsb(fname)) & finst._pt_mask)

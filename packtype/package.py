@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Iterable
+import inspect
+from typing import Any, Iterable, Type
 
 from .alias import Alias
 from .base import Base
@@ -30,15 +31,17 @@ class Package(Base):
 
     def __init__(self, parent: Base | None = None) -> None:
         super().__init__(parent)
-        self._pt_fields = []
+        self._pt_fields = {}
         for fname, ftype, fval in self._pt_definitions:
             if issubclass(ftype, Constant):
                 finst = ftype(default=fval)
                 setattr(self, fname, finst)
-                self._pt_fields.append((fname, finst))
+                finst._PT_ATTACHED_TO = self
+                self._pt_fields[finst] = fname
             else:
                 setattr(self, fname, ftype)
-                self._pt_fields.append((fname, ftype))
+                ftype._PT_ATTACHED_TO = self
+                self._pt_fields[ftype] = fname
 
     def __call__(self) -> "Package":
         return self
@@ -81,28 +84,33 @@ class Package(Base):
 
     @property
     def _pt_constants(self) -> Iterable[Constant]:
-        return ((x, y) for x, y in self._pt_fields if isinstance(y, Constant))
+        return ((y, x) for x, y in self._pt_fields.items() if isinstance(x, Constant))
 
     @property
     def _pt_scalars(self) -> Iterable[Scalar]:
-        return ((x, y) for x, y in self._pt_fields if isinstance(y, Scalar))
+        return ((y, x) for x, y in self._pt_fields.items() if (
+            inspect.isclass(x) and issubclass(x, Scalar)
+        ))
 
     @property
     def _pt_aliases(self) -> Iterable[Alias]:
-        return ((x, y) for x, y in self._pt_fields if isinstance(y, Alias))
+        return ((y, x) for x, y in self._pt_fields.items() if isinstance(x, Alias))
 
     @property
     def _pt_enums(self) -> Iterable[Enum]:
-        return ((x._pt_name, x) for x in self._PT_ATTACH if issubclass(x, Enum))
+        return ((x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Enum))
 
     @property
     def _pt_structs(self) -> Iterable[Struct]:
-        return ((x.__name__, x) for x in self._PT_ATTACH if issubclass(x, Struct))
+        return ((x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Struct))
 
     @property
     def _pt_unions(self) -> Iterable[Union]:
-        return ((x.__name__, x) for x in self._PT_ATTACH if issubclass(x, Union))
+        return ((x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Union))
 
     @property
     def _pt_structs_and_unions(self) -> Iterable[Union]:
-        return ((x.__name__, x) for x in self._PT_ATTACH if issubclass(x, Struct | Union))
+        return ((x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Struct | Union))
+
+    def _pt_lookup(self, field: Type[Base] | Base) -> str:
+        return self._pt_fields[field]

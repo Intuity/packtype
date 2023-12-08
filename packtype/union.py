@@ -26,8 +26,8 @@ class Union(Assembly):
         self._pt_updating = True
         super().__init__(parent)
         self._pt_raw = 0
-        self._pt_width = self._pt_fields[0][1]._pt_width
-        for fname, field in self._pt_fields:
+        self._pt_width = next(iter(self._pt_fields.keys()))._pt_width
+        for field, fname in self._pt_fields.items():
             if field._pt_width != self._pt_width:
                 raise UnionError(
                     f"Union member {fname} has a width of {field._pt_width} that "
@@ -43,7 +43,7 @@ class Union(Assembly):
         return self._pt_pack()
 
     def _pt_pack(self) -> int:
-        values = list({int(x) for _, x in self._pt_fields})
+        values = list({int(x) for x in self._pt_fields.keys()})
         if len(values) != 1 or values[0] != self._pt_raw:
             raise UnionError(
                 f"Multiple member values were discovered when packing a "
@@ -63,7 +63,7 @@ class Union(Assembly):
         # Capture raw value
         self._pt_raw = value & self._pt_mask
         # Broadcast to all members
-        for _, field in self._pt_fields:
+        for field in self._pt_fields.keys():
             field._pt_set(self._pt_raw)
 
     def _pt_updated(self, obj: Base, *path: Base):
@@ -74,7 +74,7 @@ class Union(Assembly):
         self._pt_updating = True
         # Update the raw value and all members (except the 'obj')
         self._pt_raw = int(obj)
-        for _, field in self._pt_fields:
+        for field in self._pt_fields.keys():
             if field is not obj:
                 field._pt_set(self._pt_raw)
         # Clear the lock

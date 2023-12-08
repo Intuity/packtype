@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
+from collections import defaultdict
 
 from .base import Base, MetaBase
 
@@ -22,14 +22,20 @@ class PrimitiveValueError(Exception):
 
 
 class MetaPrimitive(MetaBase):
+    UNIQUE_ID: dict[tuple[int, bool], int] = defaultdict(lambda: 0)
+
     def __getitem__(self, width: int, signed: bool = False):
         assert isinstance(width, int), "Width must be an integer"
         return MetaPrimitive.get_variant(self, width, signed)
 
-    @functools.lru_cache
     @staticmethod
     def get_variant(prim: "Primitive", width: int, signed: bool):
-        return type(prim.__name__ + f"_{width}",
+        # NOTE: Don't share primitives between creations as this prevents the
+        #       parent being distinctly tracked (a problem when they are used as
+        #       typedefs on a package)
+        uid = MetaPrimitive.UNIQUE_ID[width, signed]
+        MetaPrimitive.UNIQUE_ID[width, signed] += 1
+        return type(prim.__name__ + f"_{width}_{['U','S'][signed]}{uid}",
                     (prim, ),
                     {"_PT_WIDTH": width,
                      "_PT_SIGNED": signed})

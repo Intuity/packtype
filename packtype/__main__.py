@@ -72,7 +72,7 @@ def main(render: list[str], debug: bool, only: list[str], spec: str, outdir: str
     log.debug(f"Using output directory: {outdir.absolute()}")
     # Import library
     imp_spec = importlib.util.spec_from_file_location(spec.stem, spec.absolute())
-    importlib.util.module_from_spec(imp_spec)
+    imp_spec.loader.exec_module(importlib.util.module_from_spec(imp_spec))
     # Query the registry for packages
     pkgs = list(Registry.query(Package))
     log.debug(f"Discovered {len(pkgs)} package definitions")
@@ -81,8 +81,7 @@ def main(render: list[str], debug: bool, only: list[str], spec: str, outdir: str
         only = {str(x).lower() for x in only}
         pkgs = [x for x in pkgs if type(x).__name__.lower() in only]
     # Create output directory if it doesn't already exist
-    if not outdir.exists():
-        outdir.mkdir(parents=True)
+    outdir.mkdir(parents=True, exist_ok=True)
     # Render
     tmpl_dir = Path(__file__).absolute().parent / "templates"
     lookup = TemplateLookup(

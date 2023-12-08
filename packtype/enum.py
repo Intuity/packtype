@@ -48,14 +48,14 @@ class Enum(Assembly):
         # Indexed
         if self._pt_mode is EnumMode.INDEXED:
             next_val = 0
-            for _, fval in self._pt_fields:
+            for fval in self._pt_fields.keys():
                 if fval.value is None:
                     fval.value = next_val
                 next_val = fval.value + 1
         # One-hot
         elif self._pt_mode is EnumMode.ONE_HOT:
             next_val = 1
-            for fname, fval in self._pt_fields:
+            for fval, fname in self._pt_fields.items():
                 if fval.value is None:
                     fval.value = next_val
                 if (math.log2(fval.value) % 1) != 0:
@@ -66,7 +66,7 @@ class Enum(Assembly):
                 next_val = (fval.value << 1)
         # Gray code
         elif self._pt_mode is EnumMode.GRAY:
-            for idx, (fname, fval) in enumerate(self._pt_fields):
+            for idx, (fval, fname) in enumerate(self._pt_fields.items()):
                 gray_val = (idx ^ (idx >> 1))
                 if fval.value is None:
                     fval.value = gray_val
@@ -78,12 +78,12 @@ class Enum(Assembly):
         # Determine width
         if self._pt_width < 0:
             self._pt_width = int(math.ceil(math.log2(
-                max(x[1].value for x in self._pt_fields)+1)
+                max(x.value for x in self._pt_fields.keys())+1)
             ))
         # Final checks
         used = []
         max_val = (1 << self._pt_width) - 1
-        for fname, fval in self._pt_fields:
+        for fval, fname in self._pt_fields.items():
             # Check for oversized values
             if fval.value > max_val:
                 raise EnumError(

@@ -47,6 +47,7 @@ class Header:
     address: TestPkg.Addr
     length: TestPkg.Size
     access: Access
+    misc: Scalar[2]
 
 
 @TestPkg.union()

@@ -22,7 +22,7 @@ def width(obj):
 
 /* verilator lint_off UNUSEDPARAM */
 
-package ${pkg._pt_name | tc.snake_case};
+package ${pkg._pt_name() | tc.snake_case};
 
 // =============================================================================
 // Imports
@@ -45,7 +45,8 @@ localparam ${name.upper()} = 'h${f"{obj.value:08X}"};
 // Typedefs
 // =============================================================================
 
-%for name, obj in pkg._pt_scalars:
+%for name, objcls in pkg._pt_scalars:
+<%  obj = objcls() %>\
 // ${name}
 typedef logic [${obj._pt_width-1}:0] ${name | tc.snake_case}_t;
 %endfor
@@ -63,7 +64,7 @@ typedef ${obj._PT_ALIAS._pt_name() | tc.snake_case}_t ${name | tc.snake_case}_t;
 // ${name}
 typedef enum logic [${width(obj)}:0] {
 <%  sep = " " %>\
-    %for name, field in obj._pt_fields:
+    %for field, name in obj._pt_fields.items():
 <%
         prefix = tc.snake_case(obj._pt_prefix).upper()
         prefix += ["", "_"][len(prefix) > 0]
@@ -81,8 +82,8 @@ typedef enum logic [${width(obj)}:0] {
 %for name, objcls in pkg._pt_structs_and_unions:
 <%  obj = objcls() %>\
 // ${name}
-typedef ${type(obj).__name__.lower()} packed {
     %if isinstance(obj, Struct):
+typedef struct packed {
 <%
         msb_pack = (obj._pt_pack == "FROM_MSB")
         next_pos = obj._pt_width - 1
@@ -95,11 +96,16 @@ typedef ${type(obj).__name__.lower()} packed {
 <%              pad_idx += 1 %>\
             %endif
             %if isinstance(field, Scalar):
-<%              sign_sfx = " signed" if field._pt_signed else "" %>\
-    logic${sign_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${field._pt_name()};
+                %if field._PT_ATTACHED_TO:
+<%                  refers_to = field._PT_ATTACHED_TO._pt_lookup(type(field)) %>\
+    ${refers_to | tc.snake_case}_t ${name | tc.snake_case};
+                %else:
+<%                  sign_sfx = " signed" if field._pt_signed else "" %>\
+    logic${sign_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${name | tc.snake_case};
+                %endif
             %elif isinstance(field, Alias | Enum | Struct | Union):
 <%              array_sfx = f" [{field._pt_count-1}:0]" if isinstance(field, Array) else "" %>\
-    ${field._PT_ATTACHED_TO._pt_name() | tc.snake_case}_t${array_sfx} ${field._pt_name() | tc.snake_case};
+    ${field._pt_name() | tc.snake_case}_t${array_sfx} ${name | tc.snake_case};
             %endif
 <%          next_pos = (flsb - 1) %>\
         %endfor
@@ -107,21 +113,28 @@ typedef ${type(obj).__name__.lower()} packed {
 <%          pad_width = next_pos + 1 %>\
     logic${f" [{pad_width-1}:0]" if pad_width > 1 else ""} _padding_${pad_idx};
         %endif
+} ${obj._pt_name() | tc.snake_case}_t;
     %elif isinstance(obj, Union):
-        %for name, field in obj._pt_fields:
+typedef union packed {
+        %for field, name in obj._pt_fields.items():
             %if isinstance(field, Scalar):
-<%              sign_sfx = " signed" if field._pt_signed else "" %>\
-    logic${sign_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${field._pt_name()};
+                %if field._PT_ATTACHED_TO:
+<%                  refers_to = field._PT_ATTACHED_TO._pt_lookup(type(field)) %>\
+    ${refers_to | tc.snake_case}_t ${name | tc.snake_case};
+                %else:
+<%                  sign_sfx = " signed" if field._pt_signed else "" %>\
+    logic${sign_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${name | tc.snake_case};
+                %endif
             %elif isinstance(field, Enum | Struct | Alias | Union):
 <%              array_sfx = f" [{field._pt_count-1}:0]" if isinstance(field, Array) else "" %>\
-    ${field._PT_ATTACHED_TO._pt_name() | tc.snake_case}_t${array_sfx} ${field._pt_name() | tc.snake_case};
+    ${field._pt_name() | tc.snake_case}_t${array_sfx} ${name | tc.snake_case};
             %endif
         %endfor
-    %endif
 } ${obj._pt_name() | tc.snake_case}_t;
+    %endif
 
 %endfor
 
-endpackage : ${pkg._pt_name | tc.snake_case}
+endpackage : ${pkg._pt_name() | tc.snake_case}
 
 /* verilator lint_on UNUSEDPARAM */
