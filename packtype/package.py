@@ -34,7 +34,7 @@ class Package(Base):
     def __init__(self, parent: Base | None = None) -> None:
         super().__init__(parent)
         self._pt_fields = {}
-        for fname, ftype, fval in self._pt_definitions:
+        for fname, ftype, fval in self._pt_definitions():
             if issubclass(ftype, Constant):
                 finst = ftype(default=fval)
                 setattr(self, fname, finst)

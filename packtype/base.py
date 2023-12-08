@@ -47,13 +47,17 @@ class Base(metaclass=MetaBase):
         self._pt_parent = parent
 
     @classmethod
+    def _pt_construct(cls, **_kwds):
+        del _kwds
+
+    @classmethod
     def _pt_name(cls):
         return cls.__name__
 
-    @property
-    def _pt_definitions(self) -> list[str, Any]:
+    @classmethod
+    def _pt_definitions(cls) -> list[str, Any]:
         yield from (
-            (x.name, x.type, x.default) for x in dataclasses.fields(self._PT_DEF)
+            (x.name, x.type, x.default) for x in dataclasses.fields(cls._PT_DEF)
         )
 
     def _pt_updated(self, *path: "Base"):

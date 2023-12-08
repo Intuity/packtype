@@ -69,9 +69,9 @@ typedef ${obj._PT_ALIAS._pt_name() | tc.snake_case}_t ${name | tc.snake_case}_t;
 // ${name}
 typedef enum logic [${width(obj)}:0] {
 <%  sep = " " %>\
-    %for field, fname in obj._pt_fields.items():
+    %for field, fname in obj._PT_LOOKUP.items():
 <%
-        prefix = tc.snake_case(obj._pt_prefix).upper()
+        prefix = tc.snake_case(obj._PT_PREFIX).upper()
         prefix += ["", "_"][len(prefix) > 0]
 %>\
     ${sep} ${prefix}${tc.snake_case(fname).upper()} = 'd${field.value}

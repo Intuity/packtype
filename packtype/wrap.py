@@ -134,6 +134,8 @@ def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
             # Reattach functions
             for fname in cls_funcs:
                 setattr(imposter, fname, getattr(cls, fname))
+            # Imposter construction
+            imposter._pt_construct(**attrs)
             # If this is a 'shared' object then the imposter is replaced by an
             # instance rather than the definition
             if base._PT_SHARED:
