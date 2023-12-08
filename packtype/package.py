@@ -117,7 +117,11 @@ class Package(Base):
 
     @property
     def _pt_aliases(self) -> Iterable[Alias]:
-        return ((y, x) for x, y in self._pt_fields.items() if inspect.isclass(x) and issubclass(x, Alias))
+        return (
+            (y, x)
+            for x, y in self._pt_fields.items()
+            if inspect.isclass(x) and issubclass(x, Alias)
+        )
 
     @property
     def _pt_enums(self) -> Iterable[Enum]:
