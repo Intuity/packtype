@@ -33,7 +33,6 @@ from .templates.common import snake_case
 from .union import Union
 from .wrap import Registry
 
-
 # Setup logging
 logging.basicConfig(
     level="NOTSET", format="%(message)s", datefmt="[%X]", handlers=[RichHandler()]
@@ -50,23 +49,25 @@ tmpl_list = {
     "sv": ("package.sv.mako", ".sv"),
 }
 
+
 # Handle CLI
 @click.command()
-@click.option("--render", "-r", type=str, multiple=True,        help="Language to render")
-@click.option("--debug",        flag_value=True, default=False, help="Enable debug messages")
-@click.option("--only",         type=str, multiple=True,        help="Packages to render")
-@click.argument("spec",   type=click.Path(exists=True, dir_okay=False))
+@click.option("--render", "-r", type=str, multiple=True, help="Language to render")
+@click.option("--debug", flag_value=True, default=False, help="Enable debug messages")
+@click.option("--only", type=str, multiple=True, help="Packages to render")
+@click.argument("spec", type=click.Path(exists=True, dir_okay=False))
 @click.argument("outdir", type=click.Path(file_okay=False), default=".")
 def main(render: list[str], debug: bool, only: list[str], spec: str, outdir: str):
-    """ Renders packtype definitions into different forms """
+    """Renders packtype definitions into different forms"""
     # Set log verbosity
-    if debug: log.setLevel(logging.DEBUG)
+    if debug:
+        log.setLevel(logging.DEBUG)
     # Check render requests
     render = {x.lower() for x in render}
     unknown = render.difference(tmpl_list.keys())
     assert not unknown, f"No template registered to render {', '.join(render)}"
     # Convert spec and outdir to pathlib objects
-    spec   = Path(spec)
+    spec = Path(spec)
     outdir = Path(outdir)
     log.debug(f"Using specification   : {spec.absolute()}")
     log.debug(f"Using output directory: {outdir.absolute()}")
@@ -86,19 +87,21 @@ def main(render: list[str], debug: bool, only: list[str], spec: str, outdir: str
     tmpl_dir = Path(__file__).absolute().parent / "templates"
     lookup = TemplateLookup(
         directories=[tmpl_dir],
-        imports    =[
+        imports=[
             "from datetime import datetime",
             "import math",
             "import re",
             "import packtype.templates.common as tc",
         ],
     )
-    context = { "Alias": Alias,
-                "Array": Array,
-                "Enum": Enum,
-                "Scalar": Scalar,
-                "Struct": Struct,
-                "Union": Union }
+    context = {
+        "Alias": Alias,
+        "Array": Array,
+        "Enum": Enum,
+        "Scalar": Scalar,
+        "Struct": Struct,
+        "Union": Union,
+    }
     # Iterate packages to render
     for pkg in pkgs:
         pkg_name = type(pkg).__name__
@@ -109,17 +112,14 @@ def main(render: list[str], debug: bool, only: list[str], spec: str, outdir: str
             log.debug(f"Rendering {pkg_name} as {lang} to {out_path}")
             with out_path.open("w", encoding="utf-8") as fh:
                 try:
-                    fh.write(lookup.get_template(tmpl_name).render(
-                        pkg=pkg,
-                        **context
-                    ))
+                    fh.write(lookup.get_template(tmpl_name).render(pkg=pkg, **context))
                 except:
                     log.error(exceptions.text_error_template().render())
                     raise
 
 
 # Catch invocation
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     try:
         main(prog_name="packtype")
     except AssertionError as e:

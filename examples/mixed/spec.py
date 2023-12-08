@@ -15,54 +15,67 @@
 import packtype
 from packtype import Constant, Enum, Scalar
 
+
 @packtype.package()
 class MyPackage:
-    """ My package of constants, enumerations, and data structures """
+    """My package of constants, enumerations, and data structures"""
+
     # Sizing
-    GRID_WIDTH : Constant("Number of cells wide") = 9
-    GRID_DEPTH : Constant("Number of cells deep") = 7
+    GRID_WIDTH: Constant("Number of cells wide") = 9
+    GRID_DEPTH: Constant("Number of cells deep") = 7
     # Identity
-    HW_IDENTIFIER : Constant("Identifier for the device"   ) = 0x4D594857 # MYHW
-    HW_MAJOR_VERS : Constant("Major revision of the device") = 3
-    HW_MINOR_VERS : Constant("Major revision of the device") = 1
+    HW_IDENTIFIER: Constant("Identifier for the device") = 0x4D594857  # MYHW
+    HW_MAJOR_VERS: Constant("Major revision of the device") = 3
+    HW_MINOR_VERS: Constant("Major revision of the device") = 1
+
 
 @packtype.enum(package=MyPackage, mode=Enum.ONEHOT)
 class DecoderState:
-    """ Gray-coded states of the decoder FSM """
-    DISABLED : Constant("FSM disabled"        )
-    IDLE     : Constant("Waiting for stimulus")
-    HEADER   : Constant("Header received"     )
-    PAYLOAD  : Constant("Payload received"    )
+    """Gray-coded states of the decoder FSM"""
+
+    DISABLED: Constant("FSM disabled")
+    IDLE: Constant("Waiting for stimulus")
+    HEADER: Constant("Header received")
+    PAYLOAD: Constant("Payload received")
+
 
 @packtype.enum(package=MyPackage, width=12)
 class MessageType:
-    """ Different message types with explicit values """
-    PINGPONG : Constant("Ping-pong keepalive"    ) = 0x123
-    SHUTDOWN : Constant("Request system shutdown") = 0x439
-    POWERUP  : Constant("Request system power-up") = 0x752
+    """Different message types with explicit values"""
+
+    PINGPONG: Constant("Ping-pong keepalive") = 0x123
+    SHUTDOWN: Constant("Request system shutdown") = 0x439
+    POWERUP: Constant("Request system power-up") = 0x752
+
 
 @packtype.struct(package=MyPackage, width=32)
 class MessageHeader:
-    target_id : Scalar(width=8, desc="Target node for the message")
-    msg_type  : MessageType(desc="Encoded message type")
+    target_id: Scalar(width=8, desc="Target node for the message")
+    msg_type: MessageType(desc="Encoded message type")
+
 
 @packtype.struct(package=MyPackage)
 class PingPongPayload:
-    """ Payload of a ping-pong keepalive message """
-    source_id  : Scalar(width= 8, desc="Node that sent the message")
-    is_pong    : Scalar(width= 1, desc="Is this a ping or a pong")
-    ping_value : Scalar(width=15, desc="Value to include in the response")
-    timestamp  : Scalar(width= 8, desc="Timestamp message was sent")
+    """Payload of a ping-pong keepalive message"""
+
+    source_id: Scalar(width=8, desc="Node that sent the message")
+    is_pong: Scalar(width=1, desc="Is this a ping or a pong")
+    ping_value: Scalar(width=15, desc="Value to include in the response")
+    timestamp: Scalar(width=8, desc="Timestamp message was sent")
+
 
 @packtype.struct(package=MyPackage)
 class PingPongMessage:
-    """ Full message including header and payload """
-    header  : MessageHeader(desc="Header of the message")
-    payload : PingPongPayload(desc="Payload of the message")
+    """Full message including header and payload"""
+
+    header: MessageHeader(desc="Header of the message")
+    payload: PingPongPayload(desc="Payload of the message")
+
 
 @packtype.union(package=MyPackage)
 class MessageBus:
-    """ Union of the different message phases of the bus """
-    raw       : Scalar(desc="Raw bus value", width=32)
-    header    : MessageHeader(desc="Header phase")
-    ping_pong : PingPongPayload(desc="Payload of the ping-pong request")
+    """Union of the different message phases of the bus"""
+
+    raw: Scalar(desc="Raw bus value", width=32)
+    header: MessageHeader(desc="Header phase")
+    ping_pong: PingPongPayload(desc="Payload of the ping-pong request")

@@ -16,6 +16,7 @@ import packtype
 from packtype import Alias, Scalar
 
 from ..fixtures import reset_registry
+
 assert reset_registry
 
 

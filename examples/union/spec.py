@@ -16,40 +16,46 @@ from packtype import scalar
 import packtype
 from packtype import Constant, Scalar
 
+
 @packtype.package()
 class Encodings:
     pass
 
+
 @packtype.enum(package=Encodings)
 class Operation:
-    ADD : Constant("Add two numbers")
-    SUB : Constant("Subtract two numbers")
-    MUL : Constant("Multiply two numbers")
-    DIV : Constant("Divide two numbers")
+    ADD: Constant("Add two numbers")
+    SUB: Constant("Subtract two numbers")
+    MUL: Constant("Multiply two numbers")
+    DIV: Constant("Divide two numbers")
+
 
 @packtype.struct(width=32, package=Encodings)
 class Add:
-    op    : Operation(desc="Operation to perform")
-    tgt   : Scalar(width=5, desc="Target register")
-    src_a : Scalar(width=5, desc="Input register A")
-    src_b : Scalar(width=5, desc="Input register B")
+    op: Operation(desc="Operation to perform")
+    tgt: Scalar(width=5, desc="Target register")
+    src_a: Scalar(width=5, desc="Input register A")
+    src_b: Scalar(width=5, desc="Input register B")
+
 
 @packtype.struct(width=32, package=Encodings)
 class AddImm:
-    op  : Operation(desc="Operation to perform")
-    tgt : Scalar(width=5, desc="Target register")
-    src : Scalar(width=5, desc="Input register A")
-    imm : Scalar(width=20, desc="Immediate value")
+    op: Operation(desc="Operation to perform")
+    tgt: Scalar(width=5, desc="Target register")
+    src: Scalar(width=5, desc="Input register A")
+    imm: Scalar(width=20, desc="Immediate value")
+
 
 @packtype.struct(width=32, package=Encodings)
 class Sub:
-    op    : Operation(desc="Operation to perform")
-    tgt   : Scalar(width=5, desc="Target register")
-    src_a : Scalar(width=5, desc="Input register A")
-    src_b : Scalar(width=5, desc="Input register B")
+    op: Operation(desc="Operation to perform")
+    tgt: Scalar(width=5, desc="Target register")
+    src_a: Scalar(width=5, desc="Input register A")
+    src_b: Scalar(width=5, desc="Input register B")
+
 
 @packtype.union(package=Encodings)
 class Instruction:
-    raw     : Scalar(width=32, desc="Raw instruction value")
-    add     : Add(desc="Add instruction")
-    add_imm : Add(desc="Add immediate instruction")
+    raw: Scalar(width=32, desc="Raw instruction value")
+    add: Add(desc="Add instruction")
+    add_imm: Add(desc="Add immediate instruction")

@@ -13,7 +13,8 @@
 # limitations under the License.
 
 import inspect
-from typing import Any, Iterable, Type
+from collections.abc import Iterable
+from typing import Any
 
 from .alias import Alias
 from .base import Base
@@ -46,31 +47,34 @@ class Package(Base):
     def __call__(self) -> "Package":
         return self
 
-    @classmethod
-    def enum(cls, **kwds):
+    def enum(self, **kwds):
         def _inner(ptcls: Any):
             enum = get_wrapper(Enum, frame_depth=2)(**kwds)(ptcls)
-            cls._PT_ATTACH.append(enum)
-            enum._PT_ATTACHED_TO = cls
+            type(self)._PT_ATTACH.append(enum)
+            enum._PT_ATTACHED_TO = self
+            setattr(self, enum.__name__, enum)
             return enum
+
         return _inner
 
-    @classmethod
-    def struct(cls, **kwds):
+    def struct(self, **kwds):
         def _inner(ptcls: Any):
             struct = get_wrapper(Struct, frame_depth=2)(**kwds)(ptcls)
-            cls._PT_ATTACH.append(struct)
-            struct._PT_ATTACHED_TO = cls
+            type(self)._PT_ATTACH.append(struct)
+            struct._PT_ATTACHED_TO = self
+            setattr(self, struct.__name__, struct)
             return struct
+
         return _inner
 
-    @classmethod
-    def union(cls, **kwds):
+    def union(self, **kwds):
         def _inner(ptcls: Any):
             union = get_wrapper(Union, frame_depth=2)(**kwds)(ptcls)
-            cls._PT_ATTACH.append(union)
-            union._PT_ATTACHED_TO = cls
+            type(self)._PT_ATTACH.append(union)
+            union._PT_ATTACHED_TO = self
+            setattr(self, union.__name__, union)
             return union
+
         return _inner
 
     @classmethod
@@ -79,8 +83,18 @@ class Package(Base):
         all_refs = cls._pt_references()
         # Exclude directly attached types
         foreign = all_refs.difference(set(cls._PT_ATTACH).union(cls._pt_field_types()))
-        # Exclude primitives (constants and scalars)
-        return {x for x in foreign if not issubclass(x, Primitive)}
+
+        # Exclude non-typedef primitives
+        def _is_a_type(obj: Any) -> bool:
+            # If it's not a primitive, immediately accept
+            if not issubclass(obj, Primitive):
+                return True
+            # If not attached to a different package, accept
+            return (
+                obj._PT_ATTACHED_TO is not None and type(obj._PT_ATTACHED_TO) is not cls
+            )
+
+        return set(filter(_is_a_type, foreign))
 
     @property
     def _pt_constants(self) -> Iterable[Constant]:
@@ -88,9 +102,11 @@ class Package(Base):
 
     @property
     def _pt_scalars(self) -> Iterable[Scalar]:
-        return ((y, x) for x, y in self._pt_fields.items() if (
-            inspect.isclass(x) and issubclass(x, Scalar)
-        ))
+        return (
+            (y, x)
+            for x, y in self._pt_fields.items()
+            if (inspect.isclass(x) and issubclass(x, Scalar))
+        )
 
     @property
     def _pt_aliases(self) -> Iterable[Alias]:
@@ -110,7 +126,9 @@ class Package(Base):
 
     @property
     def _pt_structs_and_unions(self) -> Iterable[Union]:
-        return ((x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Struct | Union))
+        return (
+            (x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Struct | Union)
+        )
 
-    def _pt_lookup(self, field: Type[Base] | Base) -> str:
+    def _pt_lookup(self, field: type[Base] | Base) -> str:
         return self._pt_fields[field]

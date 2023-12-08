@@ -16,34 +16,39 @@ import packtype
 from packtype import Constant
 from packtype.enum import Enum
 
+
 @packtype.package()
 class Types:
     pass
 
+
 @packtype.enum(package=Types, mode=Enum.INDEXED)
 class IndexedExplicit:
-    VALUE_A : Constant("First value" ) = 0
-    VALUE_B : Constant("Second value") = 1
-    VALUE_C : Constant("Third value" ) = 2
-    VALUE_D : Constant("Fourth value") = 3
+    VALUE_A: Constant("First value") = 0
+    VALUE_B: Constant("Second value") = 1
+    VALUE_C: Constant("Third value") = 2
+    VALUE_D: Constant("Fourth value") = 3
+
 
 @packtype.enum(package=Types, mode=Enum.INDEXED)
 class IndexedAutomatic:
-    VALUE_A : Constant("First value" )
-    VALUE_B : Constant("Second value")
-    VALUE_C : Constant("Third value" )
-    VALUE_D : Constant("Fourth value")
+    VALUE_A: Constant("First value")
+    VALUE_B: Constant("Second value")
+    VALUE_C: Constant("Third value")
+    VALUE_D: Constant("Fourth value")
+
 
 @packtype.enum(package=Types, mode=Enum.ONEHOT)
 class OneHot:
-    VALUE_A : Constant("First value" )
-    VALUE_B : Constant("Second value")
-    VALUE_C : Constant("Third value" )
-    VALUE_D : Constant("Fourth value")
+    VALUE_A: Constant("First value")
+    VALUE_B: Constant("Second value")
+    VALUE_C: Constant("Third value")
+    VALUE_D: Constant("Fourth value")
+
 
 @packtype.enum(package=Types, mode=Enum.GRAY)
 class GrayCode:
-    VALUE_A : Constant("First value" )
-    VALUE_B : Constant("Second value")
-    VALUE_C : Constant("Third value" )
-    VALUE_D : Constant("Fourth value")
+    VALUE_A: Constant("First value")
+    VALUE_B: Constant("Second value")
+    VALUE_C: Constant("Third value")
+    VALUE_D: Constant("Fourth value")

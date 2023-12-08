@@ -20,6 +20,7 @@ from packtype.primitive import PrimitiveValueError
 from packtype.wrap import BadAssignmentError, BadAttributeError
 
 from ..fixtures import reset_registry
+
 assert reset_registry
 
 
@@ -39,6 +40,10 @@ def test_struct():
     assert inst.ab._pt_width == 12
     assert inst.cd._pt_width == 3
     assert inst.ef._pt_width == 9
+
+    assert (inst._pt_lsb("ab"), inst._pt_msb("ab")) == (0, 11)
+    assert (inst._pt_lsb("cd"), inst._pt_msb("cd")) == (12, 14)
+    assert (inst._pt_lsb("ef"), inst._pt_msb("ef")) == (15, 23)
 
 
 def test_struct_packing():
@@ -193,12 +198,12 @@ def test_struct_nested():
 
 
 def test_struct_bad_assign():
-
     @packtype.package()
     class TestPkg:
         pass
 
     with pytest.raises(BadAssignmentError) as e:
+
         @TestPkg.struct()
         class TestStruct:
             ab: Scalar[12] = 123
@@ -207,14 +212,61 @@ def test_struct_bad_assign():
 
 
 def test_struct_bad_width():
-
     @packtype.package()
     class TestPkg:
         pass
 
     with pytest.raises(BadAttributeError) as e:
+
         @TestPkg.struct(width=-5)
         class TestStruct:
             ab: Scalar[12]
 
     assert str(e.value) == "Unsupported value '-5' for attribute 'width' for Struct"
+
+
+def test_struct_lookup():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.struct()
+    class TestStruct:
+        ab: Scalar[12]
+        cd: Scalar[3]
+        ef: Scalar[9]
+        gh: Scalar[9]
+
+    inst = TestStruct()
+    assert inst._pt_lookup(inst.ab) == "ab"
+    assert inst._pt_lookup(inst.cd) == "cd"
+    assert inst._pt_lookup(inst.ef) == "ef"
+    assert inst._pt_lookup(inst.gh) == "gh"
+
+
+def test_struct_fields_listing():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.struct()
+    class TestStruct:
+        ab: Scalar[12]
+        cd: Scalar[3]
+        ef: Scalar[9]
+
+    inst = TestStruct()
+
+    # LSB -> MSB
+    assert list(inst._pt_fields_lsb_asc) == [
+        (0, 11, ("ab", inst.ab)),
+        (12, 14, ("cd", inst.cd)),
+        (15, 23, ("ef", inst.ef)),
+    ]
+
+    # MSB -> LSB
+    assert list(inst._pt_fields_msb_desc) == [
+        (15, 23, ("ef", inst.ef)),
+        (12, 14, ("cd", inst.cd)),
+        (0, 11, ("ab", inst.ab)),
+    ]

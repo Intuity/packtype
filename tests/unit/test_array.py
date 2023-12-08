@@ -16,7 +16,9 @@ import packtype
 from packtype import Packing, Scalar
 
 from ..fixtures import reset_registry
+
 assert reset_registry
+
 
 def test_array():
     @packtype.package()
@@ -55,12 +57,8 @@ def test_array_pack():
     inst.cd[1] = 2
     inst.cd[2] = 3
     inst.ef = 53
-    assert inst._pt_pack() == (
-        (53 << 21) | (3 << 18) | (2 << 15) | (1 << 12) | 123
-    )
-    assert int(inst) == (
-        (53 << 21) | (3 << 18) | (2 << 15) | (1 << 12) | 123
-    )
+    assert inst._pt_pack() == ((53 << 21) | (3 << 18) | (2 << 15) | (1 << 12) | 123)
+    assert int(inst) == ((53 << 21) | (3 << 18) | (2 << 15) | (1 << 12) | 123)
 
 
 def test_array_pack_from_msb():
@@ -80,12 +78,8 @@ def test_array_pack_from_msb():
     inst.cd[1] = 2
     inst.cd[2] = 3
     inst.ef = 53
-    assert inst._pt_pack() == (
-        (123 << 18) | (1 << 15) | (2 << 12) | (3 << 9) | 53
-    )
-    assert int(inst) == (
-        (123 << 18) | (1 << 15) | (2 << 12) | (3 << 9) | 53
-    )
+    assert inst._pt_pack() == ((123 << 18) | (1 << 15) | (2 << 12) | (3 << 9) | 53)
+    assert int(inst) == ((123 << 18) | (1 << 15) | (2 << 12) | (3 << 9) | 53)
 
 
 def test_array_unpack():
@@ -99,9 +93,7 @@ def test_array_unpack():
         cd: 3 * Scalar[3]
         ef: Scalar[9]
 
-    inst = TestStruct._pt_unpack(
-        (53 << 21) | (3 << 18) | (2 << 15) | (1 << 12) | 123
-    )
+    inst = TestStruct._pt_unpack((53 << 21) | (3 << 18) | (2 << 15) | (1 << 12) | 123)
     assert int(inst.ab) == 123
     assert int(inst.cd[0]) == 1
     assert int(inst.cd[1]) == 2
@@ -120,9 +112,7 @@ def test_array_unpack_from_msb():
         cd: 3 * Scalar[3]
         ef: Scalar[9]
 
-    inst = TestStruct._pt_unpack(
-        (123 << 18) | (1 << 15) | (2 << 12) | (3 << 9) | 53
-    )
+    inst = TestStruct._pt_unpack((123 << 18) | (1 << 15) | (2 << 12) | (3 << 9) | 53)
     assert int(inst.ab) == 123
     assert int(inst.cd[0]) == 1
     assert int(inst.cd[1]) == 2

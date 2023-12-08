@@ -18,6 +18,7 @@ from packtype import Scalar
 from packtype.union import UnionError
 
 from ..fixtures import reset_registry
+
 assert reset_registry
 
 
@@ -135,8 +136,7 @@ def test_union_bad_widths():
         TestUnion()
 
     assert str(e.value) == (
-        "Union member b has a width of 11 that differs from the expected width "
-        "of 12"
+        "Union member b has a width of 11 that differs from the expected width " "of 12"
     )
 
 

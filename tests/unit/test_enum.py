@@ -18,6 +18,7 @@ from packtype import Constant, EnumMode
 from packtype.enum import EnumError
 
 from ..fixtures import reset_registry
+
 assert reset_registry
 
 
@@ -204,3 +205,17 @@ def test_enum_bad_oversized():
     assert str(e.value) == (
         "Enum entry E has value 4 that cannot be encoded in a bit width of 2"
     )
+
+
+def test_enum_prefix():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.enum(prefix="BLAH")
+    class TestEnum:
+        A: Constant
+        B: Constant
+        C: Constant
+
+    assert TestEnum()._pt_prefix == "BLAH"

@@ -17,14 +17,42 @@ from pathlib import Path
 from click.testing import CliRunner
 from packtype.__main__ import main
 
+resources = Path(__file__).parent.absolute() / "resources"
+
 
 def test_sv(tmp_path):
-    resources = Path(__file__).parent.absolute() / "resources"
     # Wrap around the CLI
-    result = CliRunner().invoke(main, [
-        "--render", "sv",
-        "--debug",
-        (resources / "test_pkg.py").as_posix(),
-        tmp_path.as_posix(),
-    ], catch_exceptions=False)
+    result = CliRunner().invoke(
+        main,
+        [
+            "--render",
+            "sv",
+            "--debug",
+            (resources / "test_pkg.py").as_posix(),
+            tmp_path.as_posix(),
+        ],
+        catch_exceptions=False,
+    )
     assert result.exit_code == 0
+    assert (tmp_path / "other_pkg.sv").exists()
+    assert (tmp_path / "test_pkg.sv").exists()
+
+
+def test_sv_only(tmp_path):
+    # Wrap around the CLI
+    result = CliRunner().invoke(
+        main,
+        [
+            "--render",
+            "sv",
+            "--debug",
+            (resources / "test_pkg.py").as_posix(),
+            tmp_path.as_posix(),
+            "--only",
+            "TestPkg",
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
+    assert not (tmp_path / "other_pkg.sv").exists()
+    assert (tmp_path / "test_pkg.sv").exists()

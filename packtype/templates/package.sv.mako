@@ -38,7 +38,7 @@ import ${foreign._PT_ATTACHED_TO._pt_name() | tc.snake_case}::${foreign._pt_name
 
 %for name, obj in pkg._pt_constants:
 // ${name.upper()}
-localparam ${name.upper()} = 'h${f"{obj.value:08X}"};
+localparam ${name | tc.shouty_snake_case} = 'h${f"{obj.value:08X}"};
 %endfor
 
 // =============================================================================

@@ -35,19 +35,18 @@ class MetaPrimitive(MetaBase):
         #       typedefs on a package)
         uid = MetaPrimitive.UNIQUE_ID[width, signed]
         MetaPrimitive.UNIQUE_ID[width, signed] += 1
-        return type(prim.__name__ + f"_{width}_{['U','S'][signed]}{uid}",
-                    (prim, ),
-                    {"_PT_WIDTH": width,
-                     "_PT_SIGNED": signed})
+        return type(
+            prim.__name__ + f"_{width}_{['U','S'][signed]}{uid}",
+            (prim,),
+            {"_PT_WIDTH": width, "_PT_SIGNED": signed},
+        )
 
 
 class Primitive(Base, metaclass=MetaPrimitive):
-    _PT_WIDTH : int = -1
-    _PT_SIGNED : bool = False
+    _PT_WIDTH: int = -1
+    _PT_SIGNED: bool = False
 
-    def __init__(self,
-                 parent: Base | None = None,
-                 default: int | None = None) -> None:
+    def __init__(self, parent: Base | None = None, default: int | None = None) -> None:
         super().__init__(parent)
         if type(self)._PT_ALLOW_DEFAULT:
             self.__value = default
@@ -64,7 +63,7 @@ class Primitive(Base, metaclass=MetaPrimitive):
 
     @property
     def _pt_mask(self) -> int:
-        return ((1 << type(self)._PT_WIDTH) - 1)
+        return (1 << type(self)._PT_WIDTH) - 1
 
     @property
     def value(self) -> int:

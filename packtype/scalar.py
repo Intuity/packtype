@@ -20,6 +20,5 @@ class ScalarInitialError(Exception):
 
 
 class Scalar(Primitive):
-
     def __int__(self) -> int:
         return self.value

@@ -21,7 +21,6 @@ class UnionError(Exception):
 
 
 class Union(Assembly):
-
     def __init__(self, parent: Base | None = None) -> None:
         self._pt_updating = True
         super().__init__(parent)
@@ -37,7 +36,7 @@ class Union(Assembly):
 
     @property
     def _pt_mask(self) -> int:
-        return ((1 << self._pt_width) - 1)
+        return (1 << self._pt_width) - 1
 
     def __int__(self) -> int:
         return self._pt_pack()
@@ -48,8 +47,7 @@ class Union(Assembly):
             raise UnionError(
                 f"Multiple member values were discovered when packing a "
                 f"{type(self).__name__} union - expected a value of "
-                f"0x{self._pt_raw:X} but saw " +
-                ", ".join(f"0x{x:X}" for x in values)
+                f"0x{self._pt_raw:X} but saw " + ", ".join(f"0x{x:X}" for x in values)
             )
         return self._pt_raw
 

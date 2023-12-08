@@ -31,6 +31,7 @@ class Access:
 @packtype.package()
 class TestPkg:
     """Testing a complete package definition"""
+
     # Constants
     DATA_W: Constant = 32
     ADDR_W: Constant = 16

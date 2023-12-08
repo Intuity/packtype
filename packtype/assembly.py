@@ -14,7 +14,7 @@
 
 import functools
 from enum import Enum, auto
-from typing import Any, Type
+from typing import Any
 
 from .array import Array, ArraySpec
 from .base import Base
@@ -31,7 +31,6 @@ class WidthError(Exception):
 
 
 class Assembly(Base):
-
     def __init__(self, parent: Base | None = None) -> None:
         super().__init__(parent)
         self._pt_fields = {}
@@ -54,7 +53,7 @@ class Assembly(Base):
         else:
             return super().__setattr__(name, value)
 
-    def _pt_lookup(self, field: Type[Base] | Base) -> str:
+    def _pt_lookup(self, field: type[Base] | Base) -> str:
         return self._pt_fields[field]
 
 
@@ -84,10 +83,10 @@ class PackedAssembly(Assembly):
             for finst, fname in self._pt_fields.items():
                 if isinstance(finst, Array):
                     for idx, entry in enumerate(finst):
-                        self._pt_ranges[fname, idx] = (lsb, lsb+entry._pt_width-1)
+                        self._pt_ranges[fname, idx] = (lsb, lsb + entry._pt_width - 1)
                         lsb += entry._pt_width
                 else:
-                    self._pt_ranges[fname] = (lsb, lsb+finst._pt_width-1)
+                    self._pt_ranges[fname] = (lsb, lsb + finst._pt_width - 1)
                     lsb += finst._pt_width
         # Place fields MSB -> LSB
         else:
@@ -95,14 +94,14 @@ class PackedAssembly(Assembly):
             for finst, fname in self._pt_fields.items():
                 if isinstance(finst, Array):
                     for idx, entry in enumerate(finst):
-                        self._pt_ranges[fname, idx] = (msb-entry._pt_width+1, msb)
+                        self._pt_ranges[fname, idx] = (msb - entry._pt_width + 1, msb)
                         msb -= entry._pt_width
                 else:
-                    self._pt_ranges[fname] = (msb-finst._pt_width+1, msb)
+                    self._pt_ranges[fname] = (msb - finst._pt_width + 1, msb)
                     msb -= finst._pt_width
 
     @property
-    @functools.cache # noqa: B019
+    @functools.cache  # noqa: B019
     def _pt_field_width(self) -> None:
         total_width = 0
         for field in self._pt_fields.keys():
@@ -145,8 +144,8 @@ class PackedAssembly(Assembly):
         for finst, fname in self._pt_fields.items():
             if isinstance(finst, Array):
                 for idx, entry in enumerate(finst):
-                    packed |= (
-                        (int(entry) & entry._pt_mask) << self._pt_lsb((fname, idx))
+                    packed |= (int(entry) & entry._pt_mask) << self._pt_lsb(
+                        (fname, idx)
                     )
             else:
                 packed |= (int(finst) & finst._pt_mask) << self._pt_lsb(fname)

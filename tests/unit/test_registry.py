@@ -17,23 +17,28 @@ from packtype import Package
 from packtype.wrap import Registry
 
 from ..fixtures import reset_registry
+
 assert reset_registry
 
 
 def test_registry():
     # Check that registry is empty
     assert len(list(Registry.query(Package))) == 0
+
     # Create a package
     @packtype.package()
     class PkgA:
         pass
+
     # Check that registry has one entry
     assert len(list(Registry.query(Package))) == 1
     assert list(Registry.query(Package))[0] is PkgA
+
     # Create a second package
     @packtype.package()
     class PkgB:
         pass
+
     # Check that registry has one entry
     assert len(list(Registry.query(Package))) == 2
     assert list(Registry.query(Package))[0] is PkgA

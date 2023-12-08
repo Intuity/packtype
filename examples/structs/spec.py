@@ -15,23 +15,27 @@
 import packtype
 from packtype import Scalar, Struct
 
+
 @packtype.package()
 class Calendar:
     pass
 
+
 @packtype.struct(package=Calendar)
 class Date:
-    day   : Scalar(width= 5, desc="Day of month 1-31" )
-    month : Scalar(width= 4, desc="Month of year 1-12")
-    year  : Scalar(width=12, desc="Year e.g. 2021"    )
+    day: Scalar(width=5, desc="Day of month 1-31")
+    month: Scalar(width=4, desc="Month of year 1-12")
+    year: Scalar(width=12, desc="Year e.g. 2021")
+
 
 @packtype.struct(package=Calendar, pack=Struct.FROM_MSB, width=17)
 class Time:
-    hour   : Scalar(width=5, desc="Hour of day 0-23"     )
-    minute : Scalar(width=6, desc="Minute of hour 0-59"  )
-    second : Scalar(width=6, desc="Second of minute 0-59")
+    hour: Scalar(width=5, desc="Hour of day 0-23")
+    minute: Scalar(width=6, desc="Minute of hour 0-59")
+    second: Scalar(width=6, desc="Second of minute 0-59")
+
 
 @packtype.struct(package=Calendar)
 class DateTime:
-    date : Date(desc="Full date"        )
-    time : Time(desc="Full 24 hour time")
+    date: Date(desc="Full date")
+    time: Time(desc="Full 24 hour time")

@@ -28,9 +28,9 @@ class MetaAlias(MetaBase):
     @functools.lru_cache
     @staticmethod
     def get_variant(alias: "Alias", to_alias: Base):
-        return type(alias.__name__ + f"_{to_alias.__name__}",
-                    (alias, ),
-                    {"_PT_ALIAS": to_alias})
+        return type(
+            alias.__name__ + f"_{to_alias.__name__}", (alias,), {"_PT_ALIAS": to_alias}
+        )
 
 
 class Alias(Base, metaclass=MetaAlias):

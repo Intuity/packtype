@@ -16,6 +16,7 @@ import pytest
 
 from packtype.wrap import Registry
 
+
 @pytest.fixture(autouse=True)
 def reset_registry():
     """Reset the contents of the registry before every test"""

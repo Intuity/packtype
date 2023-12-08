@@ -16,7 +16,8 @@ import dataclasses
 import functools
 import inspect
 from collections import defaultdict
-from typing import Any, Callable, Type
+from collections.abc import Callable
+from typing import Any
 
 from .array import ArraySpec
 from .assembly import Base
@@ -26,29 +27,34 @@ from .primitive import Primitive
 class MissingAnnotationError(Exception):
     pass
 
+
 class BadFieldTypeError(Exception):
     pass
+
 
 class BadAssignmentError(Exception):
     pass
 
+
 class BadAttributeError(Exception):
     pass
 
+
 class Registry:
-    ENTRIES: dict[Type[Base], list[Type[Base] | Base]] = defaultdict(list)
+    ENTRIES: dict[type[Base], list[type[Base] | Base]] = defaultdict(list)
 
     @classmethod
-    def register(cls, root: Type[Base], item: Base) -> None:
+    def register(cls, root: type[Base], item: Base) -> None:
         cls.ENTRIES[root].append(item)
 
     @classmethod
-    def query(cls, root: Type[Base]) -> Base:
+    def query(cls, root: type[Base]) -> Base:
         yield from cls.ENTRIES[root]
 
     @classmethod
     def reset(cls) -> None:
         cls.ENTRIES.clear()
+
 
 @functools.cache
 def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
@@ -57,9 +63,9 @@ def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
             # Work out the fields defined within the class
             cls_fields = set(dir(cls)).difference(dir(object))
             # Filter out any dunder entries
-            cls_fields = { x for x in cls_fields if not x.startswith("__") }
+            cls_fields = {x for x in cls_fields if not x.startswith("__")}
             # Filter out any functions
-            cls_funcs = { x for x in cls_fields if callable(getattr(cls, x)) }
+            cls_funcs = {x for x in cls_fields if callable(getattr(cls, x))}
             cls_fields = cls_fields.difference(cls_funcs)
             # Process class with dataclass
             dc = dataclasses.dataclass(init=False)(cls)
@@ -73,9 +79,8 @@ def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
                 if isinstance(base_type, ArraySpec):
                     base_type = base_type.base
                 # Check for acceptable base type
-                if (
-                    not isinstance(base_type, Primitive) and
-                    not issubclass(base_type, Base | Primitive)
+                if not isinstance(base_type, Primitive) and not issubclass(
+                    base_type, Base | Primitive
                 ):
                     raise BadFieldTypeError(
                         f"{cls.__name__}.{fname} is of an unsupported type "
@@ -98,9 +103,8 @@ def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
                         f"Unsupported attribute '{key}' for {base.__name__}"
                     )
                 _, accepted = base._PT_ATTRIBUTES[key]
-                if (
-                    (callable(accepted) and not accepted(value)) or
-                    (isinstance(accepted, tuple) and value not in accepted)
+                if (callable(accepted) and not accepted(value)) or (
+                    isinstance(accepted, tuple) and value not in accepted
                 ):
                     raise BadAttributeError(
                         f"Unsupported value '{value}' for attribute '{key}' "
@@ -118,14 +122,14 @@ def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
             # Create imposter class
             imposter = type(
                 cls.__name__,
-                (base, ),
+                (base,),
                 {
                     "__doc__": cls.__doc__,
                     "_PT_DEF": dc,
                     "_PT_ATTACH": [],
                     "_PT_ATTRIBUTES": attrs,
                     "_PT_SOURCE": (frame.f_code.co_filename, frame.f_lineno),
-                }
+                },
             )
             # Reattach functions
             for fname in cls_funcs:
@@ -138,5 +142,7 @@ def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
             Registry.register(base, imposter)
             # Return the imposter as a substitute
             return imposter
+
         return _inner
+
     return _wrapper

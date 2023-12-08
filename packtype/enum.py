@@ -63,11 +63,11 @@ class Enum(Assembly):
                         f"Enum entry {fname} has value {fval.value} that is not "
                         f"one-hot"
                     )
-                next_val = (fval.value << 1)
+                next_val = fval.value << 1
         # Gray code
         elif self._pt_mode is EnumMode.GRAY:
             for idx, (fval, fname) in enumerate(self._pt_fields.items()):
-                gray_val = (idx ^ (idx >> 1))
+                gray_val = idx ^ (idx >> 1)
                 if fval.value is None:
                     fval.value = gray_val
                 elif fval.value != gray_val:
@@ -77,9 +77,9 @@ class Enum(Assembly):
                     )
         # Determine width
         if self._pt_width < 0:
-            self._pt_width = int(math.ceil(math.log2(
-                max(x.value for x in self._pt_fields.keys())+1)
-            ))
+            self._pt_width = int(
+                math.ceil(math.log2(max(x.value for x in self._pt_fields.keys()) + 1))
+            )
         # Final checks
         used = []
         max_val = (1 << self._pt_width) - 1
