@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from collections import defaultdict
+from typing import Any
 try:
     from typing import Self
 except ImportError:
@@ -28,9 +29,13 @@ class PrimitiveValueError(Exception):
 class MetaPrimitive(MetaBase):
     UNIQUE_ID: dict[tuple[int, bool], int] = defaultdict(lambda: 0)
 
-    def __getitem__(self, width: int, signed: bool = False):
-        width = int(width)
-        return MetaPrimitive.get_variant(self, width, signed)
+    def __getitem__(self, key: int | tuple[int, bool]):
+        if isinstance(key, tuple):
+            width, signed, *_ = key
+        else:
+            width = key
+            signed = False
+        return MetaPrimitive.get_variant(self, int(width), signed)
 
     @staticmethod
     def get_variant(prim: Self, width: int, signed: bool):
