@@ -129,6 +129,7 @@ def test_enum_bad_one_hot():
         pass
 
     with pytest.raises(EnumError) as e:
+
         @TestPkg.enum(mode=EnumMode.ONE_HOT)
         class TestEnum:
             A: Constant = 1
@@ -144,6 +145,7 @@ def test_enum_bad_gray():
         pass
 
     with pytest.raises(EnumError) as e:
+
         @TestPkg.enum(mode=EnumMode.GRAY)
         class TestEnum:
             A: Constant = 0
@@ -163,6 +165,7 @@ def test_enum_bad_repeated():
         pass
 
     with pytest.raises(EnumError) as e:
+
         @TestPkg.enum(mode=EnumMode.INDEXED)
         class TestEnum:
             A: Constant = 0
@@ -181,6 +184,7 @@ def test_enum_bad_oversized():
         pass
 
     with pytest.raises(EnumError) as e:
+
         @TestPkg.enum(mode=EnumMode.INDEXED, width=2)
         class TestEnum:
             A: Constant

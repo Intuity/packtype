@@ -49,7 +49,11 @@ class Assembly(Base):
             self._pt_fields[finst] = fname
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if not name.startswith("_") and hasattr(self, name) and isinstance(obj := getattr(self, name), Base):
+        if (
+            not name.startswith("_")
+            and hasattr(self, name)
+            and isinstance(obj := getattr(self, name), Base)
+        ):
             obj._pt_set(value)
         else:
             return super().__setattr__(name, value)
@@ -91,7 +95,7 @@ class PackedAssembly(Assembly):
                     lsb += finst._pt_width
             # Insert padding
             if lsb < self._pt_width:
-                padding = Scalar[self._pt_width-lsb]()
+                padding = Scalar[self._pt_width - lsb]()
                 self._pt_fields[padding] = "_padding"
                 self._pt_ranges["_padding"] = (lsb, self._pt_width - 1)
         # Place fields MSB -> LSB
@@ -107,7 +111,7 @@ class PackedAssembly(Assembly):
                     msb -= finst._pt_width
             # Insert padding
             if msb >= 0:
-                padding = Scalar[msb+1]()
+                padding = Scalar[msb + 1]()
                 self._pt_fields[padding] = "_padding"
                 self._pt_ranges["_padding"] = (0, msb)
 
@@ -183,12 +187,11 @@ class PackedAssembly(Assembly):
                 for idx, entry in enumerate(finst):
                     entry._pt_set(
                         (value >> self._pt_lsb((fname, idx))) & entry._pt_mask,
-                        force=True
+                        force=True,
                     )
             else:
                 finst._pt_set(
-                    (value >> self._pt_lsb(fname)) & finst._pt_mask,
-                    force=True
+                    (value >> self._pt_lsb(fname)) & finst._pt_mask, force=True
                 )
         if not force:
             self._pt_updated(self)

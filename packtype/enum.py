@@ -73,8 +73,7 @@ class Enum(Base):
                     fval = next_val
                 if (math.log2(fval) % 1) != 0:
                     raise EnumError(
-                        f"Enum entry {fname} has value {fval} that is not "
-                        f"one-hot"
+                        f"Enum entry {fname} has value {fval} that is not " f"one-hot"
                     )
                 next_val = fval << 1
                 assignments[fname] = fval
@@ -92,9 +91,7 @@ class Enum(Base):
                 assignments[fname] = fval
         # Determine width
         if cls._PT_WIDTH < 0:
-            cls._PT_WIDTH = int(
-                math.ceil(math.log2(max(assignments.values()) + 1))
-            )
+            cls._PT_WIDTH = int(math.ceil(math.log2(max(assignments.values()) + 1)))
         # Final checks
         used = []
         max_val = (1 << cls._PT_WIDTH) - 1
