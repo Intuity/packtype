@@ -76,9 +76,10 @@ class Base(metaclass=MetaBase):
         collect = set()
         for ftype in cls._pt_field_types():
             collect.update(ftype._pt_references())
-            collect.add(ftype)
+            collect.add(ftype.base if isinstance(ftype, ArraySpec) else ftype)
         # ...and through attached fields
         for field in cls._PT_ATTACH or []:
             collect.update(field._pt_references())
-            collect.add(field)
+            if not isinstance(field, ArraySpec):
+                collect.add(field)
         return collect

@@ -17,6 +17,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from .alias import Alias
+from .array import ArraySpec
 from .base import Base
 from .constant import Constant
 from .enum import Enum
@@ -83,11 +84,13 @@ class Package(Base):
         all_refs = cls._pt_references()
         # Exclude directly attached types
         foreign = all_refs.difference(set(cls._PT_ATTACH).union(cls._pt_field_types()))
-
         # Exclude non-typedef primitives
         def _is_a_type(obj: Any) -> bool:
+            # If this is an ArraySpec, refer to the encapsulated type
+            if isinstance(obj, ArraySpec):
+                obj = obj.base
             # If it's not a primitive, immediately accept
-            if not issubclass(obj, Primitive):
+            if inspect.isclass(obj) and not issubclass(obj, Primitive):
                 return True
             # If not attached to a different package, accept
             return (
