@@ -37,3 +37,6 @@ class Array:
 
     def __iter__(self) -> Iterable[Any]:
         yield from self._pt_entries
+
+    def __len__(self) -> int:
+        return len(self._pt_entries)

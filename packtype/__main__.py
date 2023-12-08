@@ -25,6 +25,7 @@ from rich.traceback import install
 
 from .alias import Alias
 from .array import Array
+from .assembly import Packing
 from .enum import Enum
 from .package import Package
 from .scalar import Scalar
@@ -98,6 +99,7 @@ def main(render: list[str], debug: bool, only: list[str], spec: str, outdir: str
         "Alias": Alias,
         "Array": Array,
         "Enum": Enum,
+        "Packing": Packing,
         "Scalar": Scalar,
         "Struct": Struct,
         "Union": Union,
