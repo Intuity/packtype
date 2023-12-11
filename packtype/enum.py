@@ -37,24 +37,30 @@ class Enum(Base):
     }
 
     _PT_MODE: EnumMode = EnumMode.INDEXED
-    _PT_WIDTH: int = 0
-    _PT_PREFIX: str | None = None
-    _PT_LOOKUP: dict = {}
+    _PT_WIDTH: int
+    _PT_PREFIX: str
+    _PT_LKP_INST: dict
+    _PT_LKP_VALUE: dict
 
-    def __init__(self, parent: Base | None = None, value: int = 0) -> None:
-        super().__init__(parent)
-        # Set initial value
+    def __init__(self, value: int = 0) -> None:
+        super().__init__()
         self._pt_set(value, force=True)
 
     @classmethod
-    def _pt_construct(cls, mode: EnumMode, width: int, prefix: str | None) -> None:
-        super()._pt_construct()
+    def _pt_construct(cls,
+                      parent: Base,
+                      mode: EnumMode,
+                      width: int,
+                      prefix: str | None,
+                      **kwds) -> None:
+        super()._pt_construct(parent)
         cls._PT_MODE = mode
         cls._PT_WIDTH = width
         cls._PT_PREFIX = prefix
         if cls._PT_PREFIX is None:
             cls._PT_PREFIX = cls._pt_name()
-        cls._PT_LOOKUP = {}
+        cls._PT_LKP_INST = {}
+        cls._PT_LKP_VALUE = {}
         # Assign values
         assignments = {}
         # Indexed
@@ -110,9 +116,10 @@ class Enum(Base):
                 )
             used.append(fval)
             # Create the enum instance
-            finst = cls(cls, fval)
+            finst = cls(fval)
             setattr(cls, fname, finst)
-            cls._PT_LOOKUP[finst] = fname
+            cls._PT_LKP_INST[finst] = fname
+            cls._PT_LKP_VALUE[fval] = finst
 
     @property
     def _pt_width(self) -> int:
@@ -131,9 +138,16 @@ class Enum(Base):
         self._pt_set(value)
 
     def _pt_set(self, value: int, force: bool = False) -> None:
-        _, self.__value = self._PT_LOOKUP.get(value, (None, int(value)))
+        _, self.__value = self._PT_LKP_INST.get(value, (None, int(value)))
         if not force:
             self._pt_updated()
 
     def __int__(self) -> int:
         return int(self.__value)
+
+    @classmethod
+    def _pt_cast(cls, value: int) -> None:
+        if value in cls._PT_LKP_VALUE:
+            return cls._PT_LKP_VALUE[value]
+        else:
+            return cls(cls, value)

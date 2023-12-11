@@ -69,7 +69,7 @@ typedef ${obj._PT_ALIAS._pt_name() | tc.snake_case}_t ${name | tc.snake_case}_t;
 // ${name}
 typedef enum logic [${width(obj)}:0] {
 <%  sep = " " %>\
-    %for field, fname in obj._PT_LOOKUP.items():
+    %for field, fname in obj._PT_LKP_INST.items():
 <%
         prefix = tc.snake_case(obj._PT_PREFIX).upper()
         prefix += ["", "_"][len(prefix) > 0]
@@ -90,7 +90,7 @@ typedef enum logic [${width(obj)}:0] {
     %if isinstance(obj, Struct):
 typedef struct packed {
 <%
-        msb_pack = (obj._pt_packing == Packing.FROM_MSB)
+        msb_pack = (obj._PT_PACKING == Packing.FROM_MSB)
         next_pos = obj._pt_width - 1
         pad_idx  = 0
 %>\

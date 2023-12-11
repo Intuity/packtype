@@ -21,18 +21,30 @@ class UnionError(Exception):
 
 
 class Union(Assembly):
-    def __init__(self, parent: Base | None = None) -> None:
-        self._pt_updating = True
-        super().__init__(parent)
-        self._pt_raw = 0
-        self._pt_width = next(iter(self._pt_fields.keys()))._pt_width
-        for field, fname in self._pt_fields.items():
-            if field._pt_width != self._pt_width:
-                raise UnionError(
-                    f"Union member {fname} has a width of {field._pt_width} that "
-                    f"differs from the expected width of {self._pt_width}"
-                )
+    _PT_WIDTH: int
+
+    def __init__(self, value: int = 0) -> None:
+        super().__init__()
         self._pt_updating = False
+        self._pt_set(value)
+
+    @classmethod
+    def _pt_construct(cls, parent: Base | None):
+        super()._pt_construct(parent)
+        cls._PT_WIDTH = None
+        for fname, ftype, _ in cls._pt_definitions():
+            fwidth = ftype()._pt_width
+            if cls._PT_WIDTH is None:
+                cls._PT_WIDTH = fwidth
+            elif fwidth != cls._PT_WIDTH:
+                raise UnionError(
+                    f"Union member {fname} has a width of {fwidth} that "
+                    f"differs from the expected width of {cls._PT_WIDTH}"
+                )
+
+    @property
+    def _pt_width(self) -> int:
+        return self._PT_WIDTH
 
     @property
     def _pt_mask(self) -> int:

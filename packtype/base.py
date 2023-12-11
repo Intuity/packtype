@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import dataclasses
-from typing import Any, Optional
+from typing import Any, Optional, Self
 
 from .array import ArraySpec
 
@@ -37,18 +37,15 @@ class Base(metaclass=MetaBase):
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {}
     # The dataclass definition
     _PT_DEF = None
-    # A shared instance will be created as the imposter rather than a class, this
-    # is used for defining packages
-    _PT_SHARED: bool = False
     # Tuple of source file and line number where the type is defined
     _PT_SOURCE: tuple[str, int] = ("?", 0)
-
-    def __init__(self, parent: Optional["Base"] = None) -> None:
-        self._pt_parent = parent
+    # Handle to parent
+    _PT_PARENT: Self = None
 
     @classmethod
-    def _pt_construct(cls, **_kwds):
+    def _pt_construct(cls, parent: Self | None = None, **_kwds):
         del _kwds
+        cls._PT_PARENT = parent
 
     @classmethod
     def _pt_name(cls):
@@ -87,3 +84,7 @@ class Base(metaclass=MetaBase):
             if not isinstance(field, ArraySpec):
                 collect.add(field)
         return collect
+
+    @property
+    def _pt_parent(self) -> Self:
+        return self._PT_PARENT

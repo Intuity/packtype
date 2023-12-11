@@ -55,8 +55,8 @@ class Primitive(Base, metaclass=MetaPrimitive):
     _PT_WIDTH: int = -1
     _PT_SIGNED: bool = False
 
-    def __init__(self, parent: Base | None = None, default: int | None = None) -> None:
-        super().__init__(parent)
+    def __init__(self, default: int | None = None) -> None:
+        super().__init__()
         if type(self)._PT_ALLOW_DEFAULT:
             self.__value = None if default is None else int(default)
         else:

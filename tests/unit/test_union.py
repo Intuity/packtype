@@ -155,13 +155,11 @@ def test_union_bad_widths():
     class TestPkg:
         pass
 
-    @TestPkg.union()
-    class TestUnion:
-        a: Scalar[12]
-        b: Scalar[11]
-
     with pytest.raises(UnionError) as e:
-        TestUnion()
+        @TestPkg.union()
+        class TestUnion:
+            a: Scalar[12]
+            b: Scalar[11]
 
     assert str(e.value) == (
         "Union member b has a width of 11 that differs from the expected width " "of 12"

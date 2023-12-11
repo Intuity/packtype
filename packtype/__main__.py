@@ -81,7 +81,7 @@ def main(render: list[str], debug: bool, only: list[str], spec: str, outdir: str
     # Filter out just those that were selected
     if only:
         only = {str(x).lower() for x in only}
-        pkgs = [x for x in pkgs if type(x).__name__.lower() in only]
+        pkgs = [x for x in pkgs if x.__name__.lower() in only]
     # Create output directory if it doesn't already exist
     outdir.mkdir(parents=True, exist_ok=True)
     # Render
@@ -105,8 +105,9 @@ def main(render: list[str], debug: bool, only: list[str], spec: str, outdir: str
         "Union": Union,
     }
     # Iterate packages to render
-    for pkg in pkgs:
-        pkg_name = type(pkg).__name__
+    for pkg_cls in pkgs:
+        pkg_name = pkg_cls.__name__
+        pkg = pkg_cls()
         # Iterate outputs to render
         for lang in render:
             tmpl_name, suffix = tmpl_list[lang]
