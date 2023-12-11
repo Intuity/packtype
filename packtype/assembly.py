@@ -221,6 +221,7 @@ class PackedAssembly(Assembly):
         return self._pt_pack()
 
     def _pt_set(self, value: int, force: bool = False) -> None:
+        value = int(value)
         for finst, fname in self._pt_fields.items():
             if isinstance(finst, Array):
                 for idx, entry in enumerate(finst):

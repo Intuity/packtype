@@ -71,7 +71,7 @@ class Union(Assembly):
 
     def _pt_set(self, value: int, force: bool = False) -> None:
         # Capture raw value
-        self._pt_raw = value & self._pt_mask
+        self._pt_raw = int(value) & self._pt_mask
         # Broadcast to all members
         for field in self._pt_fields.keys():
             field._pt_set(self._pt_raw, force=True)

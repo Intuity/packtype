@@ -138,7 +138,7 @@ class Enum(Base):
         self._pt_set(value)
 
     def _pt_set(self, value: int, force: bool = False) -> None:
-        _, self.__value = self._PT_LKP_INST.get(value, (None, int(value)))
+        self.__value = value
         if not force:
             self._pt_updated()
 
