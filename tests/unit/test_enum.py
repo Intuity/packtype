@@ -210,3 +210,20 @@ def test_enum_prefix():
         C: Constant
 
     assert TestEnum()._PT_PREFIX == "BLAH"
+
+
+def test_enum_casting():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.enum()
+    class TestEnum:
+        A: Constant
+        B: Constant
+        C: Constant
+
+    assert TestEnum._pt_cast(0) is TestEnum.A
+    assert TestEnum._pt_cast(1) is TestEnum.B
+    assert TestEnum._pt_cast(2) is TestEnum.C
+    assert int(TestEnum._pt_cast(3)) == 3

@@ -150,4 +150,4 @@ class Enum(Base):
         if value in cls._PT_LKP_VALUE:
             return cls._PT_LKP_VALUE[value]
         else:
-            return cls(cls, value)
+            return cls(value)
