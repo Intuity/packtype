@@ -14,8 +14,8 @@
 
 import pytest
 import packtype
-from packtype import Packing, Scalar
-from packtype.assembly import WidthError
+from packtype import Constant, Packing, Scalar
+from packtype.assembly import WidthError, AssignmentError
 from packtype.primitive import PrimitiveValueError
 from packtype.wrap import BadAssignmentError, BadAttributeError
 
@@ -131,14 +131,12 @@ def test_struct_oversized():
     class TestPkg:
         pass
 
-    @TestPkg.struct(width=17)
-    class TestStruct:
-        ab: Scalar[12]
-        cd: Scalar[3]
-        ef: Scalar[9]
-
     with pytest.raises(WidthError) as e:
-        TestStruct()
+        @TestPkg.struct(width=17)
+        class TestStruct:
+            ab: Scalar[12]
+            cd: Scalar[3]
+            ef: Scalar[9]
 
     assert str(e.value) == (
         "Fields of TestStruct total 24 bits which does not fit within the "
@@ -270,3 +268,93 @@ def test_struct_fields_listing():
         (12, 14, ("cd", inst.cd)),
         (0, 11, ("ab", inst.ab)),
     ]
+
+
+def test_struct_enum():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.enum(width=16)
+    class TestEnum:
+        A: Constant = 0x1234
+        B: Constant = 0x2345
+        C: Constant = 0x3456
+
+    @TestPkg.struct()
+    class TestStruct:
+        a: Scalar[2]
+        b: TestEnum
+        c: Scalar[3]
+
+    # Packing
+    inst = TestStruct()
+    inst.a = 2
+    inst.b = 0x1234
+    inst.c = 7
+    assert int(inst.a) == 2
+    assert int(inst.b) == 0x1234
+    assert int(inst.c) == 7
+    assert inst._pt_pack() == ((7 << 18) | (0x1234 << 2) | 2)
+    assert int(inst) == ((7 << 18) | (0x1234 << 2) | 2)
+
+    # Unpacking
+    inst = TestStruct._pt_unpack((7 << 18) | (0x1234 << 2) | 2)
+    assert int(inst.a) == 2
+    assert int(inst.b) == 0x1234
+    assert int(inst.c) == 7
+
+
+def test_struct_constructor():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.struct()
+    class TestStruct:
+        ab: Scalar[12]
+        cd: 3 * Scalar[3]
+        ef: Scalar[9]
+
+    inst = TestStruct(ab=123, cd=[4, 5, 6], ef=41)
+    assert int(inst.ab) == 123
+    assert int(inst.cd[0]) == 4
+    assert int(inst.cd[1]) == 5
+    assert int(inst.cd[2]) == 6
+    assert int(inst.ef) == 41
+
+
+def test_struct_bad_constructor():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.struct()
+    class TestStruct:
+        ab: Scalar[12]
+        cd: 3 * Scalar[3]
+        ef: Scalar[9]
+
+    # Test a single value being assigned to an array
+    with pytest.raises(AssignmentError) as e:
+        TestStruct(ab=123, cd=4, ef=41)
+
+    assert str(e.value) == (
+        "Cannot assign value to field cd as it is an array of 3 entries and the "
+        "assigned value does not have the same dimensions"
+    )
+
+    # Test assigning an array that's too small
+    with pytest.raises(AssignmentError) as e:
+        TestStruct(ab=123, cd=[4, 5], ef=41)
+
+    assert str(e.value) == (
+        "Cannot assign value to field cd as it is an array of 3 entries and the "
+        "assigned value does not have the same dimensions"
+    )
+
+    # Check that extra field is flagged
+    with pytest.raises(AssignmentError) as e:
+        TestStruct(ab=123, cd=[4, 5, 6], ef=41, gh=3)
+
+    assert str(e.value) == "TestStruct does not contain a field called 'gh'"

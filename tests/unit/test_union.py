@@ -14,7 +14,7 @@
 
 import pytest
 import packtype
-from packtype import Scalar
+from packtype import Constant, Scalar
 from packtype.union import UnionError
 
 from ..fixtures import reset_registry
@@ -49,10 +49,26 @@ def test_union_nested():
     class TestPkg:
         pass
 
+    @TestPkg.enum(width=3)
+    class EnumA:
+        A: Constant
+        B: Constant
+        C: Constant
+
+    @TestPkg.struct()
+    class StructA:
+        a: Scalar[10]
+        b: EnumA
+
+    @TestPkg.struct(width=13)
+    class StructB:
+        a: Scalar[5]
+        # Deliberately missing to force padding
+
     @TestPkg.union()
     class UnionA:
-        a: Scalar[13]
-        b: Scalar[13]
+        a: StructA
+        b: StructB
         c: Scalar[13]
 
     @TestPkg.union()
@@ -60,12 +76,24 @@ def test_union_nested():
         a: UnionA
         b: Scalar[13]
 
+    # Packing
     inst = UnionB()
     inst.a.b = 142
     assert int(inst.a.a) == 142
     assert int(inst.a.b) == 142
     assert int(inst.a.c) == 142
     assert int(inst.b) == 142
+    assert inst._pt_pack() == 142
+
+    # Unpacking
+    inst = UnionB._pt_unpack(142)
+    assert int(inst.a.a) == 142
+    assert int(inst.a.b) == 142
+    assert int(inst.a.c) == 142
+    assert int(inst.b) == 142
+
+    # Repacking
+    assert inst.a._pt_pack() == 142
 
 
 def test_union_struct():
@@ -127,13 +155,11 @@ def test_union_bad_widths():
     class TestPkg:
         pass
 
-    @TestPkg.union()
-    class TestUnion:
-        a: Scalar[12]
-        b: Scalar[11]
-
     with pytest.raises(UnionError) as e:
-        TestUnion()
+        @TestPkg.union()
+        class TestUnion:
+            a: Scalar[12]
+            b: Scalar[11]
 
     assert str(e.value) == (
         "Union member b has a width of 11 that differs from the expected width " "of 12"

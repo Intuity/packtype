@@ -14,6 +14,10 @@
 
 import dataclasses
 from typing import Any, Optional
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self  # noqa: UP035
 
 from .array import ArraySpec
 
@@ -37,23 +41,24 @@ class Base(metaclass=MetaBase):
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {}
     # The dataclass definition
     _PT_DEF = None
-    # A shared instance will be created as the imposter rather than a class, this
-    # is used for defining packages
-    _PT_SHARED: bool = False
     # Tuple of source file and line number where the type is defined
     _PT_SOURCE: tuple[str, int] = ("?", 0)
+    # Handle to parent
+    _PT_PARENT: Self = None
 
-    def __init__(self, parent: Optional["Base"] = None) -> None:
-        self._pt_parent = parent
+    @classmethod
+    def _pt_construct(cls, parent: Self | None = None, **_kwds):
+        del _kwds
+        cls._PT_PARENT = parent
 
     @classmethod
     def _pt_name(cls):
         return cls.__name__
 
-    @property
-    def _pt_definitions(self) -> list[str, Any]:
+    @classmethod
+    def _pt_definitions(cls) -> list[str, Any]:
         yield from (
-            (x.name, x.type, x.default) for x in dataclasses.fields(self._PT_DEF)
+            (x.name, x.type, x.default) for x in dataclasses.fields(cls._PT_DEF)
         )
 
     def _pt_updated(self, *path: "Base"):
@@ -83,3 +88,7 @@ class Base(metaclass=MetaBase):
             if not isinstance(field, ArraySpec):
                 collect.add(field)
         return collect
+
+    @property
+    def _pt_parent(self) -> Self:
+        return self._PT_PARENT

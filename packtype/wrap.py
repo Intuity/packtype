@@ -58,7 +58,7 @@ class Registry:
 
 @functools.cache
 def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
-    def _wrapper(**kwds) -> Callable:
+    def _wrapper(parent: Base | None = None, **kwds) -> Callable:
         def _inner(cls):
             # Work out the fields defined within the class
             cls_fields = set(dir(cls)).difference(dir(object))
@@ -98,10 +98,15 @@ def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
             # Check for supported attributes
             attrs = {}
             for key, value in kwds.items():
+                # Skip certain keys
+                if key in ("parent", ):
+                    continue
+                # Check if supported by the type
                 if key not in base._PT_ATTRIBUTES:
                     raise BadAttributeError(
                         f"Unsupported attribute '{key}' for {base.__name__}"
                     )
+                # Check value is acceptable
                 _, accepted = base._PT_ATTRIBUTES[key]
                 if (callable(accepted) and not accepted(value)) or (
                     isinstance(accepted, tuple) and value not in accepted
@@ -110,6 +115,7 @@ def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
                         f"Unsupported value '{value}' for attribute '{key}' "
                         f"for {base.__name__}"
                     )
+                # Store attribute
                 attrs[key] = value
             # Fill in default attributes
             for key, (default, _) in base._PT_ATTRIBUTES.items():
@@ -134,10 +140,8 @@ def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
             # Reattach functions
             for fname in cls_funcs:
                 setattr(imposter, fname, getattr(cls, fname))
-            # If this is a 'shared' object then the imposter is replaced by an
-            # instance rather than the definition
-            if base._PT_SHARED:
-                imposter = imposter()
+            # Imposter construction
+            imposter._pt_construct(parent, **attrs)
             # Register the imposter
             Registry.register(base, imposter)
             # Return the imposter as a substitute

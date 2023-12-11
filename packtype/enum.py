@@ -16,7 +16,6 @@ import enum
 import math
 from typing import Any
 
-from .assembly import Assembly
 from .base import Base
 
 
@@ -30,72 +29,125 @@ class EnumError(Exception):
     pass
 
 
-class Enum(Assembly):
+class Enum(Base):
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {
         "mode": (EnumMode.INDEXED, list(EnumMode)),
         "width": (-1, lambda x: int(x) > 0),
         "prefix": (None, lambda x: isinstance(x, str)),
     }
 
-    def __init__(self, parent: Base | None = None) -> None:
-        super().__init__(parent)
-        self._pt_mode = self._PT_ATTRIBUTES["mode"]
-        self._pt_width = self._PT_ATTRIBUTES["width"]
-        self._pt_prefix = self._PT_ATTRIBUTES["prefix"]
-        if self._pt_prefix is None:
-            self._pt_prefix = self._pt_name()
-        self._pt_lookup = {}
+    _PT_MODE: EnumMode = EnumMode.INDEXED
+    _PT_WIDTH: int
+    _PT_PREFIX: str
+    _PT_LKP_INST: dict
+    _PT_LKP_VALUE: dict
+
+    def __init__(self, value: int = 0) -> None:
+        super().__init__()
+        self._pt_set(value, force=True)
+
+    @classmethod
+    def _pt_construct(cls,
+                      parent: Base,
+                      mode: EnumMode,
+                      width: int,
+                      prefix: str | None,
+                      **kwds) -> None:
+        super()._pt_construct(parent)
+        cls._PT_MODE = mode
+        cls._PT_WIDTH = width
+        cls._PT_PREFIX = prefix
+        if cls._PT_PREFIX is None:
+            cls._PT_PREFIX = cls._pt_name()
+        cls._PT_LKP_INST = {}
+        cls._PT_LKP_VALUE = {}
+        # Assign values
+        assignments = {}
         # Indexed
-        if self._pt_mode is EnumMode.INDEXED:
+        if cls._PT_MODE is EnumMode.INDEXED:
             next_val = 0
-            for fval in self._pt_fields.keys():
-                if fval.value is None:
-                    fval.value = next_val
-                next_val = fval.value + 1
+            for fname, _, fval in cls._pt_definitions():
+                if fval is None:
+                    fval = next_val
+                next_val = fval + 1
+                assignments[fname] = fval
         # One-hot
-        elif self._pt_mode is EnumMode.ONE_HOT:
+        elif cls._PT_MODE is EnumMode.ONE_HOT:
             next_val = 1
-            for fval, fname in self._pt_fields.items():
-                if fval.value is None:
-                    fval.value = next_val
-                if (math.log2(fval.value) % 1) != 0:
+            for fname, _, fval in cls._pt_definitions():
+                if fval is None:
+                    fval = next_val
+                if (math.log2(fval) % 1) != 0:
                     raise EnumError(
-                        f"Enum entry {fname} has value {fval.value} that is not "
-                        f"one-hot"
+                        f"Enum entry {fname} has value {fval} that is not " f"one-hot"
                     )
-                next_val = fval.value << 1
+                next_val = fval << 1
+                assignments[fname] = fval
         # Gray code
-        elif self._pt_mode is EnumMode.GRAY:
-            for idx, (fval, fname) in enumerate(self._pt_fields.items()):
+        elif cls._PT_MODE is EnumMode.GRAY:
+            for idx, (fname, _, fval) in enumerate(cls._pt_definitions()):
                 gray_val = idx ^ (idx >> 1)
-                if fval.value is None:
-                    fval.value = gray_val
-                elif fval.value != gray_val:
+                if fval is None:
+                    fval = gray_val
+                elif fval != gray_val:
                     raise EnumError(
-                        f"Enum entry {fname} has value {fval.value} that does "
+                        f"Enum entry {fname} has value {fval} that does "
                         f"not conform to the expected Gray code value of {gray_val}"
                     )
+                assignments[fname] = fval
         # Determine width
-        if self._pt_width < 0:
-            self._pt_width = int(
-                math.ceil(math.log2(max(x.value for x in self._pt_fields.keys()) + 1))
-            )
+        if cls._PT_WIDTH < 0:
+            cls._PT_WIDTH = int(math.ceil(math.log2(max(assignments.values()) + 1)))
         # Final checks
         used = []
-        max_val = (1 << self._pt_width) - 1
-        for fval, fname in self._pt_fields.items():
+        max_val = (1 << cls._PT_WIDTH) - 1
+        for fname, fval in assignments.items():
             # Check for oversized values
-            if fval.value > max_val:
+            if fval > max_val:
                 raise EnumError(
-                    f"Enum entry {fname} has value {fval.value} that cannot be "
-                    f"encoded in a bit width of {self._pt_width}"
+                    f"Enum entry {fname} has value {fval} that cannot be "
+                    f"encoded in a bit width of {cls._PT_WIDTH}"
                 )
             # Check for repeated values
-            if fval.value in used:
+            if fval in used:
                 raise EnumError(
-                    f"Enum entry {fname} has value {fval.value} that appears "
+                    f"Enum entry {fname} has value {fval} that appears "
                     f"more than once in the enumeration"
                 )
-            used.append(fval.value)
-            # Create a lookup table
-            self._pt_lookup[fval.value] = (fname, fval)
+            used.append(fval)
+            # Create the enum instance
+            finst = cls(fval)
+            setattr(cls, fname, finst)
+            cls._PT_LKP_INST[finst] = fname
+            cls._PT_LKP_VALUE[fval] = finst
+
+    @property
+    def _pt_width(self) -> int:
+        return self._PT_WIDTH
+
+    @property
+    def _pt_mask(self) -> int:
+        return (1 << self._pt_width) - 1
+
+    @property
+    def value(self) -> int:
+        return self.__value
+
+    @value.setter
+    def value(self, value: int) -> int:
+        self._pt_set(value)
+
+    def _pt_set(self, value: int, force: bool = False) -> None:
+        self.__value = value
+        if not force:
+            self._pt_updated()
+
+    def __int__(self) -> int:
+        return int(self.__value)
+
+    @classmethod
+    def _pt_cast(cls, value: int) -> None:
+        if value in cls._PT_LKP_VALUE:
+            return cls._PT_LKP_VALUE[value]
+        else:
+            return cls(value)

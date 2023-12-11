@@ -24,6 +24,9 @@ class ArraySpec:
     def _pt_references(self) -> Iterable[Any]:
         return self.base._pt_references()
 
+    def __call__(self, **kwds) -> "Array":
+        return Array(self, **kwds)
+
 
 class Array:
     def __init__(self, spec: ArraySpec, *args, **kwds):
@@ -40,3 +43,7 @@ class Array:
 
     def __len__(self) -> int:
         return len(self._pt_entries)
+
+    @property
+    def _pt_width(self) -> int:
+        return sum(x._pt_width for x in self._pt_entries)

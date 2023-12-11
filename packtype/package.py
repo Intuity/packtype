@@ -29,54 +29,55 @@ from .wrap import get_wrapper
 
 
 class Package(Base):
-    _PT_SHARED: bool = True
+    _PT_FIELDS: dict
 
-    def __init__(self, parent: Base | None = None) -> None:
-        super().__init__(parent)
-        self._pt_fields = {}
-        for fname, ftype, fval in self._pt_definitions:
+    @classmethod
+    def _pt_construct(cls, parent: Base) -> None:
+        super()._pt_construct(parent)
+        cls._PT_FIELDS = {}
+        for fname, ftype, fval in cls._pt_definitions():
             if issubclass(ftype, Constant):
                 finst = ftype(default=fval)
-                setattr(self, fname, finst)
-                finst._PT_ATTACHED_TO = self
-                self._pt_fields[finst] = fname
+                setattr(cls, fname, finst)
+                finst._PT_ATTACHED_TO = cls
+                cls._PT_FIELDS[finst] = fname
             else:
-                setattr(self, fname, ftype)
-                ftype._PT_ATTACHED_TO = self
-                self._pt_fields[ftype] = fname
+                setattr(cls, fname, ftype)
+                ftype._PT_ATTACHED_TO = cls
+                cls._PT_FIELDS[ftype] = fname
 
-    def __call__(self) -> "Package":
-        return self
-
-    def enum(self, **kwds):
+    @classmethod
+    def enum(cls, **kwds):
         def _inner(ptcls: Any):
             enum = get_wrapper(Enum, frame_depth=2)(**kwds)(ptcls)
-            type(self)._PT_ATTACH.append(enum)
-            enum._PT_ATTACHED_TO = self
-            setattr(self, enum.__name__, enum)
-            self._pt_fields[enum] = enum.__name__
+            cls._PT_ATTACH.append(enum)
+            enum._PT_ATTACHED_TO = cls
+            setattr(cls, enum.__name__, enum)
+            cls._PT_FIELDS[enum] = enum.__name__
             return enum
 
         return _inner
 
-    def struct(self, **kwds):
+    @classmethod
+    def struct(cls, **kwds):
         def _inner(ptcls: Any):
             struct = get_wrapper(Struct, frame_depth=2)(**kwds)(ptcls)
-            type(self)._PT_ATTACH.append(struct)
-            struct._PT_ATTACHED_TO = self
-            setattr(self, struct.__name__, struct)
-            self._pt_fields[struct] = struct.__name__
+            cls._PT_ATTACH.append(struct)
+            struct._PT_ATTACHED_TO = cls
+            setattr(cls, struct.__name__, struct)
+            cls._PT_FIELDS[struct] = struct.__name__
             return struct
 
         return _inner
 
-    def union(self, **kwds):
+    @classmethod
+    def union(cls, **kwds):
         def _inner(ptcls: Any):
             union = get_wrapper(Union, frame_depth=2)(**kwds)(ptcls)
-            type(self)._PT_ATTACH.append(union)
-            union._PT_ATTACHED_TO = self
-            setattr(self, union.__name__, union)
-            self._pt_fields[union] = union.__name__
+            cls._PT_ATTACH.append(union)
+            union._PT_ATTACHED_TO = cls
+            setattr(cls, union.__name__, union)
+            cls._PT_FIELDS[union] = union.__name__
             return union
 
         return _inner
@@ -102,6 +103,10 @@ class Package(Base):
             )
 
         return set(filter(_is_a_type, foreign))
+
+    @property
+    def _pt_fields(self) -> dict:
+        return self._PT_FIELDS
 
     @property
     def _pt_constants(self) -> Iterable[Constant]:
@@ -141,5 +146,6 @@ class Package(Base):
             (x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Struct | Union)
         )
 
-    def _pt_lookup(self, field: type[Base] | Base) -> str:
-        return self._pt_fields[field]
+    @classmethod
+    def _pt_lookup(cls, field: type[Base] | Base) -> str:
+        return cls._PT_FIELDS[field]

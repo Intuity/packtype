@@ -33,10 +33,9 @@ def test_enum_auto_indexed():
         B: Constant
         C: Constant
 
-    inst = TestEnum()
-    assert int(inst.A) == 0
-    assert int(inst.B) == 1
-    assert int(inst.C) == 2
+    assert int(TestEnum.A) == 0
+    assert int(TestEnum.B) == 1
+    assert int(TestEnum.C) == 2
 
 
 def test_enum_auto_onehot():
@@ -50,10 +49,9 @@ def test_enum_auto_onehot():
         B: Constant
         C: Constant
 
-    inst = TestEnum()
-    assert int(inst.A) == 1
-    assert int(inst.B) == 2
-    assert int(inst.C) == 4
+    assert int(TestEnum.A) == 1
+    assert int(TestEnum.B) == 2
+    assert int(TestEnum.C) == 4
 
 
 def test_enum_auto_gray():
@@ -68,11 +66,10 @@ def test_enum_auto_gray():
         C: Constant
         D: Constant
 
-    inst = TestEnum()
-    assert int(inst.A) == 0
-    assert int(inst.B) == 1
-    assert int(inst.C) == 3
-    assert int(inst.D) == 2
+    assert int(TestEnum.A) == 0
+    assert int(TestEnum.B) == 1
+    assert int(TestEnum.C) == 3
+    assert int(TestEnum.D) == 2
 
 
 def test_enum_manual_indexed():
@@ -86,10 +83,9 @@ def test_enum_manual_indexed():
         B: Constant = 3
         C: Constant = 4
 
-    inst = TestEnum()
-    assert int(inst.A) == 2
-    assert int(inst.B) == 3
-    assert int(inst.C) == 4
+    assert int(TestEnum.A) == 2
+    assert int(TestEnum.B) == 3
+    assert int(TestEnum.C) == 4
 
 
 def test_enum_manual_onehot():
@@ -121,11 +117,10 @@ def test_enum_manual_gray():
         C: Constant = 3
         D: Constant = 2
 
-    inst = TestEnum()
-    assert int(inst.A) == 0
-    assert int(inst.B) == 1
-    assert int(inst.C) == 3
-    assert int(inst.D) == 2
+    assert int(TestEnum.A) == 0
+    assert int(TestEnum.B) == 1
+    assert int(TestEnum.C) == 3
+    assert int(TestEnum.D) == 2
 
 
 def test_enum_bad_one_hot():
@@ -133,14 +128,13 @@ def test_enum_bad_one_hot():
     class TestPkg:
         pass
 
-    @TestPkg.enum(mode=EnumMode.ONE_HOT)
-    class TestEnum:
-        A: Constant = 1
-        B: Constant = 2
-        C: Constant = 3
-
     with pytest.raises(EnumError) as e:
-        TestEnum()
+
+        @TestPkg.enum(mode=EnumMode.ONE_HOT)
+        class TestEnum:
+            A: Constant = 1
+            B: Constant = 2
+            C: Constant = 3
 
     assert str(e.value) == "Enum entry C has value 3 that is not one-hot"
 
@@ -150,15 +144,14 @@ def test_enum_bad_gray():
     class TestPkg:
         pass
 
-    @TestPkg.enum(mode=EnumMode.GRAY)
-    class TestEnum:
-        A: Constant = 0
-        B: Constant = 1
-        C: Constant = 2
-        D: Constant = 3
-
     with pytest.raises(EnumError) as e:
-        TestEnum()
+
+        @TestPkg.enum(mode=EnumMode.GRAY)
+        class TestEnum:
+            A: Constant = 0
+            B: Constant = 1
+            C: Constant = 2
+            D: Constant = 3
 
     assert str(e.value) == (
         "Enum entry C has value 2 that does not conform to the expected Gray "
@@ -171,15 +164,14 @@ def test_enum_bad_repeated():
     class TestPkg:
         pass
 
-    @TestPkg.enum(mode=EnumMode.INDEXED)
-    class TestEnum:
-        A: Constant = 0
-        B: Constant = 1
-        C: Constant = 2
-        D: Constant = 2
-
     with pytest.raises(EnumError) as e:
-        TestEnum()
+
+        @TestPkg.enum(mode=EnumMode.INDEXED)
+        class TestEnum:
+            A: Constant = 0
+            B: Constant = 1
+            C: Constant = 2
+            D: Constant = 2
 
     assert str(e.value) == (
         "Enum entry D has value 2 that appears more than once in the enumeration"
@@ -191,16 +183,15 @@ def test_enum_bad_oversized():
     class TestPkg:
         pass
 
-    @TestPkg.enum(mode=EnumMode.INDEXED, width=2)
-    class TestEnum:
-        A: Constant
-        B: Constant
-        C: Constant
-        D: Constant
-        E: Constant
-
     with pytest.raises(EnumError) as e:
-        TestEnum()
+
+        @TestPkg.enum(mode=EnumMode.INDEXED, width=2)
+        class TestEnum:
+            A: Constant
+            B: Constant
+            C: Constant
+            D: Constant
+            E: Constant
 
     assert str(e.value) == (
         "Enum entry E has value 4 that cannot be encoded in a bit width of 2"
@@ -218,4 +209,21 @@ def test_enum_prefix():
         B: Constant
         C: Constant
 
-    assert TestEnum()._pt_prefix == "BLAH"
+    assert TestEnum()._PT_PREFIX == "BLAH"
+
+
+def test_enum_casting():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.enum()
+    class TestEnum:
+        A: Constant
+        B: Constant
+        C: Constant
+
+    assert TestEnum._pt_cast(0) is TestEnum.A
+    assert TestEnum._pt_cast(1) is TestEnum.B
+    assert TestEnum._pt_cast(2) is TestEnum.C
+    assert int(TestEnum._pt_cast(3)) == 3

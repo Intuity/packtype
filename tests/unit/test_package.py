@@ -28,7 +28,7 @@ def test_package_decl():
     class TestPkg:
         pass
 
-    assert isinstance(TestPkg, Package)
+    assert issubclass(TestPkg, Package)
 
 
 def test_package_constants():
