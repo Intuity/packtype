@@ -13,7 +13,11 @@
 # limitations under the License.
 
 import dataclasses
-from typing import Any, Optional, Self
+from typing import Any, Optional
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self  # noqa: UP035
 
 from .array import ArraySpec
 
