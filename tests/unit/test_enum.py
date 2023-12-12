@@ -227,3 +227,30 @@ def test_enum_casting():
     assert TestEnum._pt_cast(1) is TestEnum.B
     assert TestEnum._pt_cast(2) is TestEnum.C
     assert int(TestEnum._pt_cast(3)) == 3
+
+
+def test_enum_arithmetic():
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.enum()
+    class TestEnum:
+        A: Constant
+        B: Constant
+        C: Constant
+
+    # Enum-Enum
+    assert TestEnum.A < TestEnum.C
+    assert TestEnum.B <= TestEnum.C
+    assert TestEnum.B == TestEnum.B
+    assert TestEnum.C >= TestEnum.B
+    assert TestEnum.C > TestEnum.A
+    assert (TestEnum.B + TestEnum.C) == 3
+    # Enum-integer
+    assert TestEnum.A < 2
+    assert TestEnum.B <= 2
+    assert TestEnum.B == 1
+    assert TestEnum.C >= 1
+    assert TestEnum.C > 0
+    assert (TestEnum.B + 2) == 3

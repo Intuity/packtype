@@ -17,6 +17,7 @@ import math
 from typing import Any
 
 from .base import Base
+from .numeric import Numeric
 
 
 class EnumMode(enum.Enum):
@@ -29,7 +30,7 @@ class EnumError(Exception):
     pass
 
 
-class Enum(Base):
+class Enum(Base, Numeric):
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {
         "mode": (EnumMode.INDEXED, list(EnumMode)),
         "width": (-1, lambda x: int(x) > 0),
