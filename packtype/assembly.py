@@ -20,6 +20,7 @@ from .array import Array, ArraySpec
 from .base import Base
 from .primitive import Primitive
 from .scalar import Scalar
+from .numeric import Numeric
 
 
 class Packing(Enum):
@@ -35,7 +36,7 @@ class AssignmentError(Exception):
     pass
 
 
-class Assembly(Base):
+class Assembly(Base, Numeric):
     def __init__(self) -> None:
         super().__init__()
         self._pt_fields = {}
