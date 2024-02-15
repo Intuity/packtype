@@ -13,13 +13,16 @@
 # limitations under the License.
 
 import dataclasses
-from typing import Any, Optional
+import functools
+from collections import defaultdict
+from typing import Any
 try:
     from typing import Self
 except ImportError:
     from typing_extensions import Self  # noqa: UP035
 
 from .array import ArraySpec
+from .bitvector import BitVector
 
 
 class MetaBase(type):
@@ -45,6 +48,12 @@ class Base(metaclass=MetaBase):
     _PT_SOURCE: tuple[str, int] = ("?", 0)
     # Handle to parent
     _PT_PARENT: Self = None
+    # Profiling
+    _PT_PROFILING: dict[str, int] = defaultdict(lambda: 0)
+
+    def __init__(self, _pt_bv: BitVector | None = None) -> None:
+        self._pt_bv = _pt_bv if _pt_bv is not None else BitVector()
+        self._PT_PROFILING[type(self).__name__] += 1
 
     @classmethod
     def _pt_construct(cls, parent: Self | None = None, **_kwds):
@@ -56,14 +65,11 @@ class Base(metaclass=MetaBase):
         return cls.__name__
 
     @classmethod
+    @functools.cache
     def _pt_definitions(cls) -> list[str, Any]:
-        yield from (
+        return [
             (x.name, x.type, x.default) for x in dataclasses.fields(cls._PT_DEF)
-        )
-
-    def _pt_updated(self, *path: "Base"):
-        if self._pt_parent is not None:
-            self._pt_parent._pt_updated(self, *path)
+        ]
 
     @classmethod
     def _pt_field_types(cls) -> list[type["Base"]]:
@@ -92,3 +98,18 @@ class Base(metaclass=MetaBase):
     @property
     def _pt_parent(self) -> Self:
         return self._PT_PARENT
+
+    @classmethod
+    def _pt_enable_profiling(self, limit: int = 1) -> None:
+        """
+        Enable tracking of Packtype object creation
+
+        :param limit: Don't print out statistics for objects below this limit
+        """
+        import atexit
+        def _list_objs():
+            print("Packtype object creation counts:")
+            for obj, cnt in sorted(Base._PT_PROFILING.items(), key=lambda x: x[1], reverse=True):
+                if cnt > limit:
+                    print(f"{cnt:10d}: {obj}")
+        atexit.register(_list_objs)

@@ -20,7 +20,7 @@ this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 # Create a virtual environment
 python3 -m virtualenv ${this_dir}/venv
 source ${this_dir}/venv/bin/activate
-python3 ${this_dir}/../setup.py develop
+python3 -m pip install ${this_dir}/..
 
 # Run all tests in subdirectories
 passed=0

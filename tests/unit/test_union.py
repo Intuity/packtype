@@ -166,27 +166,6 @@ def test_union_bad_widths():
     )
 
 
-def test_union_mismatches():
-    @packtype.package()
-    class TestPkg:
-        pass
-
-    @TestPkg.union()
-    class TestUnion:
-        a: Scalar[12]
-        b: Scalar[12]
-
-    with pytest.raises(UnionError) as e:
-        inst = TestUnion._pt_unpack(0x23)
-        inst.a._Primitive__value = 0x17
-        inst._pt_pack()
-
-    assert str(e.value) == (
-        "Multiple member values were discovered when packing a TestUnion union "
-        "- expected a value of 0x23 but saw 0x23, 0x17"
-    )
-
-
 def test_union_functions():
     @packtype.package()
     class TestPkg:
