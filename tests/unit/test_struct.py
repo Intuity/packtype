@@ -357,4 +357,4 @@ def test_struct_bad_constructor():
     with pytest.raises(AssignmentError) as e:
         TestStruct(ab=123, cd=[4, 5, 6], ef=41, gh=3)
 
-    assert str(e.value) == "TestStruct does not contain a field called 'gh'"
+    assert str(e.value) == "TestStruct does not contain fields called 'gh'"

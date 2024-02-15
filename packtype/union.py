@@ -12,8 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
+
+from .array import Array, ArraySpec
 from .assembly import Assembly
 from .base import Base
+from .bitvector import BitVector, BitVectorWindow
+from .primitive import Primitive
 
 
 class UnionError(Exception):
@@ -23,10 +28,23 @@ class UnionError(Exception):
 class Union(Assembly):
     _PT_WIDTH: int
 
-    def __init__(self, value: int = 0) -> None:
-        super().__init__()
-        self._pt_updating = False
-        self._pt_set(value)
+    def __init__(self,
+                 value: int | None = 0,
+                 _pt_bv: BitVector | BitVectorWindow | None = None) -> None:
+        super().__init__(_pt_bv=_pt_bv or BitVector(self._pt_width, value))
+        for fname, ftype, fval in self._pt_definitions():
+            if isinstance(ftype, ArraySpec):
+                if isinstance(ftype.base, Primitive):
+                    finst = Array(ftype, default=fval, _pt_bv=self._pt_bv)
+                else:
+                    finst = Array(ftype)
+            elif issubclass(ftype, Primitive):
+                finst = ftype(default=fval, _pt_bv=self._pt_bv)
+            else:
+                finst = ftype(_pt_bv=self._pt_bv)
+            finst._PT_PARENT = self
+            setattr(self, fname, finst)
+            self._pt_fields[finst] = fname
 
     @classmethod
     def _pt_construct(cls, parent: Base | None):
@@ -47,6 +65,7 @@ class Union(Assembly):
         return self._PT_WIDTH
 
     @property
+    @functools.cache
     def _pt_mask(self) -> int:
         return (1 << self._pt_width) - 1
 
@@ -54,14 +73,7 @@ class Union(Assembly):
         return self._pt_pack()
 
     def _pt_pack(self) -> int:
-        values = list({int(x) for x in self._pt_fields.keys()})
-        if len(values) != 1 or values[0] != self._pt_raw:
-            raise UnionError(
-                f"Multiple member values were discovered when packing a "
-                f"{type(self).__name__} union - expected a value of "
-                f"0x{self._pt_raw:X} but saw " + ", ".join(f"0x{x:X}" for x in values)
-            )
-        return self._pt_raw
+        return int(self._pt_bv)
 
     @classmethod
     def _pt_unpack(cls, packed: int) -> "Union":
@@ -69,28 +81,5 @@ class Union(Assembly):
         inst._pt_set(packed)
         return inst
 
-    def _pt_set(self, value: int, force: bool = False) -> None:
-        # Capture raw value
-        self._pt_raw = int(value) & self._pt_mask
-        # Broadcast to all members
-        for field in self._pt_fields.keys():
-            field._pt_set(self._pt_raw, force=True)
-        # Flag update
-        if not force:
-            self._pt_updated(self)
-
-    def _pt_updated(self, obj: Base, *path: Base):
-        # Block nested updates to avoid an infinite loop
-        if self._pt_updating:
-            return
-        # Set the lock
-        self._pt_updating = True
-        # Update the raw value and all members (except the 'obj')
-        self._pt_raw = int(obj)
-        for field in self._pt_fields.keys():
-            if field is not obj:
-                field._pt_set(self._pt_raw, force=True)
-        # Clear the lock
-        self._pt_updating = False
-        # Propagate update to the parent
-        super()._pt_updated(self, obj, *path)
+    def _pt_set(self, value: int) -> None:
+        self._pt_bv.set(value)

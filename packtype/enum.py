@@ -17,6 +17,7 @@ import math
 from typing import Any
 
 from .base import Base
+from .bitvector import BitVector, BitVectorWindow
 from .numeric import Numeric
 
 
@@ -43,9 +44,13 @@ class Enum(Base, Numeric):
     _PT_LKP_INST: dict
     _PT_LKP_VALUE: dict
 
-    def __init__(self, value: int = 0) -> None:
-        super().__init__()
-        self._pt_set(value, force=True)
+    def __init__(self,
+                 value: int = 0,
+                 _pt_bv : BitVector | BitVectorWindow | None = None) -> None:
+        super().__init__(
+            _pt_bv=BitVector(self._pt_width) if _pt_bv is None else _pt_bv
+        )
+        self._pt_set(value)
 
     @classmethod
     def _pt_construct(cls,
@@ -98,7 +103,7 @@ class Enum(Base, Numeric):
                 assignments[fname] = fval
         # Determine width
         if cls._PT_WIDTH < 0:
-            cls._PT_WIDTH = int(math.ceil(math.log2(max(assignments.values()) + 1)))
+            cls._PT_WIDTH = math.ceil(math.log2(max(assignments.values()) + 1))
         # Final checks
         used = []
         max_val = (1 << cls._PT_WIDTH) - 1
@@ -117,7 +122,7 @@ class Enum(Base, Numeric):
                 )
             used.append(fval)
             # Create the enum instance
-            finst = cls(fval)
+            finst = cls(fval, _pt_bv=BitVector(width=cls._PT_WIDTH))
             setattr(cls, fname, finst)
             cls._PT_LKP_INST[finst] = fname
             cls._PT_LKP_VALUE[fval] = finst
@@ -132,19 +137,17 @@ class Enum(Base, Numeric):
 
     @property
     def value(self) -> int:
-        return self.__value
+        return int(self._pt_bv)
 
     @value.setter
     def value(self, value: int) -> int:
         self._pt_set(value)
 
-    def _pt_set(self, value: int, force: bool = False) -> None:
-        self.__value = value
-        if not force:
-            self._pt_updated()
+    def _pt_set(self, value: int) -> None:
+        self._pt_bv.set(value)
 
     def __int__(self) -> int:
-        return int(self.__value)
+        return int(self._pt_bv)
 
     @classmethod
     def _pt_cast(cls, value: int) -> None:

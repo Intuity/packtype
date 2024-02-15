@@ -20,6 +20,7 @@ except ImportError:
     from typing_extensions import Self  # noqa: UP035
 
 from .base import Base, MetaBase
+from .bitvector import BitVector, BitVectorWindow
 from .numeric import Numeric
 
 
@@ -56,12 +57,12 @@ class Primitive(Base, Numeric, metaclass=MetaPrimitive):
     _PT_WIDTH: int = -1
     _PT_SIGNED: bool = False
 
-    def __init__(self, default: int | None = None) -> None:
-        super().__init__()
+    def __init__(self,
+                 default: int | None = None,
+                 _pt_bv: BitVector | BitVectorWindow | None = None) -> None:
+        super().__init__(_pt_bv=_pt_bv)
         if type(self)._PT_ALLOW_DEFAULT:
-            self.__value = None if default is None else int(default)
-        else:
-            self.__value = 0
+            self._pt_bv.set(0 if default is None else int(default))
 
     @property
     def _pt_width(self) -> int:
@@ -77,21 +78,19 @@ class Primitive(Base, Numeric, metaclass=MetaPrimitive):
 
     @property
     def value(self) -> int:
-        return self.__value
+        return int(self._pt_bv)
 
     @value.setter
     def value(self, value: int) -> int:
         self._pt_set(value)
 
-    def _pt_set(self, value: int, force: bool = False) -> int:
+    def _pt_set(self, value: int) -> int:
         value = int(value)
         if value < 0 or (self._pt_width > 0 and value > self._pt_mask):
             raise PrimitiveValueError(
                 f"Value {value} cannot be represented by {self._pt_width} bits"
             )
-        self.__value = value
-        if not force:
-            self._pt_updated()
+        self._pt_bv.set(value)
 
     def __int__(self) -> int:
-        return self.__value
+        return int(self._pt_bv)

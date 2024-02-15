@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .primitive import Primitive
+from enum import Enum, auto
 
 
-class Scalar(Primitive):
-    pass
+class Packing(Enum):
+    FROM_LSB = auto()
+    FROM_MSB = auto()

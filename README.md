@@ -221,3 +221,21 @@ class MessageBus:
     header    : MessageHeader
     ping_pong : PingPongPayload
 ```
+
+### Profiling
+
+Using Packtype objects within a testbench can cause significant overhead if many
+pack and unpack operations are being performed. To help diagnose performance
+issues, you can enable profiling which counts the number of each type of object
+that are created during a run:
+
+```python
+from packtype.base import Base
+
+def my_test_function():
+    Base._pt_enable_profiling(limit=10)
+```
+
+The `limit` keyword will filter out any objects from the report that have less
+than this number of creations by the end of the run, this can be useful to
+filter out noise of many small unique objects.

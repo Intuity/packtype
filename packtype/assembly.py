@@ -13,19 +13,15 @@
 # limitations under the License.
 
 import functools
-from enum import Enum, auto
 from typing import Any
 
 from .array import Array, ArraySpec
 from .base import Base
+from .bitvector import BitVector, BitVectorWindow
+from .numeric import Numeric
+from .packing import Packing
 from .primitive import Primitive
 from .scalar import Scalar
-from .numeric import Numeric
-
-
-class Packing(Enum):
-    FROM_LSB = auto()
-    FROM_MSB = auto()
 
 
 class WidthError(Exception):
@@ -37,31 +33,16 @@ class AssignmentError(Exception):
 
 
 class Assembly(Base, Numeric):
-    def __init__(self) -> None:
-        super().__init__()
+
+    def __init__(self,
+                 _pt_bv : BitVector | BitVectorWindow | None = None) -> None:
         self._pt_fields = {}
-        for fname, ftype, fval in self._pt_definitions():
-            if isinstance(ftype, ArraySpec):
-                if isinstance(ftype.base, Primitive):
-                    finst = Array(ftype, default=fval)
-                else:
-                    finst = Array(ftype)
-            elif issubclass(ftype, Primitive):
-                finst = ftype(default=fval)
-            else:
-                finst = ftype()
-            finst._PT_PARENT = self
-            setattr(self, fname, finst)
-            self._pt_fields[finst] = fname
+        super().__init__(_pt_bv=_pt_bv)
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if (
-            not name.startswith("_")
-            and hasattr(self, name)
-            and isinstance(obj := getattr(self, name), Base)
-        ):
-            obj._pt_set(value)
-        else:
+        try:
+            return getattr(self, name)._pt_set(value)
+        except AttributeError:
             return super().__setattr__(name, value)
 
     def _pt_lookup(self, field: type[Base] | Base) -> str:
@@ -78,32 +59,58 @@ class PackedAssembly(Assembly):
     _PT_RANGES: dict
     _PT_PADDING: int
 
-    def __init__(self, **kwds) -> None:
-        super().__init__()
+    def __init__(self,
+                 _pt_bv : BitVector | BitVectorWindow | None = None,
+                 **kwds) -> None:
+        super().__init__(
+            _pt_bv=BitVector(self._PT_WIDTH) if _pt_bv is None else _pt_bv
+        )
+        for fname, ftype, fval in self._pt_definitions():
+            lsb, msb = self._PT_RANGES[fname]
+            if isinstance(ftype, ArraySpec):
+                if isinstance(ftype.base, Primitive):
+                    finst = Array(ftype,
+                                  default=fval,
+                                  packing=self._PT_PACKING,
+                                  _pt_bv=self._pt_bv.create_window(msb, lsb))
+                else:
+                    finst = Array(ftype,
+                                  packing=self._PT_PACKING,
+                                  _pt_bv=self._pt_bv.create_window(msb, lsb))
+            elif issubclass(ftype, Primitive):
+                finst = ftype(default=fval,
+                              _pt_bv=self._pt_bv.create_window(msb, lsb))
+            else:
+                finst = ftype(_pt_bv=self._pt_bv.create_window(msb, lsb))
+            finst._PT_PARENT = self
+            setattr(self, fname, finst)
+            self._pt_fields[finst] = fname
+            # If a value was provided, assign it
+            if (fval := kwds.get(fname, None)) is not None:
+                if isinstance(finst, Array):
+                    if not isinstance(fval, list) or len(fval) != len(finst):
+                        raise AssignmentError(
+                            f"Cannot assign value to field {fname} as it is an array "
+                            f"of {len(finst)} entries and the assigned value does "
+                            f"not have the same dimensions"
+                        )
+                    for sub_val, sub_field in zip(fval, finst):
+                        sub_field._pt_set(sub_val)
+                else:
+                    finst._pt_set(fval)
+                # Delete from kwds to track
+                del kwds[fname]
+        # Flag any unused field values
+        if kwds:
+            raise AssignmentError(
+                f"{type(self).__name__} does not contain fields called " +
+                ", ".join(f"'{x}'" for x in kwds.keys())
+            )
         # Create padding field
         if self._PT_PADDING > 0:
-            padding = Scalar[self._PT_PADDING]()
-            self._pt_fields[padding] = "_padding"
+            padding = Scalar[self._PT_PADDING](_pt_bv=self._pt_bv)
             setattr(self, "_padding", padding)
-        # Assign field values
-        for key, value in kwds.items():
-            field = getattr(self, key, None)
-            if field is None:
-                raise AssignmentError(
-                    f"{type(self).__name__} does not contain a field called "
-                    f"'{key}'"
-                )
-            if isinstance(field, Array):
-                if not isinstance(value, list) or len(value) != len(field):
-                    raise AssignmentError(
-                        f"Cannot assign value to field {key} as it is an array "
-                        f"of {len(field)} entries and the assigned value does "
-                        f"not have the same dimensions"
-                    )
-                for idx, aval in enumerate(value):
-                    field[idx]._pt_set(aval)
-            else:
-                field._pt_set(value)
+            self._pt_fields[padding] = "_padding"
 
     @classmethod
     def _pt_construct(cls, parent: Base, packing: Packing, width: int):
@@ -123,15 +130,17 @@ class PackedAssembly(Assembly):
         if cls._PT_PACKING is Packing.FROM_LSB:
             lsb = 0
             for fname, ftype, _ in cls._pt_definitions():
+                # For arrays record each component placement separately
                 if isinstance(ftype, ArraySpec):
                     fwidth = ftype.base()._pt_width
+                    part_lsb = lsb
                     for idx in range(ftype.dimension):
-                        cls._PT_RANGES[fname, idx] = (lsb, lsb + fwidth - 1)
-                        lsb += fwidth
-                else:
-                    fwidth = ftype()._pt_width
-                    cls._PT_RANGES[fname] = (lsb, lsb + fwidth - 1)
-                    lsb += fwidth
+                        cls._PT_RANGES[fname, idx] = (part_lsb, part_lsb + fwidth - 1)
+                        part_lsb += fwidth
+                # For every field type (including arrays) record full placement
+                fwidth = ftype()._pt_width
+                cls._PT_RANGES[fname] = (lsb, lsb + fwidth - 1)
+                lsb += fwidth
             # Insert padding
             cls._PT_PADDING = max(0, cls._PT_WIDTH - lsb)
             if cls._PT_PADDING > 0:
@@ -140,15 +149,17 @@ class PackedAssembly(Assembly):
         else:
             msb = cls._PT_WIDTH - 1
             for fname, ftype, _ in cls._pt_definitions():
+                # For arrays record each component placement separately
                 if isinstance(ftype, ArraySpec):
                     fwidth = ftype.base()._pt_width
+                    part_msb = msb
                     for idx in range(ftype.dimension):
-                        cls._PT_RANGES[fname, idx] = (msb - fwidth + 1, msb)
-                        msb -= fwidth
-                else:
-                    fwidth = ftype()._pt_width
-                    cls._PT_RANGES[fname] = (msb - fwidth + 1, msb)
-                    msb -= fwidth
+                        cls._PT_RANGES[fname, idx] = (part_msb - fwidth + 1, part_msb)
+                        part_msb -= fwidth
+                # For every field type (including arrays) record full placement
+                fwidth = ftype()._pt_width
+                cls._PT_RANGES[fname] = (msb - fwidth + 1, msb)
+                msb -= fwidth
             # Insert padding
             cls._PT_PADDING = max(0, msb + 1)
             if cls._PT_PADDING > 0:
@@ -167,10 +178,12 @@ class PackedAssembly(Assembly):
         return self._PT_WIDTH
 
     @property
+    @functools.cache
     def _pt_mask(self) -> int:
         return (1 << self._PT_WIDTH) - 1
 
     @property
+    @functools.cache
     def _pt_fields_lsb_asc(self) -> list[Base]:
         pairs = []
         for finst, fname in self._pt_fields.items():
@@ -183,6 +196,7 @@ class PackedAssembly(Assembly):
         return sorted(pairs, key=lambda x: x[0])
 
     @property
+    @functools.cache
     def _pt_fields_msb_desc(self) -> list[Base]:
         pairs = []
         for finst, fname in self._pt_fields.items():
@@ -194,23 +208,16 @@ class PackedAssembly(Assembly):
             pairs.append((lsb, msb, (fname, finst)))
         return sorted(pairs, key=lambda x: x[1], reverse=True)
 
+    @functools.cache
     def _pt_lsb(self, field: str) -> int:
         return self._PT_RANGES[field][0]
 
+    @functools.cache
     def _pt_msb(self, field: str) -> int:
         return self._PT_RANGES[field][1]
 
     def _pt_pack(self) -> int:
-        packed = 0
-        for finst, fname in self._pt_fields.items():
-            if isinstance(finst, Array):
-                for idx, entry in enumerate(finst):
-                    packed |= (int(entry) & entry._pt_mask) << self._pt_lsb(
-                        (fname, idx)
-                    )
-            else:
-                packed |= (int(finst) & finst._pt_mask) << self._pt_lsb(fname)
-        return packed
+        return int(self._pt_bv)
 
     @classmethod
     def _pt_unpack(cls, packed: int) -> "PackedAssembly":
@@ -221,18 +228,5 @@ class PackedAssembly(Assembly):
     def __int__(self) -> int:
         return self._pt_pack()
 
-    def _pt_set(self, value: int, force: bool = False) -> None:
-        value = int(value)
-        for finst, fname in self._pt_fields.items():
-            if isinstance(finst, Array):
-                for idx, entry in enumerate(finst):
-                    entry._pt_set(
-                        (value >> self._pt_lsb((fname, idx))) & entry._pt_mask,
-                        force=True,
-                    )
-            else:
-                finst._pt_set(
-                    (value >> self._pt_lsb(fname)) & finst._pt_mask, force=True
-                )
-        if not force:
-            self._pt_updated(self)
+    def _pt_set(self, value: int) -> None:
+        self._pt_bv.set(value)
