@@ -92,6 +92,13 @@ def test_union_nested():
     assert int(inst.a.c) == 142
     assert int(inst.b) == 142
 
+    # Implicit unpacking
+    inst = UnionB(142)
+    assert int(inst.a.a) == 142
+    assert int(inst.a.b) == 142
+    assert int(inst.a.c) == 142
+    assert int(inst.b) == 142
+
     # Repacking
     assert inst.a._pt_pack() == 142
 

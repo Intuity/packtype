@@ -311,17 +311,40 @@ def test_struct_constructor():
         pass
 
     @TestPkg.struct()
+    class InnerA:
+        ab: Scalar[6]
+        cd: Scalar[2]
+
+    @TestPkg.struct()
+    class InnerB:
+        ab: Scalar[2]
+        cd: Scalar[6]
+
+    @TestPkg.union()
+    class InnerUnion:
+        a: InnerA
+        b: InnerB
+
+    @TestPkg.struct()
     class TestStruct:
         ab: Scalar[12]
         cd: 3 * Scalar[3]
         ef: Scalar[9]
+        gh: InnerUnion
 
-    inst = TestStruct(ab=123, cd=[4, 5, 6], ef=41)
+    inst = TestStruct(ab=123, cd=[4, 5, 6], ef=41, gh=0x27)
     assert int(inst.ab) == 123
     assert int(inst.cd[0]) == 4
     assert int(inst.cd[1]) == 5
     assert int(inst.cd[2]) == 6
     assert int(inst.ef) == 41
+    assert int(inst.gh) == 0x27
+    assert int(inst.gh.a) == 0x27
+    assert int(inst.gh.a.ab) == (0x27 & 0x3F)
+    assert int(inst.gh.a.cd) == (0x27 & 0xC0) >> 6
+    assert int(inst.gh.b) == 0x27
+    assert int(inst.gh.b.ab) == (0x27 & 0x03)
+    assert int(inst.gh.b.cd) == (0x27 & 0xFC) >> 2
 
 
 def test_struct_bad_constructor():

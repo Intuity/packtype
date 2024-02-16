@@ -27,7 +27,7 @@ class BitVector:
 
     def __init__(self, width: int | None = None, value: int = 0) -> None:
         self.__width = width
-        self.__value = 0
+        self.__value = value
 
     @property
     def width(self) -> int:

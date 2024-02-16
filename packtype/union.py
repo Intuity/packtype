@@ -29,9 +29,9 @@ class Union(Assembly):
     _PT_WIDTH: int
 
     def __init__(self,
-                 value: int | None = 0,
+                 value: int = 0,
                  _pt_bv: BitVector | BitVectorWindow | None = None) -> None:
-        super().__init__(_pt_bv=_pt_bv or BitVector(self._pt_width, value))
+        super().__init__(_pt_bv=_pt_bv or BitVector(self._pt_width, value=value))
         for fname, ftype, fval in self._pt_definitions():
             if isinstance(ftype, ArraySpec):
                 if isinstance(ftype.base, Primitive):
