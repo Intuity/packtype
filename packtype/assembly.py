@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import functools
+import math
 from typing import Any
 
 from .array import Array, ArraySpec
@@ -111,6 +112,21 @@ class PackedAssembly(Assembly):
             padding = Scalar[self._PT_PADDING](_pt_bv=self._pt_bv)
             setattr(self, "_padding", padding)
             self._pt_fields[padding] = "_padding"
+
+    def __str__(self) -> str:
+        lines = [f"{type(self).__name__} - width: {self._PT_WIDTH}, raw: 0x{int(self):X}"]
+        max_bits = int(math.ceil(math.log(self._PT_WIDTH, 10)))
+        max_name = max(map(len, self._pt_fields.values()))
+        for finst, fname in self._pt_fields.items():
+            lsb, msb = self._PT_RANGES[fname]
+            lines.append(
+                f" - [{msb:{max_bits}}:{lsb:{max_bits}}] {fname:{max_name}} "
+                f"= 0x{int(finst):X}"
+            )
+        return "\n".join(lines)
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     @classmethod
     def _pt_construct(cls, parent: Base, packing: Packing, width: int):
