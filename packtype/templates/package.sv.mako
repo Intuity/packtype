@@ -74,7 +74,7 @@ typedef enum logic [${width(obj)}:0] {
         prefix = tc.snake_case(obj._PT_PREFIX).upper()
         prefix += ["", "_"][len(prefix) > 0]
 %>\
-    ${sep} ${prefix}${tc.snake_case(fname).upper()} = 'd${field.value}
+    ${sep} ${prefix}${tc.snake_case(fname).upper()} = '${obj._pt_width}${field.value}
 <%      sep = "," %>\
     %endfor
 } ${name | tc.snake_case}_t;
