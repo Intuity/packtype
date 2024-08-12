@@ -16,6 +16,7 @@ import importlib.util
 import logging
 import traceback
 from pathlib import Path
+from types import SimpleNamespace
 
 import click
 from mako import exceptions
@@ -30,6 +31,7 @@ from .enum import Enum
 from .package import Package
 from .scalar import Scalar
 from .struct import Struct
+from .svg.render import SvgRender
 from .templates.common import snake_case
 from .union import Union
 from .wrap import Registry
@@ -73,10 +75,20 @@ def main(ctx, debug: bool, only: list[str], spec: str):
 
 
 @main.command()
+@click.pass_context
+def inspect(ctx):
+    pkgs = SimpleNamespace(**{ x.__name__: x for x in ctx.obj.get("pkgs", [])})
+    log.warning("Use the 'pkgs' namespace to inspect Packtype definitions")
+    breakpoint()
+
+
+@main.command()
+@click.option("--width", type=int, default=60)
+@click.option("--height", type=int, default=60)
 @click.argument("selection", type=str)
 @click.argument("output", type=click.Path(dir_okay=False, path_type=Path), default=None, required=False)
 @click.pass_context
-def svg(ctx, selection: str, output: Path):
+def svg(ctx, width: int, height: int, selection: str, output: Path | None):
     # Resolve selection to a struct or union
     resolved = None
     for segment in selection.split("."):
@@ -99,6 +111,12 @@ def svg(ctx, selection: str, output: Path):
             f"Selection {selection} resolved to an object of type "
             f"{resolved._PT_BASE.__name__} which cannot be rendered as an SVG"
         )
+    # Pass to the SVG renderer
+    svg = SvgRender(top=resolved, canvas=(width, height)).render()
+    if output:
+        output.write_text(svg, encoding="utf-8")
+    else:
+        print(svg)
 
 @main.command()
 @click.argument("language", type=click.Choice(("sv",), case_sensitive=False))
