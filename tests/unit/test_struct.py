@@ -132,6 +132,7 @@ def test_struct_oversized():
         pass
 
     with pytest.raises(WidthError) as e:
+
         @TestPkg.struct(width=17)
         class TestStruct:
             ab: Scalar[12]

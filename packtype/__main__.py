@@ -46,6 +46,7 @@ log.setLevel(logging.INFO)
 # Setup exception handling
 install()
 
+
 # Handle CLI
 @click.group()
 @click.option("--debug", flag_value=True, default=False, help="Enable debug messages")
@@ -77,7 +78,7 @@ def main(ctx, debug: bool, only: list[str], spec: str):
 @main.command()
 @click.pass_context
 def inspect(ctx):
-    pkgs = SimpleNamespace(**{ x.__name__: x for x in ctx.obj.get("pkgs", [])})
+    pkgs = SimpleNamespace(**{x.__name__: x for x in ctx.obj.get("pkgs", [])})
     log.warning("Use the 'pkgs' namespace to inspect Packtype definitions")
     breakpoint()
 
@@ -86,7 +87,12 @@ def inspect(ctx):
 @click.option("--width", type=int, default=60)
 @click.option("--height", type=int, default=60)
 @click.argument("selection", type=str)
-@click.argument("output", type=click.Path(dir_okay=False, path_type=Path), default=None, required=False)
+@click.argument(
+    "output",
+    type=click.Path(dir_okay=False, path_type=Path),
+    default=None,
+    required=False,
+)
 @click.pass_context
 def svg(ctx, width: int, height: int, selection: str, output: Path | None):
     # Resolve selection to a struct or union
@@ -99,13 +105,13 @@ def svg(ctx, width: int, height: int, selection: str, output: Path | None):
             resolved = matched[0]
         else:
             if (nxt_rslv := getattr(resolved, segment, None)) is None:
-                raise Exception(f"Cannot resolve '{segment}' within '{resolved.__name__}'")
+                raise Exception(
+                    f"Cannot resolve '{segment}' within '{resolved.__name__}'"
+                )
             resolved = nxt_rslv
     # Check the type is acceptable
     if not hasattr(resolved, "_PT_BASE"):
-        raise Exception(
-            f"Selection {selection} resolved to a non-Packtype object"
-        )
+        raise Exception(f"Selection {selection} resolved to a non-Packtype object")
     elif not issubclass(resolved, (Struct, Union)):
         raise Exception(
             f"Selection {selection} resolved to an object of type "
@@ -118,9 +124,12 @@ def svg(ctx, width: int, height: int, selection: str, output: Path | None):
     else:
         print(svg)
 
+
 @main.command()
 @click.argument("language", type=click.Choice(("sv",), case_sensitive=False))
-@click.argument("outdir", type=click.Path(file_okay=False, path_type=Path), default=Path.cwd())
+@click.argument(
+    "outdir", type=click.Path(file_okay=False, path_type=Path), default=Path.cwd()
+)
 @click.pass_context
 def code(ctx, language: str, outdir: Path):
     """Render Packtype package definitions using a language template"""

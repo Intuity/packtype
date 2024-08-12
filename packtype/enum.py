@@ -44,21 +44,16 @@ class Enum(Base, Numeric):
     _PT_LKP_INST: dict
     _PT_LKP_VALUE: dict
 
-    def __init__(self,
-                 value: int = 0,
-                 _pt_bv : BitVector | BitVectorWindow | None = None) -> None:
-        super().__init__(
-            _pt_bv=BitVector(self._pt_width) if _pt_bv is None else _pt_bv
-        )
+    def __init__(
+        self, value: int = 0, _pt_bv: BitVector | BitVectorWindow | None = None
+    ) -> None:
+        super().__init__(_pt_bv=BitVector(self._pt_width) if _pt_bv is None else _pt_bv)
         self._pt_set(value)
 
     @classmethod
-    def _pt_construct(cls,
-                      parent: Base,
-                      mode: EnumMode,
-                      width: int,
-                      prefix: str | None,
-                      **kwds) -> None:
+    def _pt_construct(
+        cls, parent: Base, mode: EnumMode, width: int, prefix: str | None, **kwds
+    ) -> None:
         super()._pt_construct(parent)
         cls._PT_MODE = mode
         cls._PT_WIDTH = width

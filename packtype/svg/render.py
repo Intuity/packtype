@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections.abc import Iterable
 from copy import copy
 from dataclasses import dataclass, field
 from textwrap import dedent
-from typing import Iterable
 
-from svg import SVG, Rect, Text, Style
+from svg import SVG, Rect, Style, Text
 
 from ..base import Base
 from ..struct import Struct
@@ -42,9 +42,7 @@ class SvgConfig:
     element_fill: str = "transparent"
 
 
-
 class SvgElement:
-
     def __init__(self, config: SvgConfig, instance: Base, name: str):
         self.config = config
         self.instance = instance
@@ -63,14 +61,16 @@ class SvgElement:
         # Does the text need to be truncated?
         max_chars = self.width // (self.config.name_font_size_px // 2)
         if max_chars > 3 and max_chars < len(self.name):
-            trunc_name = self.name[:max_chars-3] + "..."
+            trunc_name = self.name[: max_chars - 3] + "..."
         else:
             trunc_name = self.name[:max_chars]
         # Estimate the text size
         est_text_width = len(trunc_name) * (self.config.name_font_size_px // 2)
         # Calculate center point of box
-        center = Point(position.x + (self.width // 2),
-                       position.y + (self.height // 2) + self.config.stroke_width)
+        center = Point(
+            position.x + (self.width // 2),
+            position.y + (self.height // 2) + self.config.stroke_width,
+        )
         # Render the base rectangle
         yield Rect(
             x=position.x,
@@ -103,19 +103,23 @@ class SvgElement:
         )
         # Bit width
         yield Text(
-            x=center.x - (len(str(self.instance._pt_width)) * self.config.bitnum_font_size_px) // 2,
-            y=position.y + self.config.cell_height + self.config.bitnum_font_size_px + self.config.stroke_width * 2,
+            x=center.x
+            - (len(str(self.instance._pt_width)) * self.config.bitnum_font_size_px)
+            // 2,
+            y=position.y
+            + self.config.cell_height
+            + self.config.bitnum_font_size_px
+            + self.config.stroke_width * 2,
             class_=["bitnum"],
             text=str(self.instance._pt_width),
         )
 
 
 class SvgHierarchy:
-
     def __init__(self, config: SvgConfig, instance: Struct | Union) -> None:
         self.config = config
         self.instance = instance
-        self.children : list[SvgHierarchy | SvgElement] = []
+        self.children: list[SvgHierarchy | SvgElement] = []
 
     @property
     def width(self) -> int:
@@ -133,7 +137,6 @@ class SvgHierarchy:
 
 
 class SvgRender:
-
     def __init__(
         self,
         top: type[Struct] | type[Union],
@@ -154,6 +157,7 @@ class SvgRender:
                 else:
                     hier.attach(SvgElement(self.config, field, name))
             return hier
+
         return _recurse(instance)
 
     def render(self) -> str:
@@ -170,9 +174,13 @@ class SvgRender:
                 )
             ),
         ]
-        elements += list(top_element.render(Point(self.config.padding.x, self.config.padding.y)))
-        return str(SVG(
-            width=c_width,
-            height=c_height,
-            elements=elements,
-        ))
+        elements += list(
+            top_element.render(Point(self.config.padding.x, self.config.padding.y))
+        )
+        return str(
+            SVG(
+                width=c_width,
+                height=c_height,
+                elements=elements,
+            )
+        )

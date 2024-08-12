@@ -37,7 +37,7 @@ class MetaAlias(MetaBase):
         return type(
             alias.__name__ + f"_{to_alias.__name__}_{uid}",
             (alias,),
-            {"_PT_ALIAS": to_alias}
+            {"_PT_ALIAS": to_alias},
         )
 
 

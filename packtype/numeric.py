@@ -35,7 +35,6 @@ from .base import MetaBase
 
 
 class Numeric:
-
     def __int__(self) -> int:
         raise NotImplementedError("Subclass must implement __int__")
 

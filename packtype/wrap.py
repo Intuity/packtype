@@ -99,7 +99,7 @@ def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
             attrs = {}
             for key, value in kwds.items():
                 # Skip certain keys
-                if key in ("parent", ):
+                if key in ("parent",):
                     continue
                 # Check if supported by the type
                 if key not in base._PT_ATTRIBUTES:
