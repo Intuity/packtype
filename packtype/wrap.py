@@ -135,6 +135,7 @@ def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
                     "_PT_ATTACH": [],
                     "_PT_ATTRIBUTES": attrs,
                     "_PT_SOURCE": (frame.f_code.co_filename, frame.f_lineno),
+                    "_PT_BASE": base,
                 },
             )
             # Reattach functions

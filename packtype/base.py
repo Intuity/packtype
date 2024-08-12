@@ -34,6 +34,8 @@ class MetaBase(type):
 
 
 class Base(metaclass=MetaBase):
+    # The base class type
+    _PT_BASE: type["Base"] | None = None
     # Whether a default value can be assigned (e.g. constant value)
     _PT_ALLOW_DEFAULT: bool = False
     # Any other types to be attached to this one (e.g. struct to a package)
