@@ -136,7 +136,10 @@ class SvgElement:
                     y=position.y,
                     width=self.config.per_bit_width,
                     height=self.config.cell_height,
-                    fill=self.config.alternation.colours[((self.msb-idx) // self.config.alternation.spacing) % 2]
+                    fill=self.config.alternation.colours[
+                        ((self.msb-idx) // self.config.alternation.spacing) %
+                        len(self.config.alternation.colours)
+                    ],
                 )
         # Render the base rectangle
         points = [
