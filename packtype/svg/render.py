@@ -53,6 +53,12 @@ class TextStyle:
 
 
 @dataclass
+class Alternation:
+    spacing: int = 4
+    colours: tuple[str, str] = ("#FFF", "#EEE")
+
+
+@dataclass
 class SvgConfig:
     padding: Point = field(default_factory=lambda: Point(30, 30))
     name_style: TextStyle = field(default_factory=lambda: TextStyle(size=14))
@@ -63,6 +69,7 @@ class SvgConfig:
     box_style: LineStyle = field(default_factory=LineStyle)
     tick_style: LineStyle = field(default_factory=LineStyle)
     hatching: HatchStyle = field(default_factory=HatchStyle)
+    alternation: Alternation = field(default_factory=Alternation)
 
 
 class ElementStyle(Enum):
@@ -121,6 +128,16 @@ class SvgElement:
             position.x + (self.px_width // 2),
             position.y + (self.px_height // 2),
         )
+        # Background colour alternation
+        if self.config.alternation.spacing > 0:
+            for idx in range(self.bit_width):
+                yield Rect(
+                    x=position.x + idx * self.config.per_bit_width,
+                    y=position.y,
+                    width=self.config.per_bit_width,
+                    height=self.config.cell_height,
+                    fill=self.config.alternation.colours[((self.msb-idx) // self.config.alternation.spacing) % 2]
+                )
         # Render the base rectangle
         points = [
             svg.M(position.x + self.px_width, position.y + self.px_height),
@@ -198,7 +215,6 @@ class SvgElement:
                     ElementStyle.BLOCKED: "black",
                 }[self.style]
             )
-        # TODO @intuity: Colour alternate 4 bit chunks
 
 
 class SvgHierarchy:
