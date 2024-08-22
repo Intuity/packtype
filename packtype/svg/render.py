@@ -198,6 +198,7 @@ class SvgElement:
                     ElementStyle.BLOCKED: "black",
                 }[self.style]
             )
+        # TODO @intuity: Colour alternate 4 bit chunks
 
 
 class SvgHierarchy:
