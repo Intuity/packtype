@@ -84,8 +84,6 @@ def inspect(ctx):
 
 
 @main.command()
-@click.option("--width", type=int, default=60)
-@click.option("--height", type=int, default=60)
 @click.argument("selection", type=str)
 @click.argument(
     "output",
@@ -94,7 +92,7 @@ def inspect(ctx):
     required=False,
 )
 @click.pass_context
-def svg(ctx, width: int, height: int, selection: str, output: Path | None):
+def svg(ctx, selection: str, output: Path | None):
     # Resolve selection to a struct or union
     resolved = None
     for segment in selection.split("."):
