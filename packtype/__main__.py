@@ -31,7 +31,7 @@ from .enum import Enum
 from .package import Package
 from .scalar import Scalar
 from .struct import Struct
-from .svg.render import SvgRender, SvgConfig, SvgElement, ElementStyle
+from .svg.render import SvgRender, SvgConfig, SvgField, ElementStyle
 from .templates.common import snake_case
 from .union import Union
 from .wrap import Registry
@@ -81,6 +81,7 @@ def inspect(ctx):
     pkgs = SimpleNamespace(**{x.__name__: x for x in ctx.obj.get("pkgs", [])})
     log.warning("Use the 'pkgs' namespace to inspect Packtype definitions")
     breakpoint()
+    del pkgs
 
 
 @main.command()
@@ -136,7 +137,7 @@ def svg(ctx, selection: str, output: Path | None):
             if field._PT_BASE in (Struct, Union):
                 _recurse(field, msb=msb)
             else:
-                svg.attach(SvgElement(
+                svg.attach(SvgField(
                     bit_width=field._pt_width,
                     name="" if name == "_padding" else name,
                     msb=msb,

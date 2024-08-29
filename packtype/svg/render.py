@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from textwrap import dedent
 
 import svg
-from svg import SVG, Line, Rect, Style, Text, TSpan, Path, Pattern
+from svg import SVG, Element, Line, Rect, Style, Text, TSpan, Path, Pattern
 
 
 @dataclass
@@ -111,7 +111,19 @@ class ElementStyle(Enum):
     """Block-out (black) overlay"""
 
 
-class SvgElement:
+class SvgField:
+    """
+    SVG representation of a single bit field within a structure
+
+    :param bit_width:    Width of the field in bits
+    :param name:         ASCII name of the field
+    :param msb:          Most significant bit (fields placed left-to-right)
+    :param style:        Style to render the field (NORMAL, HATCHED, BLOCKED)
+    :param static_value: Static bit-wise value to encode in the field, this will
+                         take the place of the name
+    :param config:       Style configuration
+    """
+
     def __init__(self,
                  bit_width: int,
                  name: str,
@@ -138,15 +150,34 @@ class SvgElement:
     def px_height(self) -> int:
         return self.config.cell_height
 
+    def _estimate_text(self, text: str, style: TextStyle) -> int:
+        """
+        Estimate the width of text when rendered into the SVG, assuming that it
+        is monospaced.
+
+        :param text:  The text to render
+        :param style: The text style to render with (sets the font size)
+        :returns:     Integer width of the text
+        """
+        return len(text) * style.size
+
     def _estimate_name_text(self, text: str) -> int:
-        return len(text) * (self.config.name_style.size // 2)
+        return self._estimate_text(text, self.config.name_style)
 
     def _estimate_bit_text(self, text: str) -> int:
-        return len(text) * (self.config.bit_style.size // 2)
+        return self._estimate_text(text, self.config.bit_style)
 
     def render(self,
                position: Point | None = None,
-               final: bool = False) -> Iterable[Rect]:
+               final: bool = False) -> Iterable[Element]:
+        """
+        Render the bit field from a starting position.
+
+        :param position: The top-left coordinate to draw from
+        :param final:    Whether this field is the last to be rendered, in which
+                         case the right-hand wall will be added
+        :yields:         A series of SVG elements
+        """
         position = position or Point(0, 0)
         # Does the text need to be truncated?
         max_chars = self.px_width // (self.config.name_style.size // 2)
@@ -172,7 +203,7 @@ class SvgElement:
                         len(self.config.alternation.colours)
                     ],
                 )
-        # Render the base rectangle
+        # Render the base rectangle (open ended if not the final field)
         points = [
             svg.M(position.x + self.px_width, position.y + self.px_height),
             svg.L(position.x, position.y + self.px_height),
@@ -261,14 +292,22 @@ class SvgElement:
             )
 
 
-class SvgHierarchy:
+class SvgBitFields:
+    """
+    Holds a collection of fields and manages the rendering operation.
+
+    :param config:           Style configuration
+    :param left_annotation:  Text to place on the left of the rendered fields
+    :param right_annotation: Text to place on the right of the rendered fields
+    """
+
     def __init__(self,
                  config: SvgConfig,
                  left_annotation: str | None = None,
                  right_annotation: str | None = None) -> None:
         self.config = config
         self.annotations = (left_annotation, right_annotation)
-        self.children: list[SvgHierarchy | SvgElement] = []
+        self.children: list[SvgField] = []
 
     @property
     def px_width(self) -> int:
@@ -278,12 +317,17 @@ class SvgHierarchy:
     def bit_width(self) -> int:
         return sum(x.bit_width for x in self.children)
 
-    def attach(self, element: type["SvgHierarchy"] | SvgElement) -> None:
+    def attach(self, element: SvgField) -> None:
+        assert isinstance(element, SvgField)
         self.children.append(element)
 
-    def render(self,
-               position: Point | None = None,
-               final: bool = True) -> Iterable[Rect]:
+    def render(self, position: Point | None = None) -> Iterable[Element]:
+        """
+        Render the collection of bitfields from a given starting position.
+
+        :param position: Position to render the bit fields
+        :yields:         A series of SVG elements
+        """
         position = copy(position) or Point(0, 0)
         left, right = self.annotations
         # Left annotation
@@ -300,7 +344,7 @@ class SvgHierarchy:
         for idx, child in enumerate(self.children):
             yield from child.render(
                 position,
-                final=final and idx == (len(self.children) - 1),
+                final=(idx == (len(self.children) - 1)),
             )
             position.x += child.px_width
         # Right annotation
@@ -316,6 +360,15 @@ class SvgHierarchy:
 
 
 class SvgRender:
+    """
+    Class for managing the rendering of an SVG bitfield, applying overall text
+    styles and setting up the canvas.
+
+    :param config:           Style configuration
+    :param left_annotation:  Text to place on the left of the bit field
+    :param right_annotation: Text to place on the right of the bit field
+    """
+
     def __init__(
         self,
         config: SvgConfig | None = None,
@@ -323,17 +376,27 @@ class SvgRender:
         right_annotation: str | None = None,
     ) -> None:
         self.config = config or SvgConfig()
-        self.root = SvgHierarchy(
+        self.root = SvgBitFields(
             self.config,
             left_annotation=left_annotation,
             right_annotation=right_annotation
         )
 
-    def attach(self, element: SvgElement) -> None:
+    def attach(self, element: SvgField) -> None:
+        """
+        Attach a new SVG field into the collection of bit fields.
+
+        :param element: The element to append
+        """
         element.config = self.config
         self.root.attach(element)
 
     def render(self) -> str:
+        """
+        Render the bit fields into an SVG relying on the child bit fields.
+
+        :returns: Rendered string of the SVG
+        """
         c_width = sum((
             self.root.px_width,
             2 * self.config.padding.x,
