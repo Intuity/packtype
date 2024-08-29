@@ -21,25 +21,24 @@ from textwrap import dedent
 import svg
 from svg import SVG, Line, Rect, Style, Text, TSpan, Path, Pattern
 
-from ..base import Base
-from ..struct import Struct
-from ..union import Union
-
 
 @dataclass
 class Point:
+    """A point position - (X, Y) coordinates"""
     x: int
     y: int
 
 
 @dataclass
 class LineStyle:
+    """Defines the style for a line (width and stroke colour)"""
     width: int = 1
     stroke: str = "black"
 
 
 @dataclass
 class HatchStyle:
+    """Defines the style for hatched areas"""
     spacing: int = 5
     width: int = 1
     stroke: str = "black"
@@ -47,64 +46,85 @@ class HatchStyle:
 
 @dataclass
 class TextStyle:
-    size: int = 12
+    """Defines a text style (font, size, and colour)"""
     font: str = "monospace"
+    size: int = 12
     colour: str = "black"
 
 
 @dataclass
-class Alternation:
+class AlternationStyle:
+    """Define the alternating colour style"""
     spacing: int = 4
+    """How many bits should be in each background colour"""
     colours: tuple[str, str] = ("#FFF", "#EEE")
+    """The set of background colours to alternate through"""
 
 
 @dataclass
 class AnnotationStyle:
+    """Define the style for annotations"""
     style: TextStyle = field(default_factory=TextStyle)
+    """Text style (font, size, colour)"""
     width: int = 0
+    """Width of the annotation"""
     padding: int = 0
+    """Padding between the annotation and the side of the bitfield"""
 
 
 @dataclass
 class SvgConfig:
+    """Configure how the bitfield images are drawn"""
     padding: Point = field(default_factory=lambda: Point(30, 30))
+    """Padding on the X and Y axis (applied on all 4 sides of the bitfield)"""
     left_annotation: AnnotationStyle = field(default_factory=AnnotationStyle)
+    """Left-hand annotation style"""
     right_annotation: AnnotationStyle = field(default_factory=AnnotationStyle)
+    """Right-hand annotation style"""
     name_style: TextStyle = field(default_factory=lambda: TextStyle(size=14))
+    """Field name style"""
     bit_style: TextStyle = field(default_factory=lambda: TextStyle(size=12))
+    """Bit number and width style"""
     per_bit_width: int = 20
+    """Per-bit width to use to size fields"""
     cell_height: int = 40
+    """Height to draw bitfields"""
     element_fill: str = "transparent"
+    """Default background colour for fields"""
     box_style: LineStyle = field(default_factory=LineStyle)
+    """Define the line style to use for the boxes around fields"""
     tick_style: LineStyle = field(default_factory=LineStyle)
+    """Define the bit tick style to use within fields"""
     hatching: HatchStyle = field(default_factory=HatchStyle)
-    alternation: Alternation = field(default_factory=Alternation)
+    """Define the hatching style to use for selected fields"""
+    alternation: AlternationStyle = field(default_factory=AlternationStyle)
+    """Define the background colour alternation style"""
 
 
 class ElementStyle(Enum):
+    """Style to use for an element"""
     NORMAL = auto()
+    """Default background colour and clear overlay"""
     HATCHED = auto()
+    """Hatched overlay"""
     BLOCKED = auto()
+    """Block-out (black) overlay"""
 
 
 class SvgElement:
     def __init__(self,
-                 config: SvgConfig,
-                 instance: Base,
+                 bit_width: int,
                  name: str,
                  msb: int,
                  style: ElementStyle = ElementStyle.NORMAL,
-                 static_value: int | None = None):
-        self.config = config
-        self.instance = instance
+                 static_value: int | None = None,
+                 config: SvgConfig | None = None):
+        self.bit_width = bit_width
         self.name = name.strip()
         self.msb = msb
         self.style = style
         self.static_value = static_value
-
-    @property
-    def bit_width(self) -> int:
-        return self.instance._pt_width
+        self.config = config
 
     @property
     def lsb(self) -> int:
@@ -112,7 +132,7 @@ class SvgElement:
 
     @property
     def px_width(self) -> int:
-        return self.config.per_bit_width * self.instance._pt_width
+        return self.config.per_bit_width * self.bit_width
 
     @property
     def px_height(self) -> int:
@@ -244,11 +264,9 @@ class SvgElement:
 class SvgHierarchy:
     def __init__(self,
                  config: SvgConfig,
-                 instance: Struct | Union,
                  left_annotation: str | None = None,
                  right_annotation: str | None = None) -> None:
         self.config = config
-        self.instance = instance
         self.annotations = (left_annotation, right_annotation)
         self.children: list[SvgHierarchy | SvgElement] = []
 
@@ -280,7 +298,6 @@ class SvgHierarchy:
             position.x += self.config.left_annotation.padding
         # Bit fields
         for idx, child in enumerate(self.children):
-            print(f"Rendering {type(child.instance).__name__} @ {position=}")
             yield from child.render(
                 position,
                 final=final and idx == (len(self.children) - 1),
@@ -301,52 +318,24 @@ class SvgHierarchy:
 class SvgRender:
     def __init__(
         self,
-        top: type[Struct] | type[Union],
-        canvas: tuple[int, int],
         config: SvgConfig | None = None,
+        left_annotation: str | None = None,
+        right_annotation: str | None = None,
     ) -> None:
-        self.top = top
-        self.canvas = canvas
         self.config = config or SvgConfig()
+        self.root = SvgHierarchy(
+            self.config,
+            left_annotation=left_annotation,
+            right_annotation=right_annotation
+        )
 
-    def _process(self, instance: Struct | Union):
-        def _recurse(instance: Struct | Union, msb: int | None = None) -> SvgHierarchy:
-            hier = SvgHierarchy(self.config, instance)
-            if msb is None:
-                msb = instance._PT_WIDTH - 1
-            for name, _lsb in sorted(
-                ((name, lsb) for name, (lsb, _msb) in instance._PT_RANGES.items()),
-                key=lambda x: x[1],
-                reverse=True,
-            ):
-                field = getattr(instance, name)
-                if field._PT_BASE in (Struct, Union):
-                    inner = _recurse(field, msb=msb)
-                else:
-                    inner = SvgElement(
-                        self.config,
-                        field,
-                        name,
-                        msb,
-                        style=ElementStyle.HATCHED if name == "minute" else ElementStyle.NORMAL,
-                        static_value=123 if _lsb == 0 else None,
-                    )
-                msb -= inner.bit_width
-                hier.attach(inner)
-            return hier
-
-        return _recurse(instance)
+    def attach(self, element: SvgElement) -> None:
+        element.config = self.config
+        self.root.attach(element)
 
     def render(self) -> str:
-        top_element = self._process(self.top())
-        top_element.annotations = (self.top.__name__, "Some Annotation\nOther text\nA third line")
-        self.config.left_annotation.width = 60
-        self.config.left_annotation.padding = 10
-        self.config.right_annotation.style.size = 10
-        self.config.right_annotation.width = 60
-        self.config.right_annotation.padding = 10
         c_width = sum((
-            top_element.px_width,
+            self.root.px_width,
             2 * self.config.padding.x,
             self.config.left_annotation.width,
             self.config.left_annotation.padding,
@@ -409,7 +398,7 @@ class SvgRender:
             ])
         ]
         elements += list(
-            top_element.render(Point(self.config.padding.x, self.config.padding.y))
+            self.root.render(Point(self.config.padding.x, self.config.padding.y))
         )
         return str(
             SVG(

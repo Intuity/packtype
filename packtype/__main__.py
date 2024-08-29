@@ -31,7 +31,7 @@ from .enum import Enum
 from .package import Package
 from .scalar import Scalar
 from .struct import Struct
-from .svg.render import SvgRender
+from .svg.render import SvgRender, SvgConfig, SvgElement, ElementStyle
 from .templates.common import snake_case
 from .union import Union
 from .wrap import Registry
@@ -117,12 +117,41 @@ def svg(ctx, width: int, height: int, selection: str, output: Path | None):
             f"Selection {selection} resolved to an object of type "
             f"{resolved._PT_BASE.__name__} which cannot be rendered as an SVG"
         )
-    # Pass to the SVG renderer
-    svg = SvgRender(top=resolved, canvas=(width, height)).render()
+
+    # Create a rendering instance
+    cfg = SvgConfig()
+    cfg.left_annotation.width = 60
+    cfg.left_annotation.padding = 10
+    svg = SvgRender(cfg, left_annotation=resolved.__name__)
+
+    # Recurse through the object to construct the SVG hierarchy
+    def _recurse(instance: Struct | Union, msb: int | None = None):
+        nonlocal svg
+        if msb is None:
+            msb = instance._PT_WIDTH - 1
+        for name, _lsb in sorted(
+            ((name, lsb) for name, (lsb, _msb) in instance._PT_RANGES.items()),
+            key=lambda x: x[1],
+            reverse=True,
+        ):
+            field = getattr(instance, name)
+            if field._PT_BASE in (Struct, Union):
+                _recurse(field, msb=msb)
+            else:
+                svg.attach(SvgElement(
+                    bit_width=field._pt_width,
+                    name="" if name == "_padding" else name,
+                    msb=msb,
+                    style=ElementStyle.HATCHED if name == "_padding" else ElementStyle.NORMAL,
+                ))
+            msb -= field._pt_width
+    _recurse(resolved())
+
+    # Run the rendering operation
     if output:
-        output.write_text(svg, encoding="utf-8")
+        output.write_text(svg.render(), encoding="utf-8")
     else:
-        print(svg)
+        print(svg.render())
 
 
 @main.command()
