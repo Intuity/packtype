@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from textwrap import dedent
 
 import svg
-from svg import SVG, Line, Rect, Style, Text, Path, Pattern
+from svg import SVG, Line, Rect, Style, Text, TSpan, Path, Pattern
 
 from ..base import Base
 from ..struct import Struct
@@ -59,8 +59,17 @@ class Alternation:
 
 
 @dataclass
+class AnnotationStyle:
+    style: TextStyle = field(default_factory=TextStyle)
+    width: int = 0
+    padding: int = 0
+
+
+@dataclass
 class SvgConfig:
     padding: Point = field(default_factory=lambda: Point(30, 30))
+    left_annotation: AnnotationStyle = field(default_factory=AnnotationStyle)
+    right_annotation: AnnotationStyle = field(default_factory=AnnotationStyle)
     name_style: TextStyle = field(default_factory=lambda: TextStyle(size=14))
     bit_style: TextStyle = field(default_factory=lambda: TextStyle(size=12))
     per_bit_width: int = 20
@@ -84,12 +93,14 @@ class SvgElement:
                  instance: Base,
                  name: str,
                  msb: int,
-                 style: ElementStyle = ElementStyle.NORMAL):
+                 style: ElementStyle = ElementStyle.NORMAL,
+                 static_value: int | None = None):
         self.config = config
         self.instance = instance
         self.name = name.strip()
         self.msb = msb
         self.style = style
+        self.static_value = static_value
 
     @property
     def bit_width(self) -> int:
@@ -124,7 +135,7 @@ class SvgElement:
         else:
             trunc_name = self.name[:max_chars]
         # Calculate center point of box
-        center = Point(
+        box_center = Point(
             position.x + (self.px_width // 2),
             position.y + (self.px_height // 2),
         )
@@ -156,13 +167,23 @@ class SvgElement:
             stroke_width=self.config.box_style.width,
             fill=self.config.element_fill,
         )
-        # Render the text
-        yield Text(
-            x=center.x,
-            y=center.y,
-            class_=["baseline", "name"],
-            text=trunc_name,
-        )
+        # Render either the name or a static value
+        if self.static_value is not None:
+            for idx, bit in enumerate(f"{self.static_value:0{self.bit_width}b}"[:self.bit_width]):
+                bit_center = int(position.x + (idx + 0.5) * self.config.per_bit_width)
+                yield Text(
+                    x=bit_center,
+                    y=box_center.y,
+                    class_=["baseline", "name"],
+                    text=bit,
+                )
+        else:
+            yield Text(
+                x=box_center.x,
+                y=box_center.y,
+                class_=["baseline", "name"],
+                text=trunc_name,
+            )
         # Bit numbering
         msb_txt = str(self.msb)
         lsb_txt = str(self.lsb)
@@ -180,7 +201,7 @@ class SvgElement:
         )
         # Bit width
         yield Text(
-            x=center.x,
+            x=box_center.x,
             y=position.y
             + self.config.cell_height
             + self.config.bit_style.size
@@ -221,9 +242,14 @@ class SvgElement:
 
 
 class SvgHierarchy:
-    def __init__(self, config: SvgConfig, instance: Struct | Union) -> None:
+    def __init__(self,
+                 config: SvgConfig,
+                 instance: Struct | Union,
+                 left_annotation: str | None = None,
+                 right_annotation: str | None = None) -> None:
         self.config = config
         self.instance = instance
+        self.annotations = (left_annotation, right_annotation)
         self.children: list[SvgHierarchy | SvgElement] = []
 
     @property
@@ -241,6 +267,18 @@ class SvgHierarchy:
                position: Point | None = None,
                final: bool = True) -> Iterable[Rect]:
         position = copy(position) or Point(0, 0)
+        left, right = self.annotations
+        # Left annotation
+        if left is not None:
+            yield Text(
+                x=position.x + self.config.left_annotation.width,
+                y=position.y + self.config.cell_height // 2,
+                class_=["baseline", "left_annotation"],
+                text=left,
+            )
+            position.x += self.config.left_annotation.width
+            position.x += self.config.left_annotation.padding
+        # Bit fields
         for idx, child in enumerate(self.children):
             print(f"Rendering {type(child.instance).__name__} @ {position=}")
             yield from child.render(
@@ -248,6 +286,16 @@ class SvgHierarchy:
                 final=final and idx == (len(self.children) - 1),
             )
             position.x += child.px_width
+        # Right annotation
+        if right:
+            right_x = position.x + self.config.right_annotation.padding
+            yield Text(
+                x=right_x,
+                y=position.y,
+                class_=["right_annotation"],
+                overflow="visible",
+                elements=[TSpan(text=x, x=right_x, dy="1em") for x in right.split("\n")]
+            )
 
 
 class SvgRender:
@@ -266,7 +314,7 @@ class SvgRender:
             hier = SvgHierarchy(self.config, instance)
             if msb is None:
                 msb = instance._PT_WIDTH - 1
-            for name, _ in sorted(
+            for name, _lsb in sorted(
                 ((name, lsb) for name, (lsb, _msb) in instance._PT_RANGES.items()),
                 key=lambda x: x[1],
                 reverse=True,
@@ -280,7 +328,8 @@ class SvgRender:
                         field,
                         name,
                         msb,
-                        style=ElementStyle.NORMAL,
+                        style=ElementStyle.HATCHED if name == "minute" else ElementStyle.NORMAL,
+                        static_value=123 if _lsb == 0 else None,
                     )
                 msb -= inner.bit_width
                 hier.attach(inner)
@@ -290,7 +339,20 @@ class SvgRender:
 
     def render(self) -> str:
         top_element = self._process(self.top())
-        c_width = top_element.px_width + 2 * self.config.padding.x
+        top_element.annotations = (self.top.__name__, "Some Annotation\nOther text\nA third line")
+        self.config.left_annotation.width = 60
+        self.config.left_annotation.padding = 10
+        self.config.right_annotation.style.size = 10
+        self.config.right_annotation.width = 60
+        self.config.right_annotation.padding = 10
+        c_width = sum((
+            top_element.px_width,
+            2 * self.config.padding.x,
+            self.config.left_annotation.width,
+            self.config.left_annotation.padding,
+            self.config.right_annotation.width,
+            self.config.right_annotation.padding
+        ))
         c_height = self.config.cell_height + 2 * self.config.padding.y
         elements = [
             Style(
@@ -315,6 +377,14 @@ class SvgRender:
                     .width {{
                         font: {self.config.bit_style.size}px sans-serif;
                         text-anchor: middle;
+                    }}
+                    .left_annotation {{
+                        font: {self.config.left_annotation.style.size}px sans-serif;
+                        text-anchor: end;
+                    }}
+                    .right_annotation {{
+                        font: {self.config.right_annotation.style.size}px sans-serif;
+                        text-anchor: start;
                     }}
                     """
                 )
