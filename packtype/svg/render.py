@@ -340,8 +340,8 @@ class SvgBitFields:
             )
             position.x += self.config.left_annotation.width
             position.x += self.config.left_annotation.padding
-        # Bit fields
-        for idx, child in enumerate(self.children):
+        # Bit fields (rendering left-to-right, MSB-to-LSB)
+        for idx, child in enumerate(sorted(self.children, key=lambda x: x.msb, reverse=True)):
             yield from child.render(
                 position,
                 final=(idx == (len(self.children) - 1)),
