@@ -66,8 +66,8 @@ class TextStyle:
         :param text:  The text to render
         :returns:     Size (width, height) of the text
         """
-        # NOTE: Many fonts have a width-height ratio of 3/5, this is why this
-        #       "fudge" factor has been selected
+        # NOTE: Many fonts have a width-height ratio of 3/5, this is why a fudge
+        #       factor of 0.6 has been selected
         return Size(int((len(text) * self.size) * 0.6), self.size)
 
 
