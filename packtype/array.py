@@ -41,31 +41,41 @@ class ArraySpec:
 
 
 class Array:
-    def __init__(self,
-                 spec: ArraySpec,
-                 *args,
-                 _pt_bv : BitVector | BitVectorWindow | None = None,
-                 packing : Packing = Packing.FROM_LSB,
-                 **kwds):
+    def __init__(
+        self,
+        spec: ArraySpec,
+        *args,
+        _pt_bv: BitVector | BitVectorWindow | None = None,
+        packing: Packing = Packing.FROM_LSB,
+        **kwds,
+    ):
         self._pt_bv = BitVector(width=spec._pt_width) if _pt_bv is None else _pt_bv
         self._pt_entries = []
         if packing is Packing.FROM_LSB:
             lsb = 0
             for _ in range(spec.dimension):
-                self._pt_entries.append(entry := spec.base(
-                    *args,
-                    _pt_bv=self._pt_bv.create_window(lsb + spec.base._PT_WIDTH - 1, lsb),
-                    **kwds
-                ))
+                self._pt_entries.append(
+                    entry := spec.base(
+                        *args,
+                        _pt_bv=self._pt_bv.create_window(
+                            lsb + spec.base._PT_WIDTH - 1, lsb
+                        ),
+                        **kwds,
+                    )
+                )
                 lsb += entry._pt_width
         else:
             msb = spec._pt_width - 1
             for _ in range(spec.dimension):
-                self._pt_entries.append(entry := spec.base(
-                    *args,
-                    _pt_bv=self._pt_bv.create_window(msb, msb - spec.base._PT_WIDTH + 1),
-                    **kwds
-                ))
+                self._pt_entries.append(
+                    entry := spec.base(
+                        *args,
+                        _pt_bv=self._pt_bv.create_window(
+                            msb, msb - spec.base._PT_WIDTH + 1
+                        ),
+                        **kwds,
+                    )
+                )
                 msb -= entry._pt_width
 
     def __getitem__(self, key: int) -> Any:

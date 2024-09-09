@@ -16,6 +16,7 @@ import dataclasses
 import functools
 from collections import defaultdict
 from typing import Any
+
 try:
     from typing import Self
 except ImportError:
@@ -34,6 +35,8 @@ class MetaBase(type):
 
 
 class Base(metaclass=MetaBase):
+    # The base class type
+    _PT_BASE: type["Base"] | None = None
     # Whether a default value can be assigned (e.g. constant value)
     _PT_ALLOW_DEFAULT: bool = False
     # Any other types to be attached to this one (e.g. struct to a package)
@@ -67,9 +70,7 @@ class Base(metaclass=MetaBase):
     @classmethod
     @functools.cache
     def _pt_definitions(cls) -> list[str, Any]:
-        return [
-            (x.name, x.type, x.default) for x in dataclasses.fields(cls._PT_DEF)
-        ]
+        return [(x.name, x.type, x.default) for x in dataclasses.fields(cls._PT_DEF)]
 
     @classmethod
     def _pt_field_types(cls) -> list[type["Base"]]:
@@ -107,9 +108,13 @@ class Base(metaclass=MetaBase):
         :param limit: Don't print out statistics for objects below this limit
         """
         import atexit
+
         def _list_objs():
             print("Packtype object creation counts:")
-            for obj, cnt in sorted(Base._PT_PROFILING.items(), key=lambda x: x[1], reverse=True):
+            for obj, cnt in sorted(
+                Base._PT_PROFILING.items(), key=lambda x: x[1], reverse=True
+            ):
                 if cnt > limit:
                     print(f"{cnt:10d}: {obj}")
+
         atexit.register(_list_objs)

@@ -34,9 +34,7 @@ class AssignmentError(Exception):
 
 
 class Assembly(Base, Numeric):
-
-    def __init__(self,
-                 _pt_bv : BitVector | BitVectorWindow | None = None) -> None:
+    def __init__(self, _pt_bv: BitVector | BitVectorWindow | None = None) -> None:
         self._pt_fields = {}
         super().__init__(_pt_bv=_pt_bv)
 
@@ -60,27 +58,28 @@ class PackedAssembly(Assembly):
     _PT_RANGES: dict
     _PT_PADDING: int
 
-    def __init__(self,
-                 _pt_bv : BitVector | BitVectorWindow | None = None,
-                 **kwds) -> None:
-        super().__init__(
-            _pt_bv=BitVector(self._PT_WIDTH) if _pt_bv is None else _pt_bv
-        )
+    def __init__(
+        self, _pt_bv: BitVector | BitVectorWindow | None = None, **kwds
+    ) -> None:
+        super().__init__(_pt_bv=BitVector(self._PT_WIDTH) if _pt_bv is None else _pt_bv)
         for fname, ftype, fval in self._pt_definitions():
             lsb, msb = self._PT_RANGES[fname]
             if isinstance(ftype, ArraySpec):
                 if isinstance(ftype.base, Primitive):
-                    finst = Array(ftype,
-                                  default=fval,
-                                  packing=self._PT_PACKING,
-                                  _pt_bv=self._pt_bv.create_window(msb, lsb))
+                    finst = Array(
+                        ftype,
+                        default=fval,
+                        packing=self._PT_PACKING,
+                        _pt_bv=self._pt_bv.create_window(msb, lsb),
+                    )
                 else:
-                    finst = Array(ftype,
-                                  packing=self._PT_PACKING,
-                                  _pt_bv=self._pt_bv.create_window(msb, lsb))
+                    finst = Array(
+                        ftype,
+                        packing=self._PT_PACKING,
+                        _pt_bv=self._pt_bv.create_window(msb, lsb),
+                    )
             elif issubclass(ftype, Primitive):
-                finst = ftype(default=fval,
-                              _pt_bv=self._pt_bv.create_window(msb, lsb))
+                finst = ftype(default=fval, _pt_bv=self._pt_bv.create_window(msb, lsb))
             else:
                 finst = ftype(_pt_bv=self._pt_bv.create_window(msb, lsb))
             finst._PT_PARENT = self
@@ -104,17 +103,19 @@ class PackedAssembly(Assembly):
         # Flag any unused field values
         if kwds:
             raise AssignmentError(
-                f"{type(self).__name__} does not contain fields called " +
-                ", ".join(f"'{x}'" for x in kwds.keys())
+                f"{type(self).__name__} does not contain fields called "
+                + ", ".join(f"'{x}'" for x in kwds.keys())
             )
         # Create padding field
         if self._PT_PADDING > 0:
             padding = Scalar[self._PT_PADDING](_pt_bv=self._pt_bv)
-            setattr(self, "_padding", padding)
+            self._padding = padding
             self._pt_fields[padding] = "_padding"
 
     def __str__(self) -> str:
-        lines = [f"{type(self).__name__} - width: {self._PT_WIDTH}, raw: 0x{int(self):X}"]
+        lines = [
+            f"{type(self).__name__} - width: {self._PT_WIDTH}, raw: 0x{int(self):X}"
+        ]
         max_bits = int(math.ceil(math.log(self._PT_WIDTH, 10)))
         max_name = max(map(len, self._pt_fields.values()))
         for finst, fname in self._pt_fields.items():
@@ -182,7 +183,7 @@ class PackedAssembly(Assembly):
                 cls._PT_RANGES["_padding"] = (0, msb)
 
     @classmethod
-    @functools.cache  # noqa: B019
+    @functools.cache
     def _pt_field_width(cls) -> int:
         total_width = 0
         for fname, ftype, _ in cls._pt_definitions():

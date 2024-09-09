@@ -29,23 +29,52 @@ $> python3 -m pip install git+git://github.com/Intuity/packtype
 
 ## Using Packtype
 
-Packtype provides the `packtype` command line utility which can be used in conjuction with a specification (detailed below) to generate the different language definitions:
+Packtype provides the `packtype` command line utility which can be used in
+conjuction with a specification (detailed below) to generate different types of
+outputs.
+
+### Rendering Code
+
+A Packtype specification can be rendered into another programming language, for
+example SystemVerilog:
 
 ```bash
-# Render SystemVerilog and Python versions of the specification
-$> packtype path/to/spec.py path/to/output/dir --render sv
+# Render SystemVerilog version of the specification
+#  python -m packtype <SPEC>          code <LANG> <OUTDIR>
+$> python -m packtype examples/structs/spec.py code sv ./output_dir
 ```
 
-Two positional arguments can be provided:
+The positional arguments are:
 
- 1. `SPEC` - provides the path to the Packtype specification file.
- 2. `OUTDIR` - an optional path to the output folder for generated files (defaults to the current directory).
+ * `SPEC` - path to the Packtype specification file to process;
+ * `code` - command to Packtype to render specification to code;
+ * `LANG` - language to render (`sv` selects SystemVerilog);
+ * `OUTDIR` - path to the output directory to write rendered files.
 
 Then options are available to modify the behaviour:
 
- * `-r sv` / `--render sv` - generate the code for a certain language - only `sv` is currently supported, further languages will be added in due course.
  * `--debug` - generate debug messages as the tool runs.
  * `--help` - show the help prompt.
+
+### Rendering SVG
+
+A Packtype `struct` can also be rendered to an SVG using the `svg` command:
+
+```bash
+# Render an SVG version of a struct
+#  python3 -m packtype <SPEC>                 svg <STRUCT>      <OUTPUT>
+$> python3 -m packtype examples/union/spec.py svg Encodings.Sub test.svg
+```
+
+The positional arguments are:
+
+ * `SPEC` - path to the Packtype specification file to render;
+ * `svg` - command to Packtype to render specification to an SVG;
+ * `STRUCT` - hierarchy of the structure to render (e.g. `<PACKAGE>.<STRUCT>`);
+ * `OUTPUT` - file to write the SVG to, if omitted it will print the output to
+   STDOUT.
+
+![Example SVG](./example.svg)
 
 ## Examples
 

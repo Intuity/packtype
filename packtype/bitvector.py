@@ -15,6 +15,7 @@
 import functools
 from math import ceil, log2
 
+
 class BitVector:
     """
     Bit vector acts as the storage mechanism that backs Packtype structs, unions,
@@ -31,18 +32,18 @@ class BitVector:
 
     @property
     def width(self) -> int:
-        """ Return the bit vector width """
+        """Return the bit vector width"""
         return self.__width
 
     @property
     def value(self) -> int:
-        """ Return the bit vector value """
+        """Return the bit vector value"""
         return self.__value
 
     def __int__(self) -> int:
         return self.__value
 
-    @functools.lru_cache()
+    @functools.lru_cache
     def create_window(self, msb: int, lsb: int) -> "BitVectorWindow":
         """
         Create a window into a section of the bit vector that can be used to
@@ -53,9 +54,9 @@ class BitVector:
         :param lsb: LSB of the window
         :returns:   A BitVectorWindow matching the request
         """
-        assert self.__width is None or msb < self.__width, (
-            f"MSB of {msb} exceeds width {self.__width}"
-        )
+        assert (
+            self.__width is None or msb < self.__width
+        ), f"MSB of {msb} exceeds width {self.__width}"
         assert lsb >= 0, f"LSB of {lsb} is not supported"
         return BitVectorWindow(self, msb, lsb)
 
@@ -117,21 +118,21 @@ class BitVectorWindow:
 
     @property
     def msb(self) -> int:
-        """ Return the window's MSB """
+        """Return the window's MSB"""
         return self.__msb
 
     @property
     def lsb(self) -> int:
-        """ Return the window's LSB """
+        """Return the window's LSB"""
         return self.__lsb
 
     @property
     def width(self) -> int:
-        """ Return the window's width """
+        """Return the window's width"""
         return (self.__msb - self.__lsb) + 1
 
     def __int__(self) -> int:
-        """ Cast the window to an int by extracting the right bit range """
+        """Cast the window to an int by extracting the right bit range"""
         return self.__bitvector.extract(self.__msb, self.__lsb)
 
     def create_window(self, msb: int, lsb: int) -> "BitVectorWindow":
@@ -145,7 +146,7 @@ class BitVectorWindow:
         """
         assert lsb >= 0, f"LSB of {lsb} is not supported"
         assert msb < self.width, f"MSB of {msb} is not supported"
-        return self.__bitvector.create_window(msb+self.__lsb, lsb+self.__lsb)
+        return self.__bitvector.create_window(msb + self.__lsb, lsb + self.__lsb)
 
     def set(self, value: int, msb: int | None = None, lsb: int | None = None) -> None:
         """
@@ -159,4 +160,4 @@ class BitVectorWindow:
         lsb = 0 if lsb is None else lsb
         assert lsb >= 0, f"LSB of {lsb} is not supported"
         assert msb < self.width, f"MSB of {msb} is not supported"
-        return self.__bitvector.set(value, msb+self.__lsb, lsb+self.__lsb)
+        return self.__bitvector.set(value, msb + self.__lsb, lsb + self.__lsb)

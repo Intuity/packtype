@@ -25,10 +25,10 @@ def test_sv(tmp_path):
     result = CliRunner().invoke(
         main,
         [
-            "--render",
-            "sv",
             "--debug",
             (resources / "test_pkg.py").as_posix(),
+            "code",
+            "sv",
             tmp_path.as_posix(),
         ],
         catch_exceptions=False,
@@ -43,13 +43,13 @@ def test_sv_only(tmp_path):
     result = CliRunner().invoke(
         main,
         [
-            "--render",
-            "sv",
             "--debug",
-            (resources / "test_pkg.py").as_posix(),
-            tmp_path.as_posix(),
             "--only",
             "TestPkg",
+            (resources / "test_pkg.py").as_posix(),
+            "code",
+            "sv",
+            tmp_path.as_posix(),
         ],
         catch_exceptions=False,
     )

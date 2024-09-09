@@ -163,6 +163,7 @@ def test_union_bad_widths():
         pass
 
     with pytest.raises(UnionError) as e:
+
         @TestPkg.union()
         class TestUnion:
             a: Scalar[12]
