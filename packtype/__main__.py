@@ -119,7 +119,7 @@ def svg(ctx, selection: str, output: Path | None):
 
     # Create a rendering instance
     cfg = SvgConfig()
-    cfg.left_annotation.width = 60
+    cfg.left_annotation.width = cfg.left_annotation.style.estimate(resolved.__name__).width
     cfg.left_annotation.padding = 10
     svg = SvgRender(cfg, left_annotation=resolved.__name__)
 

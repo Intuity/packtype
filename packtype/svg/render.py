@@ -23,6 +23,13 @@ from svg import SVG, Element, Line, Rect, Style, Text, TSpan, Path, Pattern
 
 
 @dataclass
+class Size:
+    """Size of an object (width, height)"""
+    width: int
+    height: int
+
+
+@dataclass
 class Point:
     """A point position - (X, Y) coordinates"""
     x: int
@@ -31,7 +38,7 @@ class Point:
 
 @dataclass
 class LineStyle:
-    """Defines the style for a line (width and stroke colour)"""
+    """Defines the style for a line (width and stroke color)"""
     width: int = 1
     stroke: str = "black"
 
@@ -46,26 +53,38 @@ class HatchStyle:
 
 @dataclass
 class TextStyle:
-    """Defines a text style (font, size, and colour)"""
-    font: str = "monospace"
+    """Defines a text style (font, size, and color)"""
+    font: str = "sans-serif"
     size: int = 12
-    colour: str = "black"
+    color: str = "black"
+
+    def estimate(self, text: str) -> Size:
+        """
+        Estimate the width of text when rendered into the SVG, assuming that it
+        is monospaced.
+
+        :param text:  The text to render
+        :returns:     Size (width, height) of the text
+        """
+        # NOTE: Many fonts have a width-height ratio of 3/5, this is why this
+        #       "fudge" factor has been selected
+        return Size(int((len(text) * self.size) * 0.6), self.size)
 
 
 @dataclass
 class AlternationStyle:
-    """Define the alternating colour style"""
+    """Define the alternating color style"""
     spacing: int = 4
-    """How many bits should be in each background colour"""
-    colours: tuple[str, str] = ("#FFF", "#EEE")
-    """The set of background colours to alternate through"""
+    """How many bits should be in each background color"""
+    colors: tuple[str, str] = ("#FFF", "#EEE")
+    """The set of background colors to alternate through"""
 
 
 @dataclass
 class AnnotationStyle:
     """Define the style for annotations"""
     style: TextStyle = field(default_factory=TextStyle)
-    """Text style (font, size, colour)"""
+    """Text style (font, size, color)"""
     width: int = 0
     """Width of the annotation"""
     padding: int = 0
@@ -90,7 +109,7 @@ class SvgConfig:
     cell_height: int = 40
     """Height to draw bitfields"""
     element_fill: str = "transparent"
-    """Default background colour for fields"""
+    """Default background color for fields"""
     box_style: LineStyle = field(default_factory=LineStyle)
     """Define the line style to use for the boxes around fields"""
     tick_style: LineStyle = field(default_factory=LineStyle)
@@ -98,13 +117,13 @@ class SvgConfig:
     hatching: HatchStyle = field(default_factory=HatchStyle)
     """Define the hatching style to use for selected fields"""
     alternation: AlternationStyle = field(default_factory=AlternationStyle)
-    """Define the background colour alternation style"""
+    """Define the background color alternation style"""
 
 
 class ElementStyle(Enum):
     """Style to use for an element"""
     NORMAL = auto()
-    """Default background colour and clear overlay"""
+    """Default background color and clear overlay"""
     HATCHED = auto()
     """Hatched overlay"""
     BLOCKED = auto()
@@ -150,23 +169,6 @@ class SvgField:
     def px_height(self) -> int:
         return self.config.cell_height
 
-    def _estimate_text(self, text: str, style: TextStyle) -> int:
-        """
-        Estimate the width of text when rendered into the SVG, assuming that it
-        is monospaced.
-
-        :param text:  The text to render
-        :param style: The text style to render with (sets the font size)
-        :returns:     Integer width of the text
-        """
-        return len(text) * style.size
-
-    def _estimate_name_text(self, text: str) -> int:
-        return self._estimate_text(text, self.config.name_style)
-
-    def _estimate_bit_text(self, text: str) -> int:
-        return self._estimate_text(text, self.config.bit_style)
-
     def render(self,
                position: Point | None = None,
                final: bool = False) -> Iterable[Element]:
@@ -190,7 +192,7 @@ class SvgField:
             position.x + (self.px_width // 2),
             position.y + (self.px_height // 2),
         )
-        # Background colour alternation
+        # Background color alternation
         if self.config.alternation.spacing > 0:
             for idx in range(self.bit_width):
                 yield Rect(
@@ -198,9 +200,9 @@ class SvgField:
                     y=position.y,
                     width=self.config.per_bit_width,
                     height=self.config.cell_height,
-                    fill=self.config.alternation.colours[
+                    fill=self.config.alternation.colors[
                         ((self.msb-idx) // self.config.alternation.spacing) %
-                        len(self.config.alternation.colours)
+                        len(self.config.alternation.colors)
                     ],
                 )
         # Render the base rectangle (open ended if not the final field)
@@ -415,27 +417,39 @@ class SvgRender:
                         dominant-baseline: central;
                     }}
                     .name {{
-                        font: {self.config.name_style.size}px sans-serif;
+                        font-size: {self.config.name_style.size}px;
+                        font-family: {self.config.name_style.font};
+                        color: {self.config.name_style.color};
                         text-anchor: middle;
                     }}
                     .msb {{
-                        font: {self.config.bit_style.size}px sans-serif;
+                        font-size: {self.config.bit_style.size}px;
+                        font-family: {self.config.bit_style.font};
+                        color: {self.config.bit_style.color};
                         text-anchor: start;
                     }}
                     .lsb {{
-                        font: {self.config.bit_style.size}px sans-serif;
+                        font-size: {self.config.bit_style.size}px;
+                        font-family: {self.config.bit_style.font};
+                        color: {self.config.bit_style.color};
                         text-anchor: end;
                     }}
                     .width {{
-                        font: {self.config.bit_style.size}px sans-serif;
+                        font-size: {self.config.bit_style.size}px;
+                        font-family: {self.config.bit_style.font};
+                        color: {self.config.bit_style.color};
                         text-anchor: middle;
                     }}
                     .left_annotation {{
-                        font: {self.config.left_annotation.style.size}px sans-serif;
+                        font-size: {self.config.left_annotation.style.size}px;
+                        font-family: {self.config.left_annotation.style.font};
+                        color: {self.config.left_annotation.style.color};
                         text-anchor: end;
                     }}
                     .right_annotation {{
-                        font: {self.config.right_annotation.style.size}px sans-serif;
+                        font-size: {self.config.right_annotation.style.size}px
+                        font-family: {self.config.right_annotation.style.font};
+                        color: {self.config.right_annotation.style.color};
                         text-anchor: start;
                     }}
                     """
