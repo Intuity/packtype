@@ -46,7 +46,7 @@ class MetaPrimitive(MetaBase):
         return type(
             prim.__name__ + "_" + "_".join(str(x) for x in segments) + f"_{uid}",
             (prim,),
-            kwargs
+            kwargs,
         )
 
 
@@ -64,11 +64,17 @@ class NumericPrimitive(Base, Numeric, metaclass=MetaPrimitive):
             self._pt_bv.set(0 if default is None else int(default))
 
     @classmethod
-    def _pt_meta_key(cls, key : int | tuple[int, bool]) -> tuple[tuple[str], dict[str, Any]]:
+    def _pt_meta_key(
+        cls, key: int | tuple[int, bool]
+    ) -> tuple[tuple[str], dict[str, Any]]:
         if isinstance(key, int):
-            return ((str(key), ), {"_PT_WIDTH": key})
-        elif isinstance(key, tuple) and isinstance(key[0], int) and isinstance(key[1], bool):
-            return ((str(key), ), {"_PT_WIDTH": key[0], "_PT_SIGNED": key[1]})
+            return ((str(key),), {"_PT_WIDTH": key})
+        elif (
+            isinstance(key, tuple)
+            and isinstance(key[0], int)
+            and isinstance(key[1], bool)
+        ):
+            return ((str(key),), {"_PT_WIDTH": key[0], "_PT_SIGNED": key[1]})
         else:
             raise Exception(f"Unsupported NumericPrimitive key: {key}")
 

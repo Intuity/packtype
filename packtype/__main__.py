@@ -17,7 +17,6 @@ import logging
 import traceback
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Type
 
 import click
 from mako import exceptions
@@ -32,10 +31,10 @@ from .base import Base
 from .enum import Enum
 from .package import Package
 from .primitive import NumericPrimitive
-from .registers import Behaviour, Register, File
+from .registers import Behaviour, File, Register
 from .scalar import Scalar
 from .struct import Struct
-from .svg.render import SvgRender, SvgConfig, SvgField, ElementStyle
+from .svg.render import ElementStyle, SvgConfig, SvgField, SvgRender
 from .templates.common import snake_case
 from .union import Union
 from .wrap import Registry
@@ -50,10 +49,11 @@ log.setLevel(logging.INFO)
 # Setup exception handling
 install()
 
+
 def resolve_to_object(
     baseline: list[Package],
     *path: str,
-    acceptable: tuple[Type[Base]] | None = None,
+    acceptable: tuple[type[Base]] | None = None,
 ) -> Base:
     # Resolve to an object
     resolved = None
@@ -78,6 +78,7 @@ def resolve_to_object(
             f"{resolved._PT_BASE.__name__} which cannot be rendered as an SVG"
         )
     return resolved
+
 
 # Handle CLI
 @click.group()
@@ -130,7 +131,9 @@ def svg(ctx, selection: str, output: Path | None):
 
     # Create a rendering instance
     cfg = SvgConfig()
-    cfg.left_annotation.width = cfg.left_annotation.style.estimate(resolved.__name__).width
+    cfg.left_annotation.width = cfg.left_annotation.style.estimate(
+        resolved.__name__
+    ).width
     cfg.left_annotation.padding = 10
     svg = SvgRender(cfg, left_annotation=resolved.__name__)
 
@@ -148,13 +151,18 @@ def svg(ctx, selection: str, output: Path | None):
             if field._PT_BASE in (Struct, Union):
                 _recurse(field, msb=msb)
             else:
-                svg.attach(SvgField(
-                    bit_width=field._pt_width,
-                    name="" if name == "_padding" else name,
-                    msb=msb,
-                    style=ElementStyle.HATCHED if name == "_padding" else ElementStyle.NORMAL,
-                ))
+                svg.attach(
+                    SvgField(
+                        bit_width=field._pt_width,
+                        name="" if name == "_padding" else name,
+                        msb=msb,
+                        style=ElementStyle.HATCHED
+                        if name == "_padding"
+                        else ElementStyle.NORMAL,
+                    )
+                )
             msb -= field._pt_width
+
     _recurse(resolved())
 
     # Run the rendering operation
@@ -165,7 +173,9 @@ def svg(ctx, selection: str, output: Path | None):
 
 
 @main.command()
-@click.argument("mode", type=click.Choice(("package", "register"), case_sensitive=False))
+@click.argument(
+    "mode", type=click.Choice(("package", "register"), case_sensitive=False)
+)
 @click.argument("language", type=click.Choice(("sv",), case_sensitive=False))
 @click.argument("outdir", type=click.Path(file_okay=False, path_type=Path))
 @click.argument("selection", type=str, nargs=-1)
@@ -177,22 +187,28 @@ def code(ctx, mode: str, language: str, outdir: Path, selection: list[str]):
     if selection:
         all_resolved = []
         for str_path in selection:
-            all_resolved.append(resolve_to_object(
-                resolved,
-                *str_path.split("."),
-                acceptable=(Package, File),
-            ))
+            all_resolved.append(
+                resolve_to_object(
+                    resolved,
+                    *str_path.split("."),
+                    acceptable=(Package, File),
+                )
+            )
         resolved = all_resolved
     # Filter out non-matching types
     tmpl_list = None
     match mode.lower():
         case "package":
             resolved = [x for x in resolved if x._PT_BASE is Package]
-            tmpl_list = { "sv": (("package.sv.mako", ".sv"), ) }
+            tmpl_list = {"sv": (("package.sv.mako", ".sv"),)}
         case "register":
             resolved = [x for x in resolved if x._PT_BASE is File]
-            tmpl_list = { "sv": (("register_file.sv.mako", "_rf.sv"),
-                                 ("register_pkg.sv.mako", "_pkg.sv")) }
+            tmpl_list = {
+                "sv": (
+                    ("register_file.sv.mako", "_rf.sv"),
+                    ("register_pkg.sv.mako", "_pkg.sv"),
+                )
+            }
         case _:
             raise Exception(f"{mode} mode is not supported")
     # Create output directory if it doesn't already exist
@@ -211,8 +227,16 @@ def code(ctx, mode: str, language: str, outdir: Path, selection: list[str]):
     )
     context = {}
     for cls in (
-        Alias, PackedArray, Enum, Packing, Scalar, Struct, Union,
-        NumericPrimitive, Register, Behaviour,
+        Alias,
+        PackedArray,
+        Enum,
+        Packing,
+        Scalar,
+        Struct,
+        Union,
+        NumericPrimitive,
+        Register,
+        Behaviour,
     ):
         context[cls.__name__] = cls
     # Iterate baselines to render
@@ -225,7 +249,11 @@ def code(ctx, mode: str, language: str, outdir: Path, selection: list[str]):
             log.debug(f"Rendering {base_name} as {language} to {out_path}")
             with out_path.open("w", encoding="utf-8") as fh:
                 try:
-                    fh.write(lookup.get_template(tmpl_name).render(baseline=baseline, **context))
+                    fh.write(
+                        lookup.get_template(tmpl_name).render(
+                            baseline=baseline, **context
+                        )
+                    )
                 except:
                     log.error(exceptions.text_error_template().render())
                     raise

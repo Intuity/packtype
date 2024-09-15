@@ -15,22 +15,11 @@
 import subprocess
 from pathlib import Path
 
-from click.testing import CliRunner
-from packtype.__main__ import main
-
 resources = Path(__file__).parent.absolute() / "resources"
 
 
 def test_sv(tmp_path):
     # Wrap around the CLI
-<<<<<<< Updated upstream
-    result = CliRunner().invoke(
-        main,
-        [
-            "--debug",
-            (resources / "test_pkg.py").as_posix(),
-            "code",
-=======
     result = subprocess.run(
         (
             "python3",
@@ -40,7 +29,6 @@ def test_sv(tmp_path):
             (resources / "test_pkg.py").as_posix(),
             "code",
             "package",
->>>>>>> Stashed changes
             "sv",
             tmp_path.as_posix(),
         ),
@@ -53,20 +41,6 @@ def test_sv(tmp_path):
 
 def test_sv_only(tmp_path):
     # Wrap around the CLI
-<<<<<<< Updated upstream
-    result = CliRunner().invoke(
-        main,
-        [
-            "--debug",
-            "--only",
-            "TestPkg",
-            (resources / "test_pkg.py").as_posix(),
-            "code",
-            "sv",
-            tmp_path.as_posix(),
-        ],
-        catch_exceptions=False,
-=======
     result = subprocess.run(
         (
             "python3",
@@ -81,7 +55,6 @@ def test_sv_only(tmp_path):
             "TestPkg",
         ),
         check=True,
->>>>>>> Stashed changes
     )
     assert result.returncode == 0
     assert not (tmp_path / "other_pkg.sv").exists()

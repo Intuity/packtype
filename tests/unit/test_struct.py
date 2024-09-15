@@ -13,9 +13,10 @@
 # limitations under the License.
 
 import pytest
+
 import packtype
 from packtype import Constant, Packing, Scalar
-from packtype.assembly import WidthError, AssignmentError
+from packtype.assembly import AssignmentError, WidthError
 from packtype.primitive import PrimitiveValueError
 from packtype.wrap import BadAssignmentError, BadAttributeError
 

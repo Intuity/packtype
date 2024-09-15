@@ -45,6 +45,7 @@ def camel_case(raw: str) -> str:
     parts = sum([RGX_CAMEL.split(x) for x in raw.split("_")], [])
     return "".join(x.capitalize() for x in parts)
 
+
 def underscore(raw: str) -> str:
     """Convert a dot separated string to underscore separation
 

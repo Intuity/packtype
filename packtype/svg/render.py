@@ -12,19 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from enum import Enum, auto
 from collections.abc import Iterable
 from copy import copy
 from dataclasses import dataclass, field
+from enum import Enum, auto
 from textwrap import dedent
 
 import svg
-from svg import SVG, Element, Line, Rect, Style, Text, TSpan, Path, Pattern
+from svg import SVG, Element, Line, Path, Pattern, Rect, Style, Text, TSpan
 
 
 @dataclass
 class Size:
     """Size of an object (width, height)"""
+
     width: int
     height: int
 
@@ -32,6 +33,7 @@ class Size:
 @dataclass
 class Point:
     """A point position - (X, Y) coordinates"""
+
     x: int
     y: int
 
@@ -39,6 +41,7 @@ class Point:
 @dataclass
 class LineStyle:
     """Defines the style for a line (width and stroke color)"""
+
     width: int = 1
     stroke: str = "black"
 
@@ -46,6 +49,7 @@ class LineStyle:
 @dataclass
 class HatchStyle:
     """Defines the style for hatched areas"""
+
     spacing: int = 5
     width: int = 1
     stroke: str = "black"
@@ -54,6 +58,7 @@ class HatchStyle:
 @dataclass
 class TextStyle:
     """Defines a text style (font, size, and color)"""
+
     font: str = "sans-serif"
     size: int = 12
     color: str = "black"
@@ -74,6 +79,7 @@ class TextStyle:
 @dataclass
 class AlternationStyle:
     """Define the alternating color style"""
+
     spacing: int = 4
     """How many bits should be in each background color"""
     colors: tuple[str, str] = ("#FFF", "#EEE")
@@ -83,6 +89,7 @@ class AlternationStyle:
 @dataclass
 class AnnotationStyle:
     """Define the style for annotations"""
+
     style: TextStyle = field(default_factory=TextStyle)
     """Text style (font, size, color)"""
     width: int = 0
@@ -94,6 +101,7 @@ class AnnotationStyle:
 @dataclass
 class SvgConfig:
     """Configure how the bitfield images are drawn"""
+
     padding: Point = field(default_factory=lambda: Point(30, 30))
     """Padding on the X and Y axis (applied on all 4 sides of the bitfield)"""
     left_annotation: AnnotationStyle = field(default_factory=AnnotationStyle)
@@ -122,6 +130,7 @@ class SvgConfig:
 
 class ElementStyle(Enum):
     """Style to use for an element"""
+
     NORMAL = auto()
     """Default background color and clear overlay"""
     HATCHED = auto()
@@ -143,13 +152,15 @@ class SvgField:
     :param config:       Style configuration
     """
 
-    def __init__(self,
-                 bit_width: int,
-                 name: str,
-                 msb: int,
-                 style: ElementStyle = ElementStyle.NORMAL,
-                 static_value: int | None = None,
-                 config: SvgConfig | None = None):
+    def __init__(
+        self,
+        bit_width: int,
+        name: str,
+        msb: int,
+        style: ElementStyle = ElementStyle.NORMAL,
+        static_value: int | None = None,
+        config: SvgConfig | None = None,
+    ):
         self.bit_width = bit_width
         self.name = name.strip()
         self.msb = msb
@@ -169,9 +180,9 @@ class SvgField:
     def px_height(self) -> int:
         return self.config.cell_height
 
-    def render(self,
-               position: Point | None = None,
-               final: bool = False) -> Iterable[Element]:
+    def render(
+        self, position: Point | None = None, final: bool = False
+    ) -> Iterable[Element]:
         """
         Render the bit field from a starting position.
 
@@ -201,8 +212,8 @@ class SvgField:
                     width=self.config.per_bit_width,
                     height=self.config.cell_height,
                     fill=self.config.alternation.colors[
-                        ((self.msb-idx) // self.config.alternation.spacing) %
-                        len(self.config.alternation.colors)
+                        ((self.msb - idx) // self.config.alternation.spacing)
+                        % len(self.config.alternation.colors)
                     ],
                 )
         # Render the base rectangle (open ended if not the final field)
@@ -213,7 +224,9 @@ class SvgField:
             svg.L(position.x + self.px_width, position.y),
         ]
         if final:
-            points.append(svg.L(position.x + self.px_width, position.y + self.px_height),)
+            points.append(
+                svg.L(position.x + self.px_width, position.y + self.px_height),
+            )
         yield Path(
             d=points,
             stroke=self.config.box_style.stroke,
@@ -222,7 +235,9 @@ class SvgField:
         )
         # Render either the name or a static value
         if self.static_value is not None:
-            for idx, bit in enumerate(f"{self.static_value:0{self.bit_width}b}"[:self.bit_width]):
+            for idx, bit in enumerate(
+                f"{self.static_value:0{self.bit_width}b}"[: self.bit_width]
+            ):
                 bit_center = int(position.x + (idx + 0.5) * self.config.per_bit_width)
                 yield Text(
                     x=bit_center,
@@ -290,7 +305,7 @@ class SvgField:
                 fill={
                     ElementStyle.HATCHED: "url(#hatching)",
                     ElementStyle.BLOCKED: "black",
-                }[self.style]
+                }[self.style],
             )
 
 
@@ -303,10 +318,12 @@ class SvgBitFields:
     :param right_annotation: Text to place on the right of the rendered fields
     """
 
-    def __init__(self,
-                 config: SvgConfig,
-                 left_annotation: str | None = None,
-                 right_annotation: str | None = None) -> None:
+    def __init__(
+        self,
+        config: SvgConfig,
+        left_annotation: str | None = None,
+        right_annotation: str | None = None,
+    ) -> None:
         self.config = config
         self.annotations = (left_annotation, right_annotation)
         self.children: list[SvgField] = []
@@ -343,7 +360,9 @@ class SvgBitFields:
             position.x += self.config.left_annotation.width
             position.x += self.config.left_annotation.padding
         # Bit fields (rendering left-to-right, MSB-to-LSB)
-        for idx, child in enumerate(sorted(self.children, key=lambda x: x.msb, reverse=True)):
+        for idx, child in enumerate(
+            sorted(self.children, key=lambda x: x.msb, reverse=True)
+        ):
             yield from child.render(
                 position,
                 final=(idx == (len(self.children) - 1)),
@@ -357,7 +376,9 @@ class SvgBitFields:
                 y=position.y,
                 class_=["right_annotation"],
                 overflow="visible",
-                elements=[TSpan(text=x, x=right_x, dy="1em") for x in right.split("\n")]
+                elements=[
+                    TSpan(text=x, x=right_x, dy="1em") for x in right.split("\n")
+                ],
             )
 
 
@@ -381,7 +402,7 @@ class SvgRender:
         self.root = SvgBitFields(
             self.config,
             left_annotation=left_annotation,
-            right_annotation=right_annotation
+            right_annotation=right_annotation,
         )
 
     def attach(self, element: SvgField) -> None:
@@ -399,14 +420,16 @@ class SvgRender:
 
         :returns: Rendered string of the SVG
         """
-        c_width = sum((
-            self.root.px_width,
-            2 * self.config.padding.x,
-            self.config.left_annotation.width,
-            self.config.left_annotation.padding,
-            self.config.right_annotation.width,
-            self.config.right_annotation.padding
-        ))
+        c_width = sum(
+            (
+                self.root.px_width,
+                2 * self.config.padding.x,
+                self.config.left_annotation.width,
+                self.config.left_annotation.padding,
+                self.config.right_annotation.width,
+                self.config.right_annotation.padding,
+            )
+        )
         c_height = self.config.cell_height + 2 * self.config.padding.y
         elements = [
             Style(
@@ -455,8 +478,10 @@ class SvgRender:
                     """
                 )
             ),
-            svg.Defs(elements=[
-                Pattern(id="hatching",
+            svg.Defs(
+                elements=[
+                    Pattern(
+                        id="hatching",
                         width=self.config.hatching.spacing,
                         height=self.config.hatching.spacing,
                         patternTransform="rotate(45 0 0)",
@@ -470,9 +495,10 @@ class SvgRender:
                                 stroke=self.config.hatching.stroke,
                                 stroke_width=self.config.hatching.width,
                             )
-                        ]
-                        )
-            ])
+                        ],
+                    )
+                ]
+            ),
         ]
         elements += list(
             self.root.render(Point(self.config.padding.x, self.config.padding.y))
