@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import subprocess
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -22,24 +23,37 @@ resources = Path(__file__).parent.absolute() / "resources"
 
 def test_sv(tmp_path):
     # Wrap around the CLI
+<<<<<<< Updated upstream
     result = CliRunner().invoke(
         main,
         [
             "--debug",
             (resources / "test_pkg.py").as_posix(),
             "code",
+=======
+    result = subprocess.run(
+        (
+            "python3",
+            "-m",
+            "packtype",
+            "--debug",
+            (resources / "test_pkg.py").as_posix(),
+            "code",
+            "package",
+>>>>>>> Stashed changes
             "sv",
             tmp_path.as_posix(),
-        ],
-        catch_exceptions=False,
+        ),
+        check=True,
     )
-    assert result.exit_code == 0
+    assert result.returncode == 0
     assert (tmp_path / "other_pkg.sv").exists()
     assert (tmp_path / "test_pkg.sv").exists()
 
 
 def test_sv_only(tmp_path):
     # Wrap around the CLI
+<<<<<<< Updated upstream
     result = CliRunner().invoke(
         main,
         [
@@ -52,7 +66,23 @@ def test_sv_only(tmp_path):
             tmp_path.as_posix(),
         ],
         catch_exceptions=False,
+=======
+    result = subprocess.run(
+        (
+            "python3",
+            "-m",
+            "packtype",
+            "--debug",
+            (resources / "test_pkg.py").as_posix(),
+            "code",
+            "package",
+            "sv",
+            tmp_path.as_posix(),
+            "TestPkg",
+        ),
+        check=True,
+>>>>>>> Stashed changes
     )
-    assert result.exit_code == 0
+    assert result.returncode == 0
     assert not (tmp_path / "other_pkg.sv").exists()
     assert (tmp_path / "test_pkg.sv").exists()

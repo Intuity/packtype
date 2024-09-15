@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import dataclasses
 import functools
 from collections import defaultdict
 from typing import Any
@@ -45,8 +44,8 @@ class Base(metaclass=MetaBase):
     _PT_ATTACHED_TO: type["Base"] | None = None
     # Attributes specific to a type (e.g. width of a struct)
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {}
-    # The dataclass definition
-    _PT_DEF = None
+    # The fields definition
+    _PT_DEF: dict[str, tuple[type["Base"], Any]] = {}
     # Tuple of source file and line number where the type is defined
     _PT_SOURCE: tuple[str, int] = ("?", 0)
     # Handle to parent
@@ -70,12 +69,12 @@ class Base(metaclass=MetaBase):
     @classmethod
     @functools.cache
     def _pt_definitions(cls) -> list[str, Any]:
-        return [(x.name, x.type, x.default) for x in dataclasses.fields(cls._PT_DEF)]
+        return [(n, t, d) for n, (t, d) in cls._PT_DEF.items()]
 
     @classmethod
     def _pt_field_types(cls) -> list[type["Base"]]:
         if cls._PT_DEF:
-            return {x.type for x in dataclasses.fields(cls._PT_DEF)}
+            return {t for t, _ in cls._PT_DEF.values()}
         else:
             return set()
 

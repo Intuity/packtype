@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .primitive import Primitive
+from .primitive import NumericPrimitive
 
 
-class Constant(Primitive):
+class Constant(NumericPrimitive):
     _PT_ALLOW_DEFAULT: bool = True

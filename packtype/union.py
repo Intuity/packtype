@@ -14,11 +14,11 @@
 
 import functools
 
-from .array import Array, ArraySpec
+from .array import PackedArray, ArraySpec
 from .assembly import Assembly
 from .base import Base
 from .bitvector import BitVector, BitVectorWindow
-from .primitive import Primitive
+from .primitive import NumericPrimitive
 
 
 class UnionError(Exception):
@@ -34,11 +34,11 @@ class Union(Assembly):
         super().__init__(_pt_bv=_pt_bv or BitVector(self._pt_width, value=value))
         for fname, ftype, fval in self._pt_definitions():
             if isinstance(ftype, ArraySpec):
-                if isinstance(ftype.base, Primitive):
-                    finst = Array(ftype, default=fval, _pt_bv=self._pt_bv)
+                if isinstance(ftype.base, NumericPrimitive):
+                    finst = ftype.as_packed(default=fval, _pt_bv=self._pt_bv)
                 else:
-                    finst = Array(ftype,  _pt_bv=self._pt_bv)
-            elif issubclass(ftype, Primitive):
+                    finst = ftype.as_packed(_pt_bv=self._pt_bv)
+            elif issubclass(ftype, NumericPrimitive):
                 finst = ftype(default=fval, _pt_bv=self._pt_bv)
             else:
                 finst = ftype(_pt_bv=self._pt_bv)
