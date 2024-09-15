@@ -61,7 +61,6 @@ def resolve_to_object(
         if resolved is None:
             matched = [x for x in baseline if x.__name__ == segment]
             if len(matched) != 1:
-                breakpoint()
                 raise Exception(f"Cannot resolve baseline '{segment}'")
             resolved = matched[0]
         else:
@@ -184,16 +183,18 @@ def code(ctx, mode: str, language: str, outdir: Path, selection: list[str]):
                 acceptable=(Package, File),
             ))
         resolved = all_resolved
-    # Template map
-    tmpl_list = {
-        "package": {
-            "sv": (("package.sv.mako", ".sv"), ),
-        },
-        "register": {
-            "sv": (("register_file.sv.mako", "_rf.sv"),
-                   ("register_pkg.sv.mako", "_pkg.sv")),
-        },
-    }
+    # Filter out non-matching types
+    tmpl_list = None
+    match mode.lower():
+        case "package":
+            resolved = [x for x in resolved if x._PT_BASE is Package]
+            tmpl_list = { "sv": (("package.sv.mako", ".sv"), ) }
+        case "register":
+            resolved = [x for x in resolved if x._PT_BASE is File]
+            tmpl_list = { "sv": (("register_file.sv.mako", "_rf.sv"),
+                                 ("register_pkg.sv.mako", "_pkg.sv")) }
+        case _:
+            raise Exception(f"{mode} mode is not supported")
     # Create output directory if it doesn't already exist
     outdir.mkdir(parents=True, exist_ok=True)
     log.debug(f"Using output directory: {outdir.absolute()}")
@@ -219,7 +220,7 @@ def code(ctx, mode: str, language: str, outdir: Path, selection: list[str]):
         base_name = baseline_cls.__name__
         baseline = baseline_cls()
         # Iterate outputs to render
-        for tmpl_name, suffix in tmpl_list[mode][language]:
+        for tmpl_name, suffix in tmpl_list[language]:
             out_path = outdir / f"{snake_case(base_name)}{suffix}"
             log.debug(f"Rendering {base_name} as {language} to {out_path}")
             with out_path.open("w", encoding="utf-8") as fh:
