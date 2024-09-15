@@ -32,7 +32,7 @@ def test_registry():
 
     # Check that registry has one entry
     assert len(list(Registry.query(Package))) == 1
-    assert list(Registry.query(Package))[0] is PkgA
+    assert next(iter(Registry.query(Package))) is PkgA
 
     # Create a second package
     @packtype.package()
@@ -41,5 +41,6 @@ def test_registry():
 
     # Check that registry has one entry
     assert len(list(Registry.query(Package))) == 2
-    assert list(Registry.query(Package))[0] is PkgA
-    assert list(Registry.query(Package))[1] is PkgB
+    iterator = iter(Registry.query(Package))
+    assert next(iterator) is PkgA
+    assert next(iterator) is PkgB

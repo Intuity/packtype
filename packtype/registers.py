@@ -1,17 +1,17 @@
-import dataclasses
 import inspect
+from collections.abc import Iterable
 from enum import Enum, auto
 from functools import partial
 from textwrap import indent
-from typing import Any, Iterable, Self
+from typing import Any, Self
 
-from .assembly import PackedAssembly
 from .array import ArraySpec, UnpackedArray
+from .assembly import PackedAssembly
 from .base import Base
-from .wrap import get_wrapper, build_from_fields
 from .packing import Packing
 from .primitive import NumericPrimitive
 from .scalar import Scalar
+from .wrap import build_from_fields, get_wrapper
 
 # NOTE 1: Consider sign extension vs zero extension behaviours, i.e. do we want
 #         to offer automatic field expansion?
@@ -19,6 +19,7 @@ from .scalar import Scalar
 
 class Behaviour(Enum):
     """Enumerates the different types of register"""
+
     # Primary types
     CONSTANT = auto()
     """A static value that cannot be altered"""
@@ -36,11 +37,17 @@ class Behaviour(Enum):
 
     @property
     def is_primary(self) -> bool:
-        return self in (Behaviour.CONSTANT, Behaviour.DATA_X2I, Behaviour.DATA_I2X, Behaviour.FIFO_X2I, Behaviour.FIFO_I2X)
+        return self in (
+            Behaviour.CONSTANT,
+            Behaviour.DATA_X2I,
+            Behaviour.DATA_I2X,
+            Behaviour.FIFO_X2I,
+            Behaviour.FIFO_I2X,
+        )
 
     @property
     def is_secondary(self) -> bool:
-        return self in (Behaviour.LEVEL, )
+        return self in (Behaviour.LEVEL,)
 
     @property
     def internal_read(self) -> bool:
@@ -48,11 +55,11 @@ class Behaviour(Enum):
 
     @property
     def internal_read_strobe(self) -> bool:
-        return self in (Behaviour.DATA_X2I, )
+        return self in (Behaviour.DATA_X2I,)
 
     @property
     def internal_read_stream(self) -> bool:
-        return self in (Behaviour.FIFO_X2I, )
+        return self in (Behaviour.FIFO_X2I,)
 
     @property
     def internal_write(self) -> bool:
@@ -60,18 +67,20 @@ class Behaviour(Enum):
 
     @property
     def internal_write_strobe(self) -> bool:
-        return self in (Behaviour.DATA_I2X, )
+        return self in (Behaviour.DATA_I2X,)
 
     @property
     def internal_write_stream(self) -> bool:
-        return self in (Behaviour.FIFO_I2X, )
+        return self in (Behaviour.FIFO_I2X,)
 
     @property
     def external_read(self) -> bool:
-        return self in (Behaviour.CONSTANT,
-                        Behaviour.DATA_X2I,
-                        Behaviour.DATA_I2X,
-                        Behaviour.FIFO_I2X)
+        return self in (
+            Behaviour.CONSTANT,
+            Behaviour.DATA_X2I,
+            Behaviour.DATA_I2X,
+            Behaviour.FIFO_I2X,
+        )
 
     @property
     def external_write(self) -> bool:
@@ -80,6 +89,7 @@ class Behaviour(Enum):
 
 class Register(PackedAssembly):
     """Defines a single register with a behaviour, width, and alignment"""
+
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {
         "behaviour": (Behaviour.CONSTANT, list(Behaviour)),
         "packing": (Packing.FROM_LSB, [Packing.FROM_LSB, Packing.FROM_MSB]),
@@ -128,10 +138,13 @@ class Register(PackedAssembly):
         return ".".join(map(str, self._pt_path))
 
     def __repr__(self) -> str:
-        chunks = [(
-            f"0x{self._pt_offset:04X} <{self._PT_BASE.__name__}::"
-            f"{type(self).__name__}> {self.__name} ({self._pt_fullname})\n"
-        ) + indent(super().__str__(), "  ")]
+        chunks = [
+            (
+                f"0x{self._pt_offset:04X} <{self._PT_BASE.__name__}::"
+                f"{type(self).__name__}> {self.__name} ({self._pt_fullname})\n"
+            )
+            + indent(super().__str__(), "  ")
+        ]
         for sub in self._pt_paired.values():
             chunks.append(str(sub))
         return "\n".join(chunks)
@@ -140,7 +153,14 @@ class Register(PackedAssembly):
         return self.__repr__()
 
     @classmethod
-    def _pt_construct(cls, parent: Base, behaviour: Behaviour, packing: Packing, width: int | None, align: int | None):
+    def _pt_construct(
+        cls,
+        parent: Base,
+        behaviour: Behaviour,
+        packing: Packing,
+        width: int | None,
+        align: int | None,
+    ):
         super()._pt_construct(parent, packing, width)
         cls._PT_BEHAVIOUR = behaviour
         cls._PT_ALIGN = int(align)
@@ -153,6 +173,7 @@ register = get_wrapper(Register)
 
 class Group(Base):
     """Describes a group of registers that can be references by a register file"""
+
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {
         "width": (None, lambda x: x is None or int(x) > 0),
         "align": (None, lambda x: x is None or int(x) > 0),
@@ -162,18 +183,26 @@ class Group(Base):
     _PT_ALIGN: int | None
     _PT_OFFSETS: dict[str, int]
     _PT_BYTE_SIZE: int
-    _PT_BIT_CADENCE : int
-    _PT_BYTE_CADENCE : int
+    _PT_BIT_CADENCE: int
+    _PT_BYTE_CADENCE: int
 
-    def __init__(self, name: str | None = None, index: int | None = None, offset: int = 0, cadence: int = 4) -> None:
+    def __init__(
+        self,
+        name: str | None = None,
+        index: int | None = None,
+        offset: int = 0,
+        cadence: int = 4,
+    ) -> None:
         super().__init__()
         self._pt_name = name
         self._pt_index = index
         self._pt_offset = offset
-        self._pt_fields : dict[Group | Register, str] = {}
+        self._pt_fields: dict[Group | Register, str] = {}
+
         def _lookup(offset: int, name: str, idx: int):
             _, _, sub_offset = self._PT_OFFSETS[name, idx]
-            return [], {"name": name, "offset": offset+sub_offset, "index": idx}
+            return [], {"name": name, "offset": offset + sub_offset, "index": idx}
+
         for fname, ftype, _ in self._pt_definitions():
             if isinstance(ftype, ArraySpec):
                 finst = ftype.as_unpacked(_pt_per_inst=partial(_lookup, offset, fname))
@@ -185,7 +214,7 @@ class Group(Base):
                             preg.offset = offset + prd_offset
             elif ftype._PT_BASE in (Group, Register):
                 _, _, sub_offset = self._PT_OFFSETS[fname, 0]
-                finst = ftype(name=fname, index=None, offset=offset+sub_offset)
+                finst = ftype(name=fname, index=None, offset=offset + sub_offset)
                 finst._PT_PARENT = self
                 if ftype._PT_BASE is Register:
                     for pbehav, preg in finst._pt_paired.items():
@@ -237,12 +266,14 @@ class Group(Base):
         return ".".join(map(str, self._pt_path))
 
     @classmethod
-    def _pt_construct(cls, parent: Base, width: int | None, align: int | None, spacing: int | None):
+    def _pt_construct(
+        cls, parent: Base, width: int | None, align: int | None, spacing: int | None
+    ):
         # Process assignments
         cls._PT_WIDTH = None if width is None else int(width)
         cls._PT_ALIGN = None if align is None else int(align)
         cls._PT_SPACING = None if spacing is None else int(spacing)
-        cls._PT_OFFSETS : dict[str, (int, int)] = {}
+        cls._PT_OFFSETS: dict[str, (int, int)] = {}
         cls._PT_BYTE_SIZE = 0
         cls._PT_BIT_CADENCE = 0
         cls._PT_BYTE_CADENCE = 0
@@ -268,24 +299,35 @@ class Group(Base):
                     f"{fbase._PT_WIDTH}"
                 )
             # For FIFO behaviours, add a level register
-            if fbase._PT_BASE is Register and fbase._PT_BEHAVIOUR in (Behaviour.FIFO_I2X, Behaviour.FIFO_X2I):
+            if fbase._PT_BASE is Register and fbase._PT_BEHAVIOUR in (
+                Behaviour.FIFO_I2X,
+                Behaviour.FIFO_X2I,
+            ):
                 # TODO @intuity: Allow configurable level
                 fbase._PT_PAIRED[Behaviour.LEVEL] = build_from_fields(
                     base=Register,
                     cname=fbase.__name__ + "Level",
-                    fields={ "value": (Scalar[8], None) },
-                    kwds={ "behaviour": Behaviour.LEVEL },
+                    fields={"value": (Scalar[8], None)},
+                    kwds={"behaviour": Behaviour.LEVEL},
                     parent=fbase,
                 )
             # Insert a placeholder entry to offsets
             dimension = ftype.dimension if isinstance(ftype, ArraySpec) else 1
             for idx in range(dimension):
-                cls._PT_OFFSETS[fname, idx] = (fbase._PT_BYTE_SIZE, fbase._PT_ALIGN or 1, 0)
+                cls._PT_OFFSETS[fname, idx] = (
+                    fbase._PT_BYTE_SIZE,
+                    fbase._PT_ALIGN or 1,
+                    0,
+                )
                 if fbase._PT_BASE is Register:
                     for pbehav, ptype in fbase._PT_PAIRED.items():
-                        cls._PT_OFFSETS[(fname, pbehav), idx] = (ptype._PT_BYTE_SIZE, ptype._PT_ALIGN or 1, 0)
+                        cls._PT_OFFSETS[(fname, pbehav), idx] = (
+                            ptype._PT_BYTE_SIZE,
+                            ptype._PT_ALIGN or 1,
+                            0,
+                        )
         # Work out what a sensible power of two placement would be
-        cadence_bits = 1 << (cls._PT_WIDTH-1).bit_length()
+        cadence_bits = 1 << (cls._PT_WIDTH - 1).bit_length()
         cadence_byte = (cadence_bits + 7) // 8
         # Calculate offset placements
         byte_offset = 0
@@ -296,7 +338,9 @@ class Group(Base):
             # Encode the placement
             cls._PT_OFFSETS[name, idx] = (byte_size, align, int(byte_offset))
             # Bump the offset by the cadence
-            byte_offset += cadence_byte * ((byte_size + cadence_byte - 1) // cadence_byte)
+            byte_offset += cadence_byte * (
+                (byte_size + cadence_byte - 1) // cadence_byte
+            )
         # Remember the final offset
         cls._PT_BYTE_SIZE = byte_offset
         cls._PT_BIT_CADENCE = cadence_bits

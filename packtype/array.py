@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import functools
-from collections.abc import Iterable
-from typing import Any, Callable
+from collections.abc import Callable, Iterable
+from typing import Any
 
 from .bitvector import BitVector, BitVectorWindow
 from .packing import Packing
@@ -52,7 +52,10 @@ class PackedArray:
         spec: ArraySpec,
         *args,
         _pt_bv: BitVector | BitVectorWindow | None = None,
-        _pt_per_inst: Callable[[int, list[Any], dict[str, Any]], tuple[list[Any], dict[str, Any]]] | None = None,
+        _pt_per_inst: Callable[
+            [int, list[Any], dict[str, Any]], tuple[list[Any], dict[str, Any]]
+        ]
+        | None = None,
         packing: Packing = Packing.FROM_LSB,
         **kwds,
     ):
@@ -61,7 +64,11 @@ class PackedArray:
         if packing is Packing.FROM_LSB:
             lsb = 0
             for idx in range(spec.dimension):
-                inst_args, inst_kwds = _pt_per_inst(idx, *args, **kwds) if callable(_pt_per_inst) else (args, kwds)
+                inst_args, inst_kwds = (
+                    _pt_per_inst(idx, *args, **kwds)
+                    if callable(_pt_per_inst)
+                    else (args, kwds)
+                )
                 self._pt_entries.append(
                     entry := spec.base(
                         *inst_args,
@@ -75,7 +82,11 @@ class PackedArray:
         else:
             msb = spec._pt_width - 1
             for idx in range(spec.dimension):
-                inst_args, inst_kwds = _pt_per_inst(idx, *args, **kwds) if callable(_pt_per_inst) else (args, kwds)
+                inst_args, inst_kwds = (
+                    _pt_per_inst(idx, *args, **kwds)
+                    if callable(_pt_per_inst)
+                    else (args, kwds)
+                )
                 self._pt_entries.append(
                     entry := spec.base(
                         *inst_args,
@@ -110,12 +121,19 @@ class UnpackedArray:
         self,
         spec: ArraySpec,
         *args,
-        _pt_per_inst: Callable[[int, list[Any], dict[str, Any]], tuple[list[Any], dict[str, Any]]] | None = None,
-        **kwds
+        _pt_per_inst: Callable[
+            [int, list[Any], dict[str, Any]], tuple[list[Any], dict[str, Any]]
+        ]
+        | None = None,
+        **kwds,
     ):
         self._pt_entries = []
         for idx in range(spec.dimension):
-            inst_args, inst_kwds = _pt_per_inst(idx, *args, **kwds) if callable(_pt_per_inst) else (args, kwds)
+            inst_args, inst_kwds = (
+                _pt_per_inst(idx, *args, **kwds)
+                if callable(_pt_per_inst)
+                else (args, kwds)
+            )
             self._pt_entries.append(spec.base(*inst_args, **inst_kwds))
 
     def __getitem__(self, key: int) -> Any:

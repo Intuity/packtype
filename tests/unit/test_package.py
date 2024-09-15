@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest
+
 import packtype
 from packtype import Constant, Scalar
 from packtype.package import Package

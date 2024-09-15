@@ -59,9 +59,9 @@ class Registry:
 def build_from_fields(
     base: Any,
     cname: str,
-    fields : dict[str, tuple[str, Any]],
-    kwds : dict[str, Any],
-    frame_depth : int = 1,
+    fields: dict[str, tuple[str, Any]],
+    kwds: dict[str, Any],
+    frame_depth: int = 1,
     doc_str: str | None = None,
     cls_funcs: dict[str, Callable[..., Any]] | None = None,
     parent: Any | None = None,
@@ -161,13 +161,14 @@ def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
             return build_from_fields(
                 base=base,
                 cname=cls.__name__,
-                fields={ x: (y.type, y.default) for x, y in dc_fields.items() },
+                fields={x: (y.type, y.default) for x, y in dc_fields.items()},
                 kwds=kwds,
                 frame_depth=frame_depth,
                 doc_str=cls.__doc__,
-                cls_funcs={ x: getattr(cls, x) for x in cls_funcs },
+                cls_funcs={x: getattr(cls, x) for x in cls_funcs},
                 parent=parent,
             )
+
         return _inner
 
     return _wrapper

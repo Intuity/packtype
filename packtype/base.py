@@ -100,7 +100,7 @@ class Base(metaclass=MetaBase):
         return self._PT_PARENT
 
     @classmethod
-    def _pt_enable_profiling(self, limit: int = 1) -> None:
+    def _pt_enable_profiling(cls, limit: int = 1) -> None:
         """
         Enable tracking of Packtype object creation
 

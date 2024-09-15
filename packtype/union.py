@@ -14,7 +14,7 @@
 
 import functools
 
-from .array import PackedArray, ArraySpec
+from .array import ArraySpec
 from .assembly import Assembly
 from .base import Base
 from .bitvector import BitVector, BitVectorWindow

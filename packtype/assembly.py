@@ -16,7 +16,7 @@ import functools
 import math
 from typing import Any
 
-from .array import PackedArray, ArraySpec
+from .array import ArraySpec, PackedArray
 from .base import Base
 from .bitvector import BitVector, BitVectorWindow
 from .numeric import Numeric
@@ -92,7 +92,7 @@ class PackedAssembly(Assembly):
                             f"of {len(finst)} entries and the assigned value does "
                             f"not have the same dimensions"
                         )
-                    for sub_val, sub_field in zip(fval, finst):
+                    for sub_val, sub_field in zip(fval, finst, strict=False):
                         sub_field._pt_set(sub_val)
                 else:
                     finst._pt_set(fval)
