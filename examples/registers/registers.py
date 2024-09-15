@@ -64,7 +64,3 @@ class Control:
     device: DeviceGroup
     control: ControlGroup
     comms: 2 * CommsGroup
-
-me = Control()
-print(me)
-breakpoint()
