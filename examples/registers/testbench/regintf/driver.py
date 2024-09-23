@@ -12,13 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cocotb.triggers import ClockCycles
+from cocotb.triggers import RisingEdge
+from forastero import BaseDriver
 
-from ..testbench import Testbench
+from .transaction import RegRequest
 
 
-@Testbench.testcase()
-async def smoke(tb, log):
-    log.info("Waiting for 100 cycles")
-    await ClockCycles(tb.clk, 100)
-    log.info("Timer elapsed")
+class RegDriver(BaseDriver):
+    async def drive(self, obj: RegRequest):
+        self.io.set("address", obj.address)
+        self.io.set("wr_data", obj.wr_data)
+        self.io.set("write", obj.write)
+        self.io.set("enable", True)
+        await RisingEdge(self.clk)
+        self.io.set("enable", False)
