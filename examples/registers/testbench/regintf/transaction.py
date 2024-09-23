@@ -12,13 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cocotb.triggers import ClockCycles
+import dataclasses
 
-from ..testbench import Testbench
+from forastero import BaseTransaction
 
 
-@Testbench.testcase()
-async def smoke(tb, log):
-    log.info("Waiting for 100 cycles")
-    await ClockCycles(tb.clk, 100)
-    log.info("Timer elapsed")
+@dataclasses.dataclass(kw_only=True)
+class RegRequest(BaseTransaction):
+    address: int
+    write: bool
+    wr_data: int
+
+
+@dataclasses.dataclass(kw_only=True)
+class RegResponse(BaseTransaction):
+    rd_data: int
+    error: bool

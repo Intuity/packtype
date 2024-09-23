@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# ==============================================================================
+# Packtype
+# ==============================================================================
+
 # Extend PYTHONPATH
 export PYTHONPATH := $(PYTHONPATH):$(abspath ../..)
 
@@ -33,6 +37,22 @@ SV_TGTS += $(OUT_DIR)/data_structures.sv
 SV_TGTS += $(OUT_DIR)/control_pkg.sv
 SV_TGTS += $(OUT_DIR)/control_rf.sv
 
+# ==============================================================================
+# cocotb
+# ==============================================================================
+
+SIM             ?= verilator
+TOPLEVEL_LANG   ?= verilog
+TOPLEVEL        ?= control_rf
+MODULE          ?= testbench
+VERILOG_SOURCES ?= $(SV_SRCS) $(SV_TGTS)
+EXTRA_ARGS      += --trace --trace-structs --trace-fst
+
+include $(shell cocotb-config --makefiles)/Makefile.sim
+
+# ==============================================================================
+# Rules
+# ==============================================================================
 
 $(SV_TGTS): $(PY_SRCS)
 	python3 -m packtype datastructures.py code package sv $(OUT_DIR)
@@ -48,6 +68,9 @@ lint: $(SV_SRCS) $(SV_TGTS)
 	          $(SV_SRCS) \
 	          $(SV_TGTS)
 
+.PHONY: sim
+sim: results.xml
+
 .PHONY: clean
-clean:
+clean::
 	rm -f $(SV_TGTS)

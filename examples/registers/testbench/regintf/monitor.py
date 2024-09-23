@@ -12,13 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cocotb.triggers import ClockCycles
+from cocotb.triggers import RisingEdge
+from forastero import BaseMonitor
 
-from ..testbench import Testbench
+from .transaction import RegResponse
 
 
-@Testbench.testcase()
-async def smoke(tb, log):
-    log.info("Waiting for 100 cycles")
-    await ClockCycles(tb.clk, 100)
-    log.info("Timer elapsed")
+class RegMonitor(BaseMonitor):
+    async def monitor(self, capture):
+        while True:
+            await RisingEdge(self.clk)
+            write = self.io.get("write")
+            if not self.io.get("enable"):
+                continue
+            await RisingEdge(self.clk)
+            capture(RegResponse(rd_data=self.io.get("rd_data"),
+                                error=self.io.get("error") != 0))

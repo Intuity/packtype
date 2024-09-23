@@ -1,0 +1,37 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Mon Sep 23 21:10:01 2024
+[*]
+[dumpfile] "dump.fst"
+[dumpfile_mtime] "Mon Sep 23 21:08:37 2024"
+[dumpfile_size] 3093
+[savefile] "/Volumes/Development/packtype/examples/registers/control_rf.gtkw"
+[timestart] 0
+[size] 1288 600
+[pos] -1 -1
+*-16.082041 -1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+[treeopen] .
+[treeopen] .control_rf.
+[sst_width] 253
+[signals_width] 152
+[sst_expanded] 1
+[sst_vpaned_height] 159
+@28
+control_rf.i_clk
+control_rf.i_rst
+@200
+-
+@100000028
+control_rf.i_address[6:0]
+@28
+control_rf.i_write
+@22
+control_rf.i_wr_data[63:0]
+@28
+control_rf.i_enable
+@22
+control_rf.o_rd_data[63:0]
+@29
+control_rf.o_error
+[pattern_trace] 1
+[pattern_trace] 0

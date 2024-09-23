@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cocotb.triggers import ClockCycles
+from .driver import RegDriver
+from .io import RegIntfIO
+from .monitor import RegMonitor
+from .transaction import RegRequest, RegResponse
 
-from ..testbench import Testbench
-
-
-@Testbench.testcase()
-async def smoke(tb, log):
-    log.info("Waiting for 100 cycles")
-    await ClockCycles(tb.clk, 100)
-    log.info("Timer elapsed")
+assert all((
+    RegDriver,
+    RegIntfIO,
+    RegMonitor,
+    RegRequest,
+    RegResponse,
+))

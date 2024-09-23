@@ -12,13 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cocotb.triggers import ClockCycles
-
-from ..testbench import Testbench
+from forastero import BaseIO
 
 
-@Testbench.testcase()
-async def smoke(tb, log):
-    log.info("Waiting for 100 cycles")
-    await ClockCycles(tb.clk, 100)
-    log.info("Timer elapsed")
+class RegIntfIO(BaseIO):
+
+    def __init__(self, dut, name, role, io_style=None):
+        super().__init__(
+            dut,
+            name,
+            role,
+            init_sigs=["address", "wr_data", "write", "enable"],
+            resp_sigs=["rd_data", "error"],
+            io_style=io_style,
+        )
