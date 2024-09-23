@@ -41,6 +41,14 @@ DATA_T [DEPTH-1:0] entries_d, entries_q;
 count_t            head_q, tail_q, level_q;
 logic              push, pop;
 
+always_ff @(posedge i_clk, posedge i_rst) begin : ff_entries
+    if (i_rst) begin
+        entries_q <= (DEPTH*$bits(DATA_T))'(0);
+    end else begin
+        entries_q <= entries_d;
+    end
+end
+
 // =============================================================================
 // Status
 // =============================================================================
@@ -65,7 +73,7 @@ always_ff @(posedge i_clk, posedge i_rst) begin : ff_head
     if (i_rst)
         head_q <= COUNT_W'(0);
     else if (push)
-        head_q <= (head_q < COUNT_W'(DEPTH)) ? { head_q + COUNT'(1) }
+        head_q <= (head_q < COUNT_W'(DEPTH)) ? { head_q + COUNT_W'(1) }
                                              : COUNT_W'(0);
 end
 
@@ -73,11 +81,11 @@ always_ff @(posedge i_clk, posedge i_rst) begin : ff_tail
     if (i_rst)
         tail_q <= COUNT_W'(0);
     else if (pop)
-        tail_q <= (tail_q < COUNT_W'(DEPTH)) ? { tail_q + COUNT'(1) }
+        tail_q <= (tail_q < COUNT_W'(DEPTH)) ? { tail_q + COUNT_W'(1) }
                                              : COUNT_W'(0);
 end
 
-always_ff @(posedge i_clk, posedge i_rst) begin : ff_tail
+always_ff @(posedge i_clk, posedge i_rst) begin : ff_level
     if (i_rst)
         level_q <= COUNT_W'(0);
     else
@@ -90,9 +98,8 @@ end
 
 generate
 for (genvar idx = 0; idx < DEPTH; idx++) begin : gen_push
-    assign entries_d[idx] = (push && head_q == COUNT_W'(idx))
-                            ? i_wr_data
-                            : entries_q[idx];
+    assign entries_d[idx] = (push && head_q == COUNT_W'(idx)) ? i_wr_data
+                                                              : entries_q[idx];
 end
 endgenerate
 

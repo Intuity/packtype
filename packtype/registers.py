@@ -1,4 +1,5 @@
 import inspect
+import math
 from collections.abc import Iterable
 from enum import Enum, auto
 from functools import partial
@@ -95,11 +96,15 @@ class Register(PackedAssembly):
         "packing": (Packing.FROM_LSB, [Packing.FROM_LSB, Packing.FROM_MSB]),
         "width": (-1, lambda x: int(x) > 0),
         "align": (0, lambda x: int(x) >= 0),
+        # Used for FIFOs
+        "depth": (None, lambda x: int(x) >= 0),
     }
     _PT_BEHAVIOUR: Behaviour
     _PT_ALIGN: int
     _PT_BYTE_SIZE: int
     _PT_PAIRED: dict[Behaviour, Self]
+    # Used for FIFOs
+    _PT_DEPTH: int = 4
 
     def __init__(
         self,
@@ -160,12 +165,17 @@ class Register(PackedAssembly):
         packing: Packing,
         width: int | None,
         align: int | None,
+        depth: int | None,
     ):
         super()._pt_construct(parent, packing, width)
         cls._PT_BEHAVIOUR = behaviour
-        cls._PT_ALIGN = int(align)
+        cls._PT_ALIGN = int(align or 0)
         cls._PT_BYTE_SIZE = (cls._PT_WIDTH + 7) // 8
         cls._PT_PAIRED = {}
+        if depth is not None and behaviour not in (Behaviour.FIFO_I2X, Behaviour.FIFO_X2I):
+            raise Exception(f"Depth is not supported for {behaviour.name}")
+        elif depth is not None:
+            cls._PT_DEPTH = depth
 
 
 register = get_wrapper(Register)
@@ -307,7 +317,7 @@ class Group(Base):
                 fbase._PT_PAIRED[Behaviour.LEVEL] = build_from_fields(
                     base=Register,
                     cname=fbase.__name__ + "Level",
-                    fields={"value": (Scalar[8], None)},
+                    fields={"value": (Scalar[math.ceil(math.log2(fbase._PT_DEPTH+1))], None)},
                     kwds={"behaviour": Behaviour.LEVEL},
                     parent=fbase,
                 )
