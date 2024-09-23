@@ -16,4 +16,4 @@ from .primitive import NumericPrimitive
 
 
 class Scalar(NumericPrimitive):
-    pass
+    _PT_WIDTH: int = 1
