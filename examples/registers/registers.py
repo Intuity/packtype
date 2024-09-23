@@ -53,12 +53,12 @@ class ControlGroup:
 # === Communications ===
 
 
-@packtype.registers.register(behaviour=Behaviour.FIFO_X2I)
+@packtype.registers.register(behaviour=Behaviour.FIFO_X2I, depth=6)
 class HostToDevice:
     data: Packet
 
 
-@packtype.registers.register(behaviour=Behaviour.FIFO_I2X)
+@packtype.registers.register(behaviour=Behaviour.FIFO_I2X, depth=6)
 class DeviceToHost:
     data: Packet
 
