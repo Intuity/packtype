@@ -21,10 +21,10 @@ from .transaction import RegResponse
 class RegMonitor(BaseMonitor):
     async def monitor(self, capture):
         while True:
-            await RisingEdge(self.clk)
             write = self.io.get("write")
             if not self.io.get("enable"):
+                await RisingEdge(self.clk)
                 continue
             await RisingEdge(self.clk)
-            capture(RegResponse(rd_data=self.io.get("rd_data"),
+            capture(RegResponse(rd_data=0 if write else self.io.get("rd_data"),
                                 error=self.io.get("error") != 0))

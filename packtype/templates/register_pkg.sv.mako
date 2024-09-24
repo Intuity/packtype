@@ -58,7 +58,7 @@ typedef enum logic [${byte_width-1}:0] {
 
 %for base in sorted(base_types, key=lambda x: x.__name__):
 typedef struct packed {
-    %for field, name in base()._pt_fields.items():
+    %for f_lsb, f_msb, (name, field) in base()._pt_fields_msb_desc:
         %if isinstance(field, NumericPrimitive):
             %if field._pt_width > 1:
     logic [${field._pt_width-1}:0] ${name | tc.snake_case};
@@ -68,7 +68,7 @@ typedef struct packed {
         %elif field._PT_BASE in (Struct, Union):
     ${field._pt_name() | tc.snake_case}_t ${name | tc.snake_case};
         %endif
-    %endfor ## field, name in base()._pt_fields.items()
+    %endfor ## f_lsb, f_msb, (name, field) in base()._pt_fields_msb_desc
 } ${base.__name__ | tc.snake_case}_t;
 
 %endfor ## base in base_types

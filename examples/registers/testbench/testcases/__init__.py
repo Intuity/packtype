@@ -12,4 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from .access import *  # noqa: F403
 from .smoke import *  # noqa: F403
