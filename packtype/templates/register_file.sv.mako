@@ -147,7 +147,7 @@ assign o_${rname}_strobe = strobe_${rname};
 
 %elif behav is Behaviour.DATA_I2X:
 
-${struct} current_${rname};
+${struct} current_${rname}, buffer_${rname};
 logic error_${rname};
 logic is_write_${rname};
 assign is_write_${rname} = is_write && (i_address == ${rname.upper()}_OFFSET);
@@ -156,10 +156,30 @@ assign error_${rname} = is_write_${rname};
 always_ff @(posedge i_clk, posedge i_rst) begin : ff_${rname}
     ## TODO @intuity: Handle non-zero reset value?
     if (i_rst)
-        current_${rname} <= ${struct}'(0);
+        buffer_${rname} <= ${struct}'(0);
     else if (i_${rname}_strobe)
-        current_${rname} <= i_${rname}_data;
+        buffer_${rname} <= i_${rname}_data;
 end
+
+assign current_${rname} = '{
+    %for idx, (field, fname) in enumerate(reg._pt_fields.items()):
+    ${',' if idx else ' '} ${fname}: \
+        %if isinstance(field, Constant):
+${field._pt_width}'h${f"{int(field):X}"}
+        %else:
+buffer_${rname}.${fname}
+        %endif ## isinstance(field, Constant)
+    %endfor ## idx, (field, fname) in enumerate(reg._pt_fields.items())
+};
+
+logic _unused_${rname} = &{
+      1'b0
+    %for field, fname in reg._pt_fields.items():
+        %if isinstance(field, Constant):
+    , buffer_${rname}.${fname}
+        %endif ## isinstance(field, Constant)
+    %endfor ## field, fname in reg._pt_fields.items()
+};
 
 %elif behav is Behaviour.FIFO_X2I:
 
@@ -172,7 +192,6 @@ assign error_${rname} = is_read_${rname} ||
                         (is_write_${rname} && is_full_${rname});
 
 
-## TODO @intuity: Allow depth to be controlled
 pt_fifo #(
       .DATA_T     ( ${struct} )
     , .DEPTH      ( ${reg._PT_DEPTH} )

@@ -19,12 +19,12 @@ from forastero import BaseTransaction
 
 @dataclasses.dataclass(kw_only=True)
 class RegRequest(BaseTransaction):
-    address: int
-    write: bool
-    wr_data: int
+    address: int = 0
+    write: bool = False
+    wr_data: int = 0
 
 
 @dataclasses.dataclass(kw_only=True)
 class RegResponse(BaseTransaction):
-    rd_data: int
-    error: bool
+    rd_data: int = 0
+    error: bool = False

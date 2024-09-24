@@ -28,6 +28,7 @@ from .alias import Alias
 from .array import PackedArray
 from .assembly import Packing
 from .base import Base
+from .constant import Constant
 from .enum import Enum
 from .package import Package
 from .primitive import NumericPrimitive
@@ -228,6 +229,7 @@ def code(ctx, mode: str, language: str, outdir: Path, selection: list[str]):
     context = {}
     for cls in (
         Alias,
+        Constant,
         PackedArray,
         Enum,
         Packing,
