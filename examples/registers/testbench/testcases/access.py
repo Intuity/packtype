@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cocotb.triggers import RisingEdge
+from cocotb.triggers import ClockCycles, RisingEdge
 from forastero import DriverEvent, MonitorEvent
+from packtype.registers import Behaviour
 
 from registers import Control, Version, Status
 
@@ -93,3 +94,41 @@ async def access_control(tb, log):
         for idx, value in enumerate(state):
             got = int(tb.internal.core_reset[idx].value)
             assert got == value, f"Reset {idx} - expected: {value} got: {got}"
+
+
+@Testbench.testcase()
+async def access_fifos(tb, log):
+    """Exercise FIFOs"""
+    ctrl = Control()
+    # Push a bunch of entries into the X2I FIFO
+    values = []
+    for _ in range(tb.random.randint(1, ctrl.comms[0].h2d._PT_DEPTH)):
+        values.append(value := tb.random.getrandbits(ctrl.comms[0].h2d._pt_width))
+        event = tb.drv.enqueue(RegRequest(
+            address=ctrl.comms[0].h2d._pt_offset,
+            write=True,
+            wr_data=value,
+        ), wait_for=DriverEvent.POST_DRIVE)
+        tb.scoreboard.channels["mon"].push_reference(RegResponse())
+    await event.wait()
+    # Read back the level
+    await tb.drv.enqueue(RegRequest(
+        address=ctrl.comms[0].h2d._pt_paired[Behaviour.LEVEL]._pt_offset,
+        write=False,
+    ), wait_for=DriverEvent.POST_DRIVE).wait()
+    tb.scoreboard.channels["mon"].push_reference(RegResponse(rd_data=len(values)))
+    # Check the internally visible level
+    assert int(tb.internal.comms_h2d_level[0].value) == len(values)
+    # Pop internally
+    for idx, value in enumerate(values):
+        # Drive ready to 'pop' the presented value
+        tb.internal.comms_h2d_ready[0].value = 1
+        await RisingEdge(tb.clk)
+        tb.internal.comms_h2d_ready[0].value = 0
+        # Check status
+        log.info(f"Popping internal index {idx} -> 0x{value:016X}")
+        got = int(tb.internal.comms_h2d[0].value)
+        assert got == value, f"Index {idx} - got: 0x{got:016X}, expected: 0x{value:016X}"
+        assert int(tb.internal.comms_h2d_valid[0].value) == 1
+        # Wait a while
+        await ClockCycles(tb.clk, tb.random.randint(0, 10))
