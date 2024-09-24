@@ -93,39 +93,35 @@ assign is_write = i_enable &&  i_write;
 
 %for reg in filter(lambda x: x._PT_BEHAVIOUR.is_primary, baseline):
 <%
-behav  = reg._PT_BEHAVIOUR
-struct = tc.snake_case(type(reg).__name__) + "_t"
-rname  = tc.underscore(reg._pt_fullname)
+    behav  = reg._PT_BEHAVIOUR
+    struct = tc.snake_case(type(reg).__name__) + "_t"
+    rname  = tc.underscore(reg._pt_fullname)
 %>\
 // =============================================================================
 // Register: ${reg._pt_fullname} (${behav.name})
 // =============================================================================
-
-%if behav is Behaviour.CONSTANT:
+    %if behav is Behaviour.CONSTANT:
 
 ${struct} current_${rname};
-logic error_${rname};
-logic is_write_${rname};
-assign is_write_${rname} = is_write && (i_address == ${rname.upper()}_OFFSET);
+logic error_${rname}, is_write_${rname};
 
-assign error_${rname} = is_write_${rname};
+assign is_write_${rname} = is_write && (i_address == ${rname.upper()}_OFFSET);
+assign error_${rname}    = is_write_${rname};
 
 assign current_${rname} = '{
-%for idx, (field, fname) in enumerate(reg._pt_fields.items()):
+        %for idx, (field, fname) in enumerate(reg._pt_fields.items()):
     ${"," if idx > 0 else " "} ${fname}: ${field._pt_width}'h${f"{int(field):X}"}
-%endfor ## field, fname in reg._pt_fields.items()
+        %endfor ## field, fname in reg._pt_fields.items()
 };
 
-%elif behav is Behaviour.DATA_X2I:
+    %elif behav is Behaviour.DATA_X2I:
 
 ${struct} current_${rname};
-logic error_${rname};
-logic is_write_${rname};
+logic error_${rname}, is_read_${rname}, is_write_${rname}, strobe_${rname};
+
+assign is_read_${rname}  = is_read  && (i_address == ${rname.upper()}_OFFSET);
 assign is_write_${rname} = is_write && (i_address == ${rname.upper()}_OFFSET);
-
-assign error_${rname} = 1'b0;
-
-logic strobe_${rname};
+assign error_${rname}    = is_read_${rname};
 
 always_ff @(posedge i_clk, posedge i_rst) begin : ff_${rname}
     ## TODO @intuity: Handle non-zero reset value?
@@ -145,13 +141,13 @@ end
 assign o_${rname}_data   = current_${rname};
 assign o_${rname}_strobe = strobe_${rname};
 
-%elif behav is Behaviour.DATA_I2X:
+    %elif behav is Behaviour.DATA_I2X:
 
 ${struct} current_${rname}, buffer_${rname};
-logic error_${rname};
-logic is_write_${rname};
+logic error_${rname}, is_write_${rname};
+
 assign is_write_${rname} = is_write && (i_address == ${rname.upper()}_OFFSET);
-assign error_${rname} = is_write_${rname};
+assign error_${rname}    = is_write_${rname};
 
 always_ff @(posedge i_clk, posedge i_rst) begin : ff_${rname}
     ## TODO @intuity: Handle non-zero reset value?
@@ -162,35 +158,35 @@ always_ff @(posedge i_clk, posedge i_rst) begin : ff_${rname}
 end
 
 assign current_${rname} = '{
-    %for idx, (field, fname) in enumerate(reg._pt_fields.items()):
+        %for idx, (field, fname) in enumerate(reg._pt_fields.items()):
     ${',' if idx else ' '} ${fname}: \
-        %if isinstance(field, Constant):
+            %if isinstance(field, Constant):
 ${field._pt_width}'h${f"{int(field):X}"}
-        %else:
+            %else:
 buffer_${rname}.${fname}
-        %endif ## isinstance(field, Constant)
-    %endfor ## idx, (field, fname) in enumerate(reg._pt_fields.items())
+            %endif ## isinstance(field, Constant)
+        %endfor ## idx, (field, fname) in enumerate(reg._pt_fields.items())
 };
 
+    %if len([x for x in reg._pt_fields.keys() if isinstance(x, Constant)]):
 logic _unused_${rname} = &{
       1'b0
-    %for field, fname in reg._pt_fields.items():
-        %if isinstance(field, Constant):
+            %for field, fname in reg._pt_fields.items():
+                %if isinstance(field, Constant):
     , buffer_${rname}.${fname}
-        %endif ## isinstance(field, Constant)
-    %endfor ## field, fname in reg._pt_fields.items()
+                %endif ## isinstance(field, Constant)
+            %endfor ## field, fname in reg._pt_fields.items()
 };
 
-%elif behav is Behaviour.FIFO_X2I:
+    %endif
+    %elif behav is Behaviour.FIFO_X2I:
 
-logic error_${rname};
-logic is_read_${rname}, is_write_${rname}, is_full_${rname};
+logic error_${rname}, is_read_${rname}, is_write_${rname}, is_full_${rname};
 logic [${reg._pt_paired[Behaviour.LEVEL]._pt_width-1}:0] level_${rname};
-assign is_read_${rname} = is_read && (i_address == ${rname.upper()}_OFFSET);
-assign is_write_${rname} = is_write && (i_address == ${rname.upper()}_OFFSET);
-assign error_${rname} = is_read_${rname} ||
-                        (is_write_${rname} && is_full_${rname});
 
+assign is_read_${rname}  = is_read && (i_address == ${rname.upper()}_OFFSET);
+assign is_write_${rname} = is_write && (i_address == ${rname.upper()}_OFFSET);
+assign error_${rname}    = is_read_${rname} || (is_write_${rname} && is_full_${rname});
 
 pt_fifo #(
       .DATA_T     ( ${struct} )
@@ -212,17 +208,16 @@ pt_fifo #(
     , .o_hwm      ( )
     , .o_empty    ( )
 );
-%elif behav is Behaviour.FIFO_I2X:
+
+    %elif behav is Behaviour.FIFO_I2X:
 
 ${struct} current_${rname};
-logic error_${rname};
-logic is_read_${rname}, is_write_${rname}, rd_valid_${rname};
-assign is_read_${rname} = is_read && (i_address == ${rname.upper()}_OFFSET);
-assign is_write_${rname} = is_write && (i_address == ${rname.upper()}_OFFSET);
-assign error_${rname} = is_write_${rname} ||
-                        (is_read_${rname} && !rd_valid_${rname});
-
+logic error_${rname}, is_read_${rname}, is_write_${rname}, rd_valid_${rname};
 logic [${reg._pt_paired[Behaviour.LEVEL]._pt_width-1}:0] level_${rname};
+
+assign is_read_${rname}  = is_read && (i_address == ${rname.upper()}_OFFSET);
+assign is_write_${rname} = is_write && (i_address == ${rname.upper()}_OFFSET);
+assign error_${rname}    = is_write_${rname} || (is_read_${rname} && !rd_valid_${rname});
 
 pt_fifo #(
       .DATA_T     ( ${struct} )
@@ -237,23 +232,23 @@ pt_fifo #(
     // Pop stream
     , .o_rd_data  ( current_${rname}  )
     , .o_rd_valid ( rd_valid_${rname} )
-    , .i_rd_ready ( is_read_${rname} )
+    , .i_rd_ready ( is_read_${rname}  )
     // Status
-    , .o_level    ( level_${rname}   )
+    , .o_level    ( level_${rname} )
     , .o_full     ( )
     , .o_hwm      ( )
     , .o_empty    ( )
 );
 
-%else:
+    %else:
 <%  raise NotImplementedError() %>\
-%endif
-%for behav, sub in reg._pt_paired.items():
-    %if behav is Behaviour.LEVEL:
+    %endif
+    %for behav, sub in reg._pt_paired.items():
+        %if behav is Behaviour.LEVEL:
 assign o_${sub._pt_fullname | tc.underscore} = level_${rname};
-    %endif ## behav is Behaviour.LEVEL
-%endfor ## sub in reg._pt_paired.items()
 
+        %endif ## behav is Behaviour.LEVEL
+    %endfor ## sub in reg._pt_paired.items()
 %endfor ## reg in baseline
 // =============================================================================
 // Access Response
