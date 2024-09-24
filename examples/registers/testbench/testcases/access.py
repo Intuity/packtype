@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from cocotb.triggers import RisingEdge
-from forastero import MonitorEvent
+from forastero import DriverEvent, MonitorEvent
 
 from registers import Control, Version, Status
 
@@ -65,3 +65,31 @@ async def access_device(tb, log):
             rd_data=int(sts),
         ))
         await tb.mon.wait_for(MonitorEvent.CAPTURE)
+
+
+@Testbench.testcase()
+async def access_control(tb, log):
+    """Write to the reset control registers"""
+    ctrl = Control()
+    resets = ctrl.control.core_reset
+    for idx in range(100):
+        # Decide on a state to write
+        state = [tb.random.getrandbits(resets[0]._pt_width) for _ in resets]
+        log.info(f"Pass {idx} setting resets to {state}")
+        # Write the state
+        for value, reset in zip(state, resets):
+            event = tb.drv.enqueue(RegRequest(
+                address=reset._pt_offset,
+                write=True,
+                wr_data=value,
+            ), wait_for=DriverEvent.POST_DRIVE)
+            tb.scoreboard.channels["mon"].push_reference(RegResponse())
+        # Wait for the final value to be sunk
+        log.info("Waiting for writes to be sunk")
+        await event.wait()
+        await RisingEdge(tb.clk)
+        # Check state
+        log.info("Checking state")
+        for idx, value in enumerate(state):
+            got = int(tb.internal.core_reset[idx].value)
+            assert got == value, f"Reset {idx} - expected: {value} got: {got}"
