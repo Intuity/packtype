@@ -73,16 +73,16 @@ always_ff @(posedge i_clk, posedge i_rst) begin : ff_head
     if (i_rst)
         head_q <= COUNT_W'(0);
     else if (push)
-        head_q <= (head_q < COUNT_W'(DEPTH)) ? { head_q + COUNT_W'(1) }
-                                             : COUNT_W'(0);
+        head_q <= (head_q == COUNT_W'(DEPTH - 'd1)) ? COUNT_W'(0)
+                                                    : { head_q + COUNT_W'(1) };
 end
 
 always_ff @(posedge i_clk, posedge i_rst) begin : ff_tail
     if (i_rst)
         tail_q <= COUNT_W'(0);
     else if (pop)
-        tail_q <= (tail_q < COUNT_W'(DEPTH)) ? { tail_q + COUNT_W'(1) }
-                                             : COUNT_W'(0);
+        tail_q <= (tail_q == COUNT_W'(DEPTH - 'd1)) ? COUNT_W'(0)
+                                                    : { tail_q + COUNT_W'(1) };
 end
 
 always_ff @(posedge i_clk, posedge i_rst) begin : ff_level
