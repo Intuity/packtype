@@ -97,8 +97,8 @@ async def access_control(tb, log):
 
 
 @Testbench.testcase()
-async def access_fifos(tb, log):
-    """Exercise FIFOs"""
+async def access_fifo_h2d(tb, log):
+    """Exercise H2D FIFOs"""
     ctrl = Control()
     for idx in range(100):
         comm_idx = tb.random.randint(0, len(ctrl.comms)-1)
@@ -144,3 +144,45 @@ async def access_fifos(tb, log):
         tb.scoreboard.channels["mon"].push_reference(RegResponse(rd_data=0))
         # Check the internally visible level
         assert int(tb.internal.comms_h2d_level[comm_idx].value) == 0
+
+
+@Testbench.testcase()
+async def access_fifo_d2h(tb, log):
+    """Exercise D2H FIFOs"""
+    ctrl = Control()
+    for idx in range(100):
+        comm_idx = tb.random.randint(0, len(ctrl.comms)-1)
+        comm = ctrl.comms[comm_idx]
+        log.info(f"Pass {idx} exercising channel {comm_idx}")
+        # Push a bunch of entries into the I2X FIFO
+        values = []
+        for _ in range(tb.random.randint(1, comm.d2h._PT_DEPTH)):
+            values.append(value := tb.random.getrandbits(comm.d2h._pt_width))
+            tb.internal.comms_d2h[comm_idx].value = value
+            tb.internal.comms_d2h_valid[comm_idx].value = 1
+            await RisingEdge(tb.clk)
+            tb.internal.comms_d2h_valid[comm_idx].value = 0
+            await ClockCycles(tb.clk, tb.random.randint(0, 10))
+        # Read back the level
+        await tb.drv.enqueue(RegRequest(
+            address=comm.d2h._pt_paired[Behaviour.LEVEL]._pt_offset,
+            write=False,
+        ), wait_for=DriverEvent.POST_DRIVE).wait()
+        tb.scoreboard.channels["mon"].push_reference(RegResponse(rd_data=len(values)))
+        # Check the internally visible level
+        assert int(tb.internal.comms_d2h_level[comm_idx].value) == len(values)
+        # Pop externally
+        for idx, value in enumerate(values):
+            # Read back to pop the value
+            tb.drv.enqueue(RegRequest(address=comm.d2h._pt_offset, write=False))
+            tb.scoreboard.channels["mon"].push_reference(RegResponse(rd_data=value))
+            # Wait a while
+            await ClockCycles(tb.clk, tb.random.randint(0, 10))
+        # Read back the level again (should get a zero)
+        await tb.drv.enqueue(RegRequest(
+            address=comm.d2h._pt_paired[Behaviour.LEVEL]._pt_offset,
+            write=False,
+        ), wait_for=DriverEvent.POST_DRIVE).wait()
+        tb.scoreboard.channels["mon"].push_reference(RegResponse(rd_data=0))
+        # Check the internally visible level
+        assert int(tb.internal.comms_d2h_level[comm_idx].value) == 0
