@@ -15,8 +15,26 @@
 from types import SimpleNamespace
 
 from forastero import BaseBench, IORole
-
-from .regintf import RegDriver, RegIntfIO, RegMonitor
+from forastero_io.axi4lite.io import (
+    AXI4LiteWriteAddressIO,
+    AXI4LiteWriteDataIO,
+    AXI4LiteWriteResponseIO,
+    AXI4LiteReadAddressIO,
+    AXI4LiteReadResponseIO,
+)
+from forastero_io.axi4lite.initiator import (
+    AXI4LiteWriteAddressInitiator,
+    AXI4LiteWriteDataInitiator,
+    AXI4LiteReadAddressInitiator,
+)
+from forastero_io.axi4lite.monitor import (
+    AXI4LiteWriteResponseMonitor,
+    AXI4LiteReadResponseMonitor,
+)
+from forastero_io.axi4lite.target import (
+    AXI4LiteWriteResponseTarget,
+    AXI4LiteReadResponseTarget,
+)
 
 
 class Testbench(BaseBench):
@@ -24,10 +42,27 @@ class Testbench(BaseBench):
 
     def __init__(self, dut):
         super().__init__(dut, clk=dut.i_clk, rst=dut.i_rst)
-        # Register interface
-        reg_io = RegIntfIO(dut, None, IORole.RESPONDER)
-        self.register("drv", RegDriver(self, reg_io, self.clk, self.rst))
-        self.register("mon", RegMonitor(self, reg_io, self.clk, self.rst))
+        # Register AXI4-Lite drivers
+        for prefix, io_type, io_role, drv_type in (
+            ("aw", AXI4LiteWriteAddressIO, IORole.RESPONDER, AXI4LiteWriteAddressInitiator),
+            ("w", AXI4LiteWriteDataIO, IORole.RESPONDER, AXI4LiteWriteDataInitiator),
+            ("b", AXI4LiteWriteResponseIO, IORole.INITIATOR, AXI4LiteWriteResponseTarget),
+            ("ar", AXI4LiteReadAddressIO, IORole.RESPONDER, AXI4LiteReadAddressInitiator),
+            ("r", AXI4LiteReadResponseIO, IORole.INITIATOR, AXI4LiteReadResponseTarget),
+        ):
+            self.register(
+                f"{prefix}_drv",
+                drv_type(self, io_type(dut, None, io_role), self.clk, self.rst),
+            )
+        # Register AXI4-Lite monitors
+        for prefix, io_type, io_role, mon_type in (
+            ("b", AXI4LiteWriteResponseIO, IORole.INITIATOR, AXI4LiteWriteResponseMonitor),
+            ("r", AXI4LiteReadResponseIO, IORole.INITIATOR, AXI4LiteReadResponseMonitor),
+        ):
+            self.register(
+                f"{prefix}_mon",
+                mon_type(self, io_type(dut, None, io_role), self.clk, self.rst),
+            )
         # Internal I/O
         self.internal = SimpleNamespace(
             version=self.dut.i_device_version_data,

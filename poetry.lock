@@ -232,6 +232,24 @@ tabulate = ">=0.9.0,<0.10.0"
 yappi = ">=1.6.0,<2.0.0"
 
 [[package]]
+name = "forastero-io"
+version = "1.0.0"
+description = "Collection of useful I/O components for Forastero testbenches"
+optional = false
+python-versions = "^3.11"
+files = []
+develop = false
+
+[package.dependencies]
+forastero = "^1.0"
+
+[package.source]
+type = "git"
+url = "https://github.com/VyperCore/forastero-io.git"
+reference = "fd788086f6d6059848ab76e0ac78d7e8caca4bf0"
+resolved_reference = "fd788086f6d6059848ab76e0ac78d7e8caca4bf0"
+
+[[package]]
 name = "iniconfig"
 version = "2.0.0"
 description = "brain-dead simple config-ini parsing"
@@ -661,4 +679,4 @@ test = ["gevent (>=20.6.2)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "770344a6a7d9d625e1b43b58867eeb5291a7b6bd3f822099ec7d8140734c13ef"
+content-hash = "e294f6ce8c5b474aaf986070e770a06e5ff7080c820eb5083cc69542fd11d057"
