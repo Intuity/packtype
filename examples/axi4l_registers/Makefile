@@ -47,7 +47,7 @@ SIM             ?= verilator
 TOPLEVEL_LANG   ?= verilog
 TOPLEVEL        ?= wrapper
 MODULE          ?= testbench
-VERILOG_SOURCES ?= $(SV_SRCS) $(SV_TGTS) $(SV_LATE_SRCS)
+VERILOG_SOURCES ?= $(SV_EARLY_SRCS) $(SV_TGTS) $(SV_LATE_SRCS)
 EXTRA_ARGS      += --trace --trace-structs --trace-fst
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

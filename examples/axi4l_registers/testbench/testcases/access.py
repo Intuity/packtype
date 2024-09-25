@@ -13,25 +13,29 @@
 # limitations under the License.
 
 from cocotb.triggers import ClockCycles, RisingEdge
-from forastero import DriverEvent, MonitorEvent
+from forastero import MonitorEvent
+from forastero_io.axi4lite.sequences import axi4lite_b_backpressure, axi4lite_r_backpressure
+from forastero_io.axi4lite.transaction import AXI4LiteReadAddress, AXI4LiteReadResponse, AXI4LiteWriteAddress, AXI4LiteWriteData, AXI4LiteWriteResponse
 from packtype.registers import Behaviour
 
 from registers import Control, Version, Status
 
-from ..regintf import RegRequest, RegResponse
 from ..testbench import Testbench
 
 
 @Testbench.testcase()
 async def access_device(tb, log):
     """Read back from the identity, version, and status registers"""
+    # Randomise backpressure
+    tb.schedule(axi4lite_b_backpressure(driver=tb.b_drv), blocking=False)
+    tb.schedule(axi4lite_r_backpressure(driver=tb.r_drv), blocking=False)
+    # Create register bank instance
     ctrl = Control()
     # Read the identity register
     log.info("Reading back identity")
-    tb.drv.enqueue(RegRequest(address=ctrl.device.identity._pt_offset,
-                              write=False))
-    tb.scoreboard.channels["mon"].push_reference(RegResponse(
-        rd_data=int(ctrl.device.identity),
+    tb.ar_drv.enqueue(AXI4LiteReadAddress(address=ctrl.device.identity._pt_offset))
+    tb.scoreboard.channels["r_mon"].push_reference(AXI4LiteReadResponse(
+        data=int(ctrl.device.identity),
     ))
     # Read the version register
     log.info("Reading back version (build randomised 100 times)")
@@ -42,14 +46,11 @@ async def access_device(tb, log):
         tb.internal.version_strobe.value = 1
         await RisingEdge(tb.clk)
         tb.internal.version_strobe.value = 0
-        tb.drv.enqueue(RegRequest(
-            address=ctrl.device.version._pt_offset,
-            write=False
+        tb.ar_drv.enqueue(AXI4LiteReadAddress(address=ctrl.device.version._pt_offset))
+        tb.scoreboard.channels["r_mon"].push_reference(AXI4LiteReadResponse(
+            data=int(version),
         ))
-        tb.scoreboard.channels["mon"].push_reference(RegResponse(
-            rd_data=int(version),
-        ))
-        await tb.mon.wait_for(MonitorEvent.CAPTURE)
+        await tb.r_mon.wait_for(MonitorEvent.CAPTURE)
     # Read back the status register
     log.info("Reading back status (randomised 100 times)")
     for _ in range(100):
@@ -58,20 +59,20 @@ async def access_device(tb, log):
         tb.internal.status_strobe.value = 1
         await RisingEdge(tb.clk)
         tb.internal.status_strobe.value = 0
-        tb.drv.enqueue(RegRequest(
-            address=ctrl.device.status._pt_offset,
-            write=False,
-        ))
-        tb.scoreboard.channels["mon"].push_reference(RegResponse(
-            rd_data=int(sts),
-        ))
-        await tb.mon.wait_for(MonitorEvent.CAPTURE)
+        tb.ar_drv.enqueue(AXI4LiteReadAddress(address=ctrl.device.status._pt_offset))
+        tb.scoreboard.channels["r_mon"].push_reference(AXI4LiteReadResponse(data=int(sts)))
+        await tb.r_mon.wait_for(MonitorEvent.CAPTURE)
 
 
 @Testbench.testcase()
 async def access_control(tb, log):
     """Write to the reset control registers"""
+    # Randomise backpressure
+    tb.schedule(axi4lite_b_backpressure(driver=tb.b_drv), blocking=False)
+    tb.schedule(axi4lite_r_backpressure(driver=tb.r_drv), blocking=False)
+    # Create register bank instance
     ctrl = Control()
+    # Randomise accesses to core reset signals
     resets = ctrl.control.core_reset
     for idx in range(100):
         # Decide on a state to write
@@ -79,16 +80,13 @@ async def access_control(tb, log):
         log.info(f"Pass {idx} setting resets to {state}")
         # Write the state
         for value, reset in zip(state, resets):
-            event = tb.drv.enqueue(RegRequest(
-                address=reset._pt_offset,
-                write=True,
-                wr_data=value,
-            ), wait_for=DriverEvent.POST_DRIVE)
-            tb.scoreboard.channels["mon"].push_reference(RegResponse())
-        # Wait for the final value to be sunk
+            tb.aw_drv.enqueue(AXI4LiteWriteAddress(address=reset._pt_offset))
+            tb.w_drv.enqueue(AXI4LiteWriteData(data=value, strobe=0xFF))
+            tb.scoreboard.channels["b_mon"].push_reference(AXI4LiteWriteResponse())
+        # Wait for the write responses
         log.info("Waiting for writes to be sunk")
-        await event.wait()
-        await RisingEdge(tb.clk)
+        for _ in resets:
+            await tb.b_mon.wait_for(MonitorEvent.CAPTURE)
         # Check state
         log.info("Checking state")
         for idx, value in enumerate(state):
@@ -99,7 +97,12 @@ async def access_control(tb, log):
 @Testbench.testcase()
 async def access_fifo_h2d(tb, log):
     """Exercise H2D FIFOs"""
+    # Randomise backpressure
+    tb.schedule(axi4lite_b_backpressure(driver=tb.b_drv), blocking=False)
+    tb.schedule(axi4lite_r_backpressure(driver=tb.r_drv), blocking=False)
+    # Create register bank instance
     ctrl = Control()
+    # Randomise H2D FIFO access
     for idx in range(100):
         comm_idx = tb.random.randint(0, len(ctrl.comms)-1)
         comm = ctrl.comms[comm_idx]
@@ -108,19 +111,17 @@ async def access_fifo_h2d(tb, log):
         values = []
         for _ in range(tb.random.randint(1, comm.h2d._PT_DEPTH)):
             values.append(value := tb.random.getrandbits(comm.h2d._pt_width))
-            event = tb.drv.enqueue(RegRequest(
-                address=comm.h2d._pt_offset,
-                write=True,
-                wr_data=value,
-            ), wait_for=DriverEvent.POST_DRIVE)
-            tb.scoreboard.channels["mon"].push_reference(RegResponse())
-        await event.wait()
+            tb.aw_drv.enqueue(AXI4LiteWriteAddress(address=comm.h2d._pt_offset))
+            tb.w_drv.enqueue(AXI4LiteWriteData(data=value))
+            tb.scoreboard.channels["b_mon"].push_reference(AXI4LiteWriteResponse())
+        for _ in values:
+            await tb.b_mon.wait_for(MonitorEvent.CAPTURE)
         # Read back the level
-        await tb.drv.enqueue(RegRequest(
+        tb.ar_drv.enqueue(AXI4LiteReadAddress(
             address=comm.h2d._pt_paired[Behaviour.LEVEL]._pt_offset,
-            write=False,
-        ), wait_for=DriverEvent.POST_DRIVE).wait()
-        tb.scoreboard.channels["mon"].push_reference(RegResponse(rd_data=len(values)))
+        ))
+        await tb.r_mon.wait_for(MonitorEvent.CAPTURE)
+        tb.scoreboard.channels["r_mon"].push_reference(AXI4LiteReadResponse(data=len(values)))
         # Check the internally visible level
         assert int(tb.internal.comms_h2d_level[comm_idx].value) == len(values)
         # Pop internally
@@ -137,11 +138,11 @@ async def access_fifo_h2d(tb, log):
             # Wait a while
             await ClockCycles(tb.clk, tb.random.randint(0, 10))
         # Read back the level again (should get a zero)
-        await tb.drv.enqueue(RegRequest(
+        tb.ar_drv.enqueue(AXI4LiteReadAddress(
             address=comm.h2d._pt_paired[Behaviour.LEVEL]._pt_offset,
-            write=False,
-        ), wait_for=DriverEvent.POST_DRIVE).wait()
-        tb.scoreboard.channels["mon"].push_reference(RegResponse(rd_data=0))
+        ))
+        await tb.r_mon.wait_for(MonitorEvent.CAPTURE)
+        tb.scoreboard.channels["r_mon"].push_reference(AXI4LiteReadResponse(data=0))
         # Check the internally visible level
         assert int(tb.internal.comms_h2d_level[comm_idx].value) == 0
 
@@ -149,7 +150,12 @@ async def access_fifo_h2d(tb, log):
 @Testbench.testcase()
 async def access_fifo_d2h(tb, log):
     """Exercise D2H FIFOs"""
+    # Randomise backpressure
+    tb.schedule(axi4lite_b_backpressure(driver=tb.b_drv), blocking=False)
+    tb.schedule(axi4lite_r_backpressure(driver=tb.r_drv), blocking=False)
+    # Create register bank instance
     ctrl = Control()
+    # Randomise D2H FIFO access
     for idx in range(100):
         comm_idx = tb.random.randint(0, len(ctrl.comms)-1)
         comm = ctrl.comms[comm_idx]
@@ -164,25 +170,28 @@ async def access_fifo_d2h(tb, log):
             tb.internal.comms_d2h_valid[comm_idx].value = 0
             await ClockCycles(tb.clk, tb.random.randint(0, 10))
         # Read back the level
-        await tb.drv.enqueue(RegRequest(
+        tb.ar_drv.enqueue(AXI4LiteReadAddress(
             address=comm.d2h._pt_paired[Behaviour.LEVEL]._pt_offset,
-            write=False,
-        ), wait_for=DriverEvent.POST_DRIVE).wait()
-        tb.scoreboard.channels["mon"].push_reference(RegResponse(rd_data=len(values)))
+        ))
+        tb.scoreboard.channels["r_mon"].push_reference(AXI4LiteReadResponse(data=len(values)))
+        log.info("Waiting for read of level")
+        await tb.r_mon.wait_for(MonitorEvent.CAPTURE)
         # Check the internally visible level
         assert int(tb.internal.comms_d2h_level[comm_idx].value) == len(values)
         # Pop externally
         for idx, value in enumerate(values):
             # Read back to pop the value
-            tb.drv.enqueue(RegRequest(address=comm.d2h._pt_offset, write=False))
-            tb.scoreboard.channels["mon"].push_reference(RegResponse(rd_data=value))
-            # Wait a while
-            await ClockCycles(tb.clk, tb.random.randint(0, 10))
+            tb.ar_drv.enqueue(AXI4LiteReadAddress(address=comm.d2h._pt_offset))
+            tb.scoreboard.channels["r_mon"].push_reference(AXI4LiteReadResponse(data=value))
+        log.info(f"Waiting for read back of {len(values)} values")
+        for _ in values:
+            await tb.r_mon.wait_for(MonitorEvent.CAPTURE)
         # Read back the level again (should get a zero)
-        await tb.drv.enqueue(RegRequest(
+        tb.ar_drv.enqueue(AXI4LiteReadAddress(
             address=comm.d2h._pt_paired[Behaviour.LEVEL]._pt_offset,
-            write=False,
-        ), wait_for=DriverEvent.POST_DRIVE).wait()
-        tb.scoreboard.channels["mon"].push_reference(RegResponse(rd_data=0))
+        ))
+        tb.scoreboard.channels["r_mon"].push_reference(AXI4LiteReadResponse(data=0))
+        log.info("Waiting for read of empty level")
+        await tb.r_mon.wait_for(MonitorEvent.CAPTURE)
         # Check the internally visible level
         assert int(tb.internal.comms_d2h_level[comm_idx].value) == 0
