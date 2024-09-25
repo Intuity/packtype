@@ -21,8 +21,8 @@ module pt_axi4lite_bridge #(
     , localparam PROT_W         =  3
     , localparam RESP_W         =  2
 ) (
-      input  logic              i_clk
-    , input  logic              i_rst
+      input  logic                  i_clk
+    , input  logic                  i_rst
     // =========================================================================
     // AX4-Lite Upstream
     // =========================================================================
@@ -162,7 +162,7 @@ always_ff @(posedge i_clk, posedge i_rst)
     if (i_rst)
         { pending_read_q, pending_write_q } <= 2'd0;
     else
-        { pending_read_q, pending_write_q } <= { accept_write, accept_read };
+        { pending_read_q, pending_write_q } <= { accept_read, accept_write };
 
 // Fill in response
 assign rb_wr_data = '{
