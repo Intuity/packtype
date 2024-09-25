@@ -19,7 +19,7 @@ typing-extensions = "^4.8.0"
 svg-py = "^1.4.3"
 cocotb = "^1.9.1"
 forastero = "^1.0"
-forastero-io = {git = "https://github.com/VyperCore/forastero-io.git", rev = "fd788086f6d6059848ab76e0ac78d7e8caca4bf0"}
+forastero-io = {git = "https://github.com/VyperCore/forastero-io.git"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"

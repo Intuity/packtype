@@ -246,8 +246,8 @@ forastero = "^1.0"
 [package.source]
 type = "git"
 url = "https://github.com/VyperCore/forastero-io.git"
-reference = "fd788086f6d6059848ab76e0ac78d7e8caca4bf0"
-resolved_reference = "fd788086f6d6059848ab76e0ac78d7e8caca4bf0"
+reference = "HEAD"
+resolved_reference = "2d36ce107481a28f81980a52ad76cb331c6d9db8"
 
 [[package]]
 name = "iniconfig"
@@ -679,4 +679,4 @@ test = ["gevent (>=20.6.2)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "e294f6ce8c5b474aaf986070e770a06e5ff7080c820eb5083cc69542fd11d057"
+content-hash = "3343f7d27142995cc80e5b81dcd08cb814f4210e6a87b3304813db95a1f0fa78"
