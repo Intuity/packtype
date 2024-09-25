@@ -30,7 +30,8 @@ OUT_DIR ?= out
 INC_DIRS += ../../packtype/common
 
 # RTL source files
-SV_SRCS += ../../packtype/common/pt_fifo.sv
+SV_EARLY_SRCS += ../../packtype/common/pt_fifo.sv
+SV_LATE_SRCS  +=
 
 # RTL target files
 SV_TGTS += $(OUT_DIR)/data_structures.sv
@@ -45,7 +46,7 @@ SIM             ?= verilator
 TOPLEVEL_LANG   ?= verilog
 TOPLEVEL        ?= control_rf
 MODULE          ?= testbench
-VERILOG_SOURCES ?= $(SV_SRCS) $(SV_TGTS)
+VERILOG_SOURCES ?= $(SV_SRCS) $(SV_TGTS) $(SV_LATE_SRCS)
 EXTRA_ARGS      += --trace --trace-structs --trace-fst
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
@@ -59,14 +60,13 @@ $(SV_TGTS): $(PY_SRCS)
 	python3 -m packtype --debug registers.py code register sv $(OUT_DIR)
 
 .PHONY: lint
-lint: $(SV_SRCS) $(SV_TGTS)
+lint: $(VERILOG_SOURCES)
 	verilator --lint-only \
 	          -Wall \
-	          --top-module control_rf \
+	          --top-module $(TOPLEVEL) \
 	          $(addprefix +incdir+,$(INC_DIRS)) \
 	          verilator.vlt \
-	          $(SV_SRCS) \
-	          $(SV_TGTS)
+	          $(VERILOG_SOURCES)
 
 .PHONY: sim
 sim: results.xml
