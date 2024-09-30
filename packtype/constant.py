@@ -16,4 +16,4 @@ from .primitive import NumericPrimitive
 
 
 class Constant(NumericPrimitive):
-    _PT_ALLOW_DEFAULT: bool = True
+    pass

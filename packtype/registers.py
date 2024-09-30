@@ -1,7 +1,7 @@
+import enum
 import inspect
 import math
 from collections.abc import Iterable
-from enum import Enum, auto
 from functools import partial
 from textwrap import indent
 from typing import Any, Self
@@ -9,31 +9,34 @@ from typing import Any, Self
 from .array import ArraySpec, UnpackedArray
 from .assembly import PackedAssembly
 from .base import Base
+from .enum import Enum
+from .constant import Constant
 from .packing import Packing
 from .primitive import NumericPrimitive
 from .scalar import Scalar
+from .struct import Struct
 from .wrap import build_from_fields, get_wrapper
 
 # NOTE 1: Consider sign extension vs zero extension behaviours, i.e. do we want
 #         to offer automatic field expansion?
 
 
-class Behaviour(Enum):
+class Behaviour(enum.Enum):
     """Enumerates the different types of register"""
 
     # Primary types
-    CONSTANT = auto()
+    CONSTANT = enum.auto()
     """A static value that cannot be altered"""
-    DATA_X2I = auto()
+    DATA_X2I = enum.auto()
     """Data that is externally written and internally read"""
-    DATA_I2X = auto()
+    DATA_I2X = enum.auto()
     """Data that is internally written and externally read"""
-    FIFO_X2I = auto()
+    FIFO_X2I = enum.auto()
     """FIFO that is externally filled and internally decanted"""
-    FIFO_I2X = auto()
+    FIFO_I2X = enum.auto()
     """FIFO that is internally filled and externally decanted"""
     # Second/paired types
-    LEVEL = auto()
+    LEVEL = enum.auto()
     """A paired register carrying level for FIFO_X2I and FIFO_I2X behaviours"""
 
     @property
@@ -91,6 +94,9 @@ class Behaviour(Enum):
 class Register(PackedAssembly):
     """Defines a single register with a behaviour, width, and alignment"""
 
+    # Allow both constants and scalars to be assigned values
+    _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant, Enum, Scalar, Struct]
+    # Detail custom attributes that registers offer
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {
         "behaviour": (Behaviour.CONSTANT, list(Behaviour)),
         "packing": (Packing.FROM_LSB, [Packing.FROM_LSB, Packing.FROM_MSB]),

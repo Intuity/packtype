@@ -29,6 +29,7 @@ from .wrap import get_wrapper
 
 
 class Package(Base):
+    _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant]
     _PT_FIELDS: dict
 
     @classmethod

@@ -19,6 +19,7 @@ from typing import Any
 from .array import ArraySpec, PackedArray
 from .base import Base
 from .bitvector import BitVector, BitVectorWindow
+from .constant import Constant
 from .numeric import Numeric
 from .packing import Packing
 from .primitive import NumericPrimitive
@@ -34,6 +35,8 @@ class AssignmentError(Exception):
 
 
 class Assembly(Base, Numeric):
+    _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant]
+
     def __init__(self, _pt_bv: BitVector | BitVectorWindow | None = None) -> None:
         self._pt_fields = {}
         super().__init__(_pt_bv=_pt_bv)
