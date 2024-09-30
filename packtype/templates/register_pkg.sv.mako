@@ -65,7 +65,7 @@ typedef struct packed {
             %else:
     logic ${name | tc.snake_case};
             %endif
-        %elif field._PT_BASE in (Struct, Union):
+        %elif field._PT_BASE in (Enum, Struct, Union):
     ${field._pt_name() | tc.snake_case}_t ${name | tc.snake_case};
         %endif
     %endfor ## f_lsb, f_msb, (name, field) in base()._pt_fields_msb_desc

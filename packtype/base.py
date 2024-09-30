@@ -21,6 +21,7 @@ try:
 except ImportError:
     from typing_extensions import Self  # noqa: UP035
 
+from .alias import MetaAlias
 from .array import ArraySpec
 from .bitvector import BitVector
 
@@ -80,16 +81,23 @@ class Base(metaclass=MetaBase):
 
     @classmethod
     def _pt_references(cls) -> list[type["Base"]]:
+        def _unwrap(obj):
+            # Unwrap arrays
+            if isinstance(obj, ArraySpec):
+                obj = obj.base
+            # Unwrap aliased types
+            if issubclass(type(obj), MetaAlias):
+                obj = obj._PT_ALIAS
+            return obj
         # Else iterate through core fields
         collect = set()
-        for ftype in cls._pt_field_types():
+        for ftype in map(_unwrap, cls._pt_field_types()):
             collect.update(ftype._pt_references())
-            collect.add(ftype.base if isinstance(ftype, ArraySpec) else ftype)
+            collect.add(ftype)
         # ...and through attached fields
-        for field in cls._PT_ATTACH or []:
+        for field in map(_unwrap, cls._PT_ATTACH or []):
             collect.update(field._pt_references())
-            if not isinstance(field, ArraySpec):
-                collect.add(field)
+            collect.add(field)
         return collect
 
     @property
