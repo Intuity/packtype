@@ -80,9 +80,6 @@ class Base(metaclass=MetaBase):
 
     @classmethod
     def _pt_references(cls) -> list[type["Base"]]:
-        # If no definition, return early
-        if not cls._PT_DEF:
-            return set()
         # Else iterate through core fields
         collect = set()
         for ftype in cls._pt_field_types():
