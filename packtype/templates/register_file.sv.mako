@@ -116,17 +116,27 @@ assign current_${rname} = '{
 
     %elif behav is Behaviour.DATA_X2I:
 
-${struct} current_${rname};
+${struct} reset_${rname}, current_${rname};
 logic error_${rname}, is_read_${rname}, is_write_${rname}, strobe_${rname};
 
 assign is_read_${rname}  = is_read  && (i_address == ${rname.upper()}_OFFSET);
 assign is_write_${rname} = is_write && (i_address == ${rname.upper()}_OFFSET);
 assign error_${rname}    = is_read_${rname};
 
+assign reset_${rname} = '{
+        %for idx, (field, fname) in enumerate(reg._pt_fields.items()):
+    ${"," if idx > 0 else " "} ${fname}: \
+            %if field._PT_BASE in (Enum, Struct, Union):
+${type(field).__name__ | tc.snake_case}_t'(${f"{int(field):X}"})
+            %else:
+${field._pt_width}'h${f"{int(field):X}"}
+            %endif
+        %endfor ## field, fname in reg._pt_fields.items()
+};
+
 always_ff @(posedge i_clk, posedge i_rst) begin : ff_${rname}
-    ## TODO @intuity: Handle non-zero reset value?
     if (i_rst) begin
-        current_${rname} <= ${struct}'(0);
+        current_${rname} <= reset_${rname};
         strobe_${rname}  <= 1'b0;
     end else begin
         if (is_write_${rname}) begin
@@ -143,16 +153,26 @@ assign o_${rname}_strobe = strobe_${rname};
 
     %elif behav is Behaviour.DATA_I2X:
 
-${struct} current_${rname}, buffer_${rname};
+${struct} reset_${rname}, current_${rname}, buffer_${rname};
 logic error_${rname}, is_write_${rname};
 
 assign is_write_${rname} = is_write && (i_address == ${rname.upper()}_OFFSET);
 assign error_${rname}    = is_write_${rname};
 
+assign reset_${rname} = '{
+        %for idx, (field, fname) in enumerate(reg._pt_fields.items()):
+    ${"," if idx > 0 else " "} ${fname}: \
+            %if field._PT_BASE in (Enum, Struct, Union):
+${type(field).__name__ | tc.snake_case}_t'(${f"{int(field):X}"})
+            %else:
+${field._pt_width}'h${f"{int(field):X}"}
+            %endif
+        %endfor ## field, fname in reg._pt_fields.items()
+};
+
 always_ff @(posedge i_clk, posedge i_rst) begin : ff_${rname}
-    ## TODO @intuity: Handle non-zero reset value?
     if (i_rst)
-        buffer_${rname} <= ${struct}'(0);
+        buffer_${rname} <= reset_${rname};
     else if (i_${rname}_strobe)
         buffer_${rname} <= i_${rname}_data;
 end
