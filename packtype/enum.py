@@ -18,6 +18,7 @@ from typing import Any
 
 from .base import Base
 from .bitvector import BitVector, BitVectorWindow
+from .constant import Constant
 from .numeric import Numeric
 
 
@@ -32,6 +33,7 @@ class EnumError(Exception):
 
 
 class Enum(Base, Numeric):
+    _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant]
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {
         "mode": (EnumMode.INDEXED, list(EnumMode)),
         "width": (-1, lambda x: int(x) > 0),

@@ -19,6 +19,7 @@ from collections import defaultdict
 from collections.abc import Callable
 from typing import Any
 
+from .alias import Alias
 from .array import ArraySpec
 from .assembly import Base
 from .primitive import NumericPrimitive
@@ -68,23 +69,26 @@ def build_from_fields(
 ) -> Any:
     # Check fields
     for fname, (ftype, default) in fields.items():
-        base_type = ftype
-        if isinstance(base_type, ArraySpec):
-            base_type = base_type.base
+        real_type = ftype.base if isinstance(ftype, ArraySpec) else ftype
+        # Unwrap alias types
+        if issubclass(real_type, Alias):
+            real_type = real_type._PT_ALIAS
         # Check for acceptable base type
-        if not isinstance(base_type, NumericPrimitive) and not issubclass(
-            base_type, Base | NumericPrimitive
+        if not isinstance(real_type, NumericPrimitive) and not issubclass(
+            real_type, Base | NumericPrimitive
         ):
             raise BadFieldTypeError(
-                f"{cname}.{fname} is of an unsupported type {base_type.__name__}"
+                f"{cname}.{fname} is of an unsupported type {real_type.__name__}"
             )
         # Map a missing value to None
         if isinstance(default, dataclasses._MISSING_TYPE):
             fields[fname] = (ftype, None)
         # Check if assignment allowed
-        elif default is not None and not base_type._PT_ALLOW_DEFAULT:
+        # NOTE: The subclass check is necessary for scalar/constant specialisations
+        elif default is not None and real_type not in base._PT_ALLOW_DEFAULTS and not any(issubclass(real_type, x) for x in base._PT_ALLOW_DEFAULTS):
             raise BadAssignmentError(
-                f"{cname}.{fname} cannot be assigned an initial value of {default}"
+                f"{cname}.{fname} cannot be assigned an initial value of {default} "
+                f"within a base type of {base.__name__}"
             )
     # Check for supported attributes
     attrs = {}

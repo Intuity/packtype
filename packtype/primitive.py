@@ -60,8 +60,7 @@ class NumericPrimitive(Base, Numeric, metaclass=MetaPrimitive):
         _pt_bv: BitVector | BitVectorWindow | None = None,
     ) -> None:
         super().__init__(_pt_bv=_pt_bv)
-        if type(self)._PT_ALLOW_DEFAULT:
-            self._pt_bv.set(0 if default is None else int(default))
+        self._pt_bv.set(0 if default is None else int(default))
 
     @classmethod
     def _pt_meta_key(
