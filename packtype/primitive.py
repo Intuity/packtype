@@ -67,14 +67,16 @@ class NumericPrimitive(Base, Numeric, metaclass=MetaPrimitive):
     def _pt_meta_key(
         cls, key: int | tuple[int, bool]
     ) -> tuple[tuple[str], dict[str, Any]]:
-        if isinstance(key, int):
+        if isinstance(key, int) or hasattr(key, "__int__"):
+            key = int(key)
             return ((str(key),), {"_PT_WIDTH": key})
         elif (
             isinstance(key, tuple)
-            and isinstance(key[0], int)
-            and isinstance(key[1], bool)
+            and (isinstance(key[0], int) or hasattr(key[0], "__int__"))
+            and (isinstance(key[1], bool) or hasattr(key[1], "__bool__"))
         ):
-            return ((str(key),), {"_PT_WIDTH": key[0], "_PT_SIGNED": key[1]})
+            width, signed = int(key[0]), bool(key[1])
+            return ((str(key),), {"_PT_WIDTH": width, "_PT_SIGNED": signed})
         else:
             raise Exception(f"Unsupported NumericPrimitive key: {key}")
 
