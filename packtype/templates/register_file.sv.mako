@@ -21,18 +21,25 @@ widest_type = max(len(tc.snake_case(x.__name__)) for x in base_types) + 2
 %>\
 
 module ${type(baseline).__name__ | tc.snake_case}_rf
-import   ${type(baseline).__name__ | tc.snake_case}_pkg::offset_t
+import   ${type(baseline).__name__ | tc.snake_case}_pkg::offset_t\
+%for foreign in baseline._pt_foreign():
+
+    %if foreign._PT_ATTACHED_TO:
+<%      refers_to = foreign._PT_ATTACHED_TO._pt_lookup(foreign) %>\
+       , ${foreign._PT_ATTACHED_TO._pt_name() | tc.snake_case}::${refers_to | tc.snake_case}_t\
+    %else:
+       , ${foreign._PT_ATTACHED_TO._pt_name() | tc.snake_case}::${foreign._pt_name() | tc.snake_case}_t\
+    %endif
+%endfor ## foreign in baseline._pt_foreign()
 %for reg in baseline:
-       , ${type(baseline).__name__ | tc.snake_case}_pkg::${reg._pt_fullname.upper() | tc.underscore}_OFFSET
+
+       , ${type(baseline).__name__ | tc.snake_case}_pkg::${reg._pt_fullname.upper() | tc.underscore}_OFFSET\
 %endfor ## reg in baseline
 %for idx, base in enumerate(sorted(base_types, key=lambda x: x.__name__)):
-       , ${type(baseline).__name__ | tc.snake_case}_pkg::${base.__name__ | tc.snake_case}_t\
-    %if idx == len(base_types) - 1:
-;
-    %else:
 
-    %endif ## idx == len(base_types) - 1
+       , ${type(baseline).__name__ | tc.snake_case}_pkg::${base.__name__ | tc.snake_case}_t\
 %endfor ## idx, base in enumerate(sorted(base_types, key=lambda x: x.__name__))
+;
 #(
       ## TODO @intuity: Use the cadence width, not the raw width
       localparam DATA_W = ${baseline._PT_BIT_CADENCE}
