@@ -227,7 +227,7 @@ class Group(Base):
                     if sub._PT_BASE is Register:
                         for pbehav, preg in sub._pt_paired.items():
                             _, _, prd_offset = self._PT_OFFSETS[(fname, pbehav), 0]
-                            preg.offset = offset + prd_offset
+                            preg._pt_offset = sub._pt_offset + prd_offset
             elif ftype._PT_BASE in (Group, Register):
                 _, _, sub_offset = self._PT_OFFSETS[fname, 0]
                 finst = ftype(name=fname, index=None, offset=offset + sub_offset)
@@ -235,7 +235,7 @@ class Group(Base):
                 if ftype._PT_BASE is Register:
                     for pbehav, preg in finst._pt_paired.items():
                         _, _, prd_offset = self._PT_OFFSETS[(fname, pbehav), 0]
-                        preg._pt_offset = offset + prd_offset
+                        preg._pt_offset = finst._pt_offset + prd_offset
             else:
                 raise Exception(f"Unsupported type: {ftype}")
             setattr(self, fname, finst)

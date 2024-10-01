@@ -107,10 +107,10 @@ typedef struct packed {
             %if isinstance(field, Scalar):
                 %if field._PT_ATTACHED_TO:
 <%                  refers_to = field._PT_ATTACHED_TO._pt_lookup(type(field)) %>\
-    ${refers_to | tc.snake_case}_t ${fname | tc.snake_case};
+    ${refers_to | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
                 %else:
 <%                  sign_sfx = " signed" if field._pt_signed else "" %>\
-    logic${sign_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${fname | tc.snake_case};
+    logic${sign_sfx}${array_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${fname | tc.snake_case};
                 %endif
             %elif isinstance(field, Alias | Enum | Struct | Union):
     ${field._pt_name() | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
