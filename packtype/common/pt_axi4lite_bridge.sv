@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO @intuity: Pretty sure the alignment conditions are wrong for AXI writes
+//                and won't work where AW and W arrive in different cycles
+
 module pt_axi4lite_bridge #(
       parameter  AXI_ADDR_W     = 32
     , parameter  RF_ADDR_W      = 32
