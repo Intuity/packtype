@@ -207,6 +207,9 @@ def code(ctx, option: list[str], mode: str, language: str, outdir: Path, selecti
                 )
             )
         resolved = all_resolved
+    # Detect missing selection
+    if not resolved:
+        raise Exception("Failed to resolve any objects to render")
     # Filter out non-matching types
     tmpl_list = None
     match mode.lower():
