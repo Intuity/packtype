@@ -78,17 +78,17 @@ class ${cls_name}${base.__name__ | tc.camel_case}(${cls_name}Container):
 
     def pack(self) -> int:
         value = 0
-    %for _, lsb, (name, field) in base()._pt_fields_msb_desc:
+    %for lsb, _, (name, field) in base()._pt_fields_msb_desc:
         value |= (self.${name | tc.snake_case} & 0x${f"{(1 << field._pt_width) - 1:X}"}) << ${lsb}
-    %endfor ## _, lsb, (name, field) in base()._pt_fields_msb_desc
+    %endfor ## lsb, _, (name, field) in base()._pt_fields_msb_desc
         return value
 
     @classmethod
     def unpack(cls, value: int) -> "${cls_name}${base.__name__ | tc.camel_case}":
         return cls(
-    %for _, lsb, (name, field) in base()._pt_fields_msb_desc:
+    %for lsb, _, (name, field) in base()._pt_fields_msb_desc:
             ${name | tc.snake_case}=((value >> ${lsb}) & 0x${f"{(1 << field._pt_width) - 1:X}"}),
-    %endfor ## _, lsb, (name, field) in base()._pt_fields_msb_desc
+    %endfor ## lsb, _, (name, field) in base()._pt_fields_msb_desc
         )
 
 %endfor ## base in base_types
