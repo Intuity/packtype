@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ast
 import importlib.util
 import logging
 import traceback
@@ -174,15 +175,25 @@ def svg(ctx, selection: str, output: Path | None):
 
 
 @main.command()
+@click.option(
+    "-o", "--option", type=str, multiple=True, help="Options in the form <KEY>=<VALUE>",
+)
 @click.argument(
     "mode", type=click.Choice(("package", "register"), case_sensitive=False)
 )
-@click.argument("language", type=click.Choice(("sv",), case_sensitive=False))
+@click.argument("language", type=click.Choice(("sv","py"), case_sensitive=False))
 @click.argument("outdir", type=click.Path(file_okay=False, path_type=Path))
 @click.argument("selection", type=str, nargs=-1)
 @click.pass_context
-def code(ctx, mode: str, language: str, outdir: Path, selection: list[str]):
+def code(ctx, option: list[str], mode: str, language: str, outdir: Path, selection: list[str]):
     """Render Packtype package definitions using a language template"""
+    # Digest options
+    options = {}
+    for opt_str in option:
+        if opt_str.count("=") != 1:
+            raise Exception(f"Incorrect number of = in '{opt_str}'")
+        key, value = opt_str.split("=")
+        options[key.strip().lower()] = ast.literal_eval(value.strip())
     # Resolve selection to a struct or union
     resolved = ctx.obj.get("baseline", [])
     if selection:
@@ -208,6 +219,9 @@ def code(ctx, mode: str, language: str, outdir: Path, selection: list[str]):
                 "sv": (
                     ("register_file.sv.mako", "_rf.sv"),
                     ("register_pkg.sv.mako", "_pkg.sv"),
+                ),
+                "py": (
+                    ("register_access.py.mako", "_access.py"),
                 )
             }
         case _:
@@ -226,7 +240,7 @@ def code(ctx, mode: str, language: str, outdir: Path, selection: list[str]):
             "import packtype.templates.common as tc",
         ],
     )
-    context = {}
+    context = {"options": options}
     for cls in (
         Alias,
         Constant,
