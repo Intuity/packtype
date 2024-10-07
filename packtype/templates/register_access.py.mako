@@ -75,8 +75,8 @@ class ${cls_name}Container:
 %for base in sorted(base_types, key=lambda x: x.__name__):
 @dataclass
 class ${cls_name}${base.__name__ | tc.camel_case}(${cls_name}Container):
-    %for _, _, (name, _) in base()._pt_fields_msb_desc:
-    ${name | tc.snake_case}: int
+    %for _, _, (name, field) in base()._pt_fields_msb_desc:
+    ${name | tc.snake_case}: int = 0x${f"{int(field):X}"}
     %endfor ## _, _, (name, _) in base()._pt_fields_msb_desc
 
     def __int__(self) -> int:
