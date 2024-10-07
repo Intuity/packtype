@@ -37,9 +37,9 @@ class AssignmentError(Exception):
 class Assembly(Base, Numeric):
     _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant]
 
-    def __init__(self, _pt_bv: BitVector | BitVectorWindow | None = None) -> None:
+    def __init__(self, _pt_bv: BitVector | BitVectorWindow | None = None, default: int | None = None) -> None:
         self._pt_fields = {}
-        super().__init__(_pt_bv=_pt_bv)
+        super().__init__(_pt_bv=_pt_bv, default=default)
 
     def __setattr__(self, name: str, value: Any) -> None:
         try:
@@ -62,27 +62,21 @@ class PackedAssembly(Assembly):
     _PT_PADDING: int
 
     def __init__(
-        self, _pt_bv: BitVector | BitVectorWindow | None = None, **kwds
+        self,
+        _pt_bv: BitVector | BitVectorWindow | None = None,
+        default: int | None = None,
+        **kwds,
     ) -> None:
-        super().__init__(_pt_bv=BitVector(self._PT_WIDTH) if _pt_bv is None else _pt_bv)
+        super().__init__(_pt_bv=BitVector(self._PT_WIDTH) if _pt_bv is None else _pt_bv, default=default)
         for fname, ftype, fval in self._pt_definitions():
             lsb, msb = self._PT_RANGES[fname]
             if isinstance(ftype, ArraySpec):
-                if isinstance(ftype.base, NumericPrimitive):
-                    finst = ftype.as_packed(
-                        default=fval,
-                        packing=self._PT_PACKING,
-                        _pt_bv=self._pt_bv.create_window(msb, lsb),
-                    )
-                else:
-                    finst = ftype.as_packed(
-                        packing=self._PT_PACKING,
-                        _pt_bv=self._pt_bv.create_window(msb, lsb),
-                    )
-            elif issubclass(ftype, NumericPrimitive):
-                finst = ftype(default=fval, _pt_bv=self._pt_bv.create_window(msb, lsb))
+                finst = ftype.as_packed(
+                    packing=self._PT_PACKING,
+                    _pt_bv=self._pt_bv.create_window(msb, lsb),
+                )
             else:
-                finst = ftype(_pt_bv=self._pt_bv.create_window(msb, lsb))
+                finst = ftype(default=fval, _pt_bv=self._pt_bv.create_window(msb, lsb))
             finst._PT_PARENT = self
             setattr(self, fname, finst)
             self._pt_fields[finst] = fname
