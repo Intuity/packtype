@@ -18,8 +18,6 @@ limitations under the License.
 <%
 cls_name = type(baseline).__name__
 bit_cadence = baseline._PT_BIT_CADENCE
-pfx_async = "async " if options.get("async", False) else ""
-pfx_await = "await " if options.get("async", False) else ""
 base_types = {x for x in baseline._pt_references() if x._PT_BASE is Register}
 %>\
 
@@ -39,14 +37,22 @@ class ${cls_name}Error(Exception):
 # Host-Memory Mapped Access Routines
 # ==============================================================================
 
-${pfx_async}def _read_host(address: int) -> int:
+def _read_host(address: int) -> int:
     ptr = ctypes.cast(ctypes.c_void_p(address), ctypes.POINTER(ctypes.c_uint${bit_cadence}))
     return ptr[0]
 
 
-${pfx_async}def _write_host(address: int, data: int) -> None:
+async def _read_host_async(address: int) -> int:
+    return _read_host(address)
+
+
+async def _write_host(address: int, data: int) -> None:
     ptr = ctypes.cast(ctypes.c_void_p(address), ctypes.POINTER(ctypes.c_uint${bit_cadence}))
     ptr[0] = data
+
+
+async def _write_host_async(address: int, data: int) -> None:
+    _write_host(address, data)
 
 # ==============================================================================
 # Offset Enumeration
@@ -97,7 +103,7 @@ class ${cls_name}${base.__name__ | tc.camel_case}(${cls_name}Container):
 # Generic Register Abstractions
 # ==============================================================================
 
-class DataX2I:
+class RegisterBase:
 
     def __init__(
         self,
@@ -111,76 +117,115 @@ class DataX2I:
         self._parent = parent
         self._container = container
 
-    ${pfx_async}def write(self, data: int | ${cls_name}Container) -> None:
-        ${pfx_await}self._parent._write_raw(self._offset, int(data))
 
-    ${pfx_async}def read(self) -> dataclass:
-        return self._container.unpack(${pfx_await}self._parent._read_raw(self._offset))
-
-
-class DataI2X:
-
-    def __init__(
-        self,
-        name: str,
-        offset: ${cls_name}Offset,
-        parent: Any,
-        container: dataclass,
-    ) -> None:
-        self._name = name
-        self._offset = offset
-        self._parent = parent
-        self._container = container
-
-    ${pfx_async}def write(self, data: int | ${cls_name}Container) -> None:
-        raise ${cls_name}Error(f"Cannot write to {self._name} is it is of type {type(self).__name__}")
-
-    ${pfx_async}def read(self) -> dataclass:
-        return self._container.unpack(${pfx_await}self._parent._read_raw(self._offset))
+class SyncDataX2I(RegisterBase):
+    def write(self, *args, **kwds) -> None:
+        value = 0
+        if args:
+            assert not kwds, "Does not support both conditional and named arguments"
+            assert len(args) == 1, "Only supports a single positional argument"
+            try:
+                value= int(args[0])
+            except ValueError as e:
+                raise ${cls_name}Error(f"Cannot cast {args[0]} to an integer") from e
+            value = int(args[0])
+        elif kwds:
+            value = int(self._container(**kwds))
+        else:
+            raise Exception("Must provide positional or named arguments")
+        self._parent._write_raw(self._offset, value)
+    def read(self) -> dataclass:
+        return self._container.unpack(self._parent._read_raw(self._offset))
 
 
-class FifoX2I:
-
-    def __init__(
-        self,
-        name: str,
-        offset: ${cls_name}Offset,
-        level_offset: ${cls_name}Offset,
-        parent: Any,
-        container: dataclass,
-    ) -> None:
-        self._name = name
-        self._offset = offset
-        self._parent = parent
-        self._container = container
-
-    ${pfx_async}def push(self, data: int | ${cls_name}Container) -> None:
-        ${pfx_await}self._parent._write_raw(self._offset, int(data))
-
-    ${pfx_async}def get_level(self) -> int:
-        return ${pfx_await}self._parent._read_raw(self._offset)
+class AsyncDataX2I(RegisterBase):
+    async def write(self, *args, **kwds) -> None:
+        value = 0
+        if args:
+            assert not kwds, "Does not support both conditional and named arguments"
+            assert len(args) == 1, "Only supports a single positional argument"
+            try:
+                value= int(args[0])
+            except ValueError as e:
+                raise ${cls_name}Error(f"Cannot cast {args[0]} to an integer") from e
+            value = int(args[0])
+        elif kwds:
+            value = int(self._container(**kwds))
+        else:
+            raise Exception("Must provide positional or named arguments")
+        await self._parent._write_raw_async(self._offset, value)
+    async def read(self) -> dataclass:
+        return self._container.unpack(await self._parent._read_raw_async(self._offset))
 
 
-class FifoI2X:
+class SyncDataI2X(RegisterBase):
+    def read(self) -> dataclass:
+        return self._container.unpack(self._parent._read_raw(self._offset))
 
-    def __init__(
-        self,
-        name: str,
-        offset: ${cls_name}Offset,
-        level_offset: ${cls_name}Offset,
-        parent: Any,
-        container: dataclass,
-    ) -> None:
-        self._name = name
-        self._offset = offset
-        self._parent = parent
-        self._container = container
 
-    ${pfx_async}def pop(self) -> dataclass:
-        return self._container.unpack(${pfx_await}self._parent._read_raw(self._offset))
+class AsyncDataI2X(RegisterBase):
+    async def read(self) -> dataclass:
+        return self._container.unpack(await self._parent._read_raw_async(self._offset))
 
-    ${pfx_async}def get_level(self) -> int:
-        return ${pfx_await}self._parent._read_raw(self._offset)
+
+class FifoBase(RegisterBase):
+    def __init__(self, level_offset: ${cls_name}Offset, *args, **kwds) -> None:
+        super().__init__(*args, **kwds)
+        self._level_offset = level_offset
+
+
+class SyncFifoX2I(FifoBase):
+    def push(self, *args, **kwds) -> None:
+        value = 0
+        if args:
+            assert not kwds, "Does not support both conditional and named arguments"
+            assert len(args) == 1, "Only supports a single positional argument"
+            try:
+                value= int(args[0])
+            except ValueError as e:
+                raise ${cls_name}Error(f"Cannot cast {args[0]} to an integer") from e
+            value = int(args[0])
+        elif kwds:
+            value = int(self._container(**kwds))
+        else:
+            raise Exception("Must provide positional or named arguments")
+        self._parent._write_raw(self._offset, value)
+    def get_level(self) -> int:
+        return self._parent._read_raw(self._level_offset)
+
+
+class AsyncFifoX2I(FifoBase):
+    async def push(self, *args, **kwds) -> None:
+        value = 0
+        if args:
+            assert not kwds, "Does not support both conditional and named arguments"
+            assert len(args) == 1, "Only supports a single positional argument"
+            try:
+                value= int(args[0])
+            except ValueError as e:
+                raise ${cls_name}Error(f"Cannot cast {args[0]} to an integer") from e
+            value = int(args[0])
+        elif kwds:
+            value = int(self._container(**kwds))
+        else:
+            raise Exception("Must provide positional or named arguments")
+        await self._parent._write_raw_async(self._offset, value)
+    async def get_level(self) -> int:
+        return await self._parent._read_raw_async(self._level_offset)
+
+
+class SyncFifoI2X(FifoBase):
+    def pop(self) -> dataclass:
+        return self._container.unpack(self._parent._read_raw(self._offset))
+    def get_level(self) -> int:
+        return self._parent._read_raw(self._level_offset)
+
+
+class AsyncFifoI2X(FifoBase):
+    async def pop(self) -> dataclass:
+        return self._container.unpack(await self._parent._read_raw_async(self._offset))
+    async def get_level(self) -> int:
+        return await self._parent._read_raw_async(self._level_offset)
 
 # ==============================================================================
 # Register Interface Class
@@ -193,6 +238,7 @@ class ${cls_name}:
 
     :param base_address: Set the offset base address to access the register
                          file, defaults to zero
+    :param use_async:    Whether to use asyncio access patterns
     :param read_fn:      Optional function to write to an address, if not provided
                          the default behaviour will be a read from the host's
                          memory map
@@ -204,13 +250,14 @@ class ${cls_name}:
     def __init__(
         self,
         base_address: int = 0,
-        read_fn: Callable[[int, ], int] = _read_host,
-        write_fn: Callable[[int, int], None] = _write_host,
+        use_async: bool = False,
+        read_fn: Callable[[int, ], int] | None = None,
+        write_fn: Callable[[int, int], None] | None = None,
     ) -> None:
         # Attach attributes
         self._base_address = base_address
-        self._read_fn = read_fn
-        self._write_fn = write_fn
+        self._read_fn = read_fn or [_read_host, _read_host_async][use_async]
+        self._write_fn = write_fn or [_write_host, _write_host_async][use_async]
         # Attach registers
 %for reg in filter(lambda x: x._PT_BEHAVIOUR.is_primary, baseline):
 <%
@@ -218,28 +265,38 @@ class ${cls_name}:
     rname  = tc.underscore(reg._pt_fullname)
 %>\
     %if behav in (Behaviour.CONSTANT, Behaviour.DATA_I2X, Behaviour.DATA_X2I):
-        self.${rname} = Data${["I2X", "X2I"][behav is Behaviour.DATA_X2I]}(
-            "${rname}",
-            ${cls_name}Offset.${rname.upper()},
-            self,
-            ${cls_name}${type(reg).__name__ | tc.camel_case},
+<%      wname = f"Data{['I2X', 'X2I'][behav is Behaviour.DATA_X2I]}" %>\
+        self.${rname} = (Async${wname} if use_async else Sync${wname})(
+            name="${rname}",
+            offset=${cls_name}Offset.${rname.upper()},
+            parent=self,
+            container=${cls_name}${type(reg).__name__ | tc.camel_case},
         )
     %elif behav in (Behaviour.FIFO_X2I, Behaviour.FIFO_I2X):
-<%      lvl = reg._pt_paired[Behaviour.LEVEL] %>\
-        self.${rname} = Fifo${["I2X", "X2I"][behav is Behaviour.FIFO_X2I]}(
-            "${rname}",
-            ${cls_name}Offset.${rname.upper()},
-            ${cls_name}Offset.${lvl._pt_fullname.upper() | tc.underscore},
-            self,
-            ${cls_name}${type(reg).__name__ | tc.camel_case},
+<%
+        lvl   = reg._pt_paired[Behaviour.LEVEL]
+        wname = f"Fifo{['I2X', 'X2I'][behav is Behaviour.FIFO_X2I]}"
+%>\
+        self.${rname} = (Async${wname} if use_async else Sync${wname})(
+            name="${rname}",
+            offset=${cls_name}Offset.${rname.upper()},
+            level_offset=${cls_name}Offset.${lvl._pt_fullname.upper() | tc.underscore},
+            parent=self,
+            container=${cls_name}${type(reg).__name__ | tc.camel_case},
         )
     %else:
 <%      raise Exception("Unsupported behaviour!") %>
     %endif
 %endfor ## reg in filter(lambda x: x._PT_BEHAVIOUR.is_primary, baseline)
 
-    ${pfx_async}def _read_raw(self, offset: ${cls_name}Offset) -> int:
-        return ${pfx_await}self._read_fn(self._base_address + int(offset))
+    def _read_raw(self, offset: ${cls_name}Offset) -> int:
+        return self._read_fn(self._base_address + int(offset))
 
-    ${pfx_async}def _write_raw(self, offset: int, data: ${cls_name}Offset) -> None:
-        ${pfx_await}self._write_fn(self._base_address + int(offset), data)
+    async def _read_raw_async(self, offset: ${cls_name}Offset) -> int:
+        return await self._read_fn(self._base_address + int(offset))
+
+    def _write_raw(self, offset: int, data: ${cls_name}Offset) -> None:
+        self._write_fn(self._base_address + int(offset), data)
+
+    async def _write_raw_async(self, offset: int, data: ${cls_name}Offset) -> None:
+        await self._write_fn(self._base_address + int(offset), data)

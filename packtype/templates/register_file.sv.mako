@@ -134,7 +134,7 @@ assign reset_${rname} = '{
         %for idx, (field, fname) in enumerate(reg._pt_fields.items()):
     ${"," if idx > 0 else " "} ${fname}: \
             %if field._PT_BASE in (Enum, Struct, Union):
-${type(field).__name__ | tc.snake_case}_t'(${f"{int(field):X}"})
+${type(field).__name__ | tc.snake_case}_t'(${f"{int(field)}"})
             %else:
 ${field._pt_width}'h${f"{int(field):X}"}
             %endif
@@ -170,7 +170,7 @@ assign reset_${rname} = '{
         %for idx, (field, fname) in enumerate(reg._pt_fields.items()):
     ${"," if idx > 0 else " "} ${fname}: \
             %if field._PT_BASE in (Enum, Struct, Union):
-${type(field).__name__ | tc.snake_case}_t'(${f"{int(field):X}"})
+${type(field).__name__ | tc.snake_case}_t'(${f"{int(field)}"})
             %else:
 ${field._pt_width}'h${f"{int(field):X}"}
             %endif

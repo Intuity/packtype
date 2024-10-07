@@ -47,10 +47,15 @@ class Enum(Base, Numeric):
     _PT_LKP_VALUE: dict
 
     def __init__(
-        self, value: int = 0, _pt_bv: BitVector | BitVectorWindow | None = None
+        self, value: int | None = None, default: int | None = None, _pt_bv: BitVector | BitVectorWindow | None = None
     ) -> None:
         super().__init__(_pt_bv=BitVector(self._pt_width) if _pt_bv is None else _pt_bv)
-        self._pt_set(value)
+        if value is not None:
+            self._pt_set(value)
+        elif default is not None:
+            self._pt_set(default)
+        else:
+            self._pt_set(0)
 
     @classmethod
     def _pt_construct(
