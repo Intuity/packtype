@@ -55,8 +55,10 @@ class Base(metaclass=MetaBase):
     _PT_PROFILING: dict[str, int] = defaultdict(lambda: 0)
 
     def __init__(self, _pt_bv: BitVector | None = None, default: int | None = None) -> None:
-        self._pt_bv = _pt_bv if _pt_bv is not None else BitVector()
-        self._pt_bv.set(0 if default is None else default)
+        self._pt_bv = _pt_bv
+        if self._pt_bv is None:
+            self._pt_bv = BitVector()
+            self._pt_bv.set(0 if default is None else default)
         self._PT_PROFILING[type(self).__name__] += 1
 
     @classmethod
