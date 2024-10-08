@@ -34,7 +34,7 @@ class Union(Assembly):
         default: int | None = None,
         _pt_bv: BitVector | BitVectorWindow | None = None,
     ) -> None:
-        super().__init__(_pt_bv=_pt_bv, default=default)
+        super().__init__(_pt_bv=_pt_bv, default=default if value is None else value)
         if value is None:
             value = 0 if default is None else default
         for fname, ftype, fval in self._pt_definitions():
