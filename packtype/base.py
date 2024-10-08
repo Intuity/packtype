@@ -45,6 +45,8 @@ class Base(metaclass=MetaBase):
     _PT_ATTACHED_TO: type["Base"] | None = None
     # Attributes specific to a type (e.g. width of a struct)
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {}
+    # Bit width
+    _PT_WIDTH: int = 0
     # The fields definition
     _PT_DEF: dict[str, tuple[type["Base"], Any]] = {}
     # Tuple of source file and line number where the type is defined
@@ -57,7 +59,7 @@ class Base(metaclass=MetaBase):
     def __init__(self, _pt_bv: BitVector | None = None, default: int | None = None) -> None:
         self._pt_bv = _pt_bv
         if self._pt_bv is None:
-            self._pt_bv = BitVector()
+            self._pt_bv = BitVector(width=self._PT_WIDTH)
             self._pt_bv.set(0 if default is None else default)
         self._PT_PROFILING[type(self).__name__] += 1
 

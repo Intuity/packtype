@@ -29,9 +29,12 @@ class Union(Assembly):
     _PT_WIDTH: int
 
     def __init__(
-        self, value: int | None = None, default: int | None = None, _pt_bv: BitVector | BitVectorWindow | None = None
+        self,
+        value: int | None = None,
+        default: int | None = None,
+        _pt_bv: BitVector | BitVectorWindow | None = None,
     ) -> None:
-        super().__init__(_pt_bv=_pt_bv or BitVector(self._pt_width, value=value))
+        super().__init__(_pt_bv=_pt_bv, default=default)
         if value is None:
             value = 0 if default is None else default
         for fname, ftype, fval in self._pt_definitions():
