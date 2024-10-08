@@ -117,7 +117,7 @@ assign error_${rname}    = is_write_${rname};
 
 assign current_${rname} = '{
         %for idx, (field, fname) in enumerate(reg._pt_fields.items()):
-    ${"," if idx > 0 else " "} ${fname}: ${field._pt_width}'h${f"{int(field):X}"}
+    ${"," if idx > 0 else " "} ${fname}: ${int(field._pt_width)}'h${f"{int(field):X}"}
         %endfor ## field, fname in reg._pt_fields.items()
 };
 
@@ -134,7 +134,7 @@ assign reset_${rname} = '{
         %for idx, (field, fname) in enumerate(reg._pt_fields.items()):
     ${"," if idx > 0 else " "} ${fname}: \
             %if field._PT_BASE in (Enum, Struct, Union):
-${type(field).__name__ | tc.snake_case}_t'(${f"{int(field)}"})
+${type(field).__name__ | tc.snake_case}_t'(${int(field._pt_width)}'h${f"{int(field):X}"})
             %else:
 ${field._pt_width}'h${f"{int(field):X}"}
             %endif
@@ -170,9 +170,9 @@ assign reset_${rname} = '{
         %for idx, (field, fname) in enumerate(reg._pt_fields.items()):
     ${"," if idx > 0 else " "} ${fname}: \
             %if field._PT_BASE in (Enum, Struct, Union):
-${type(field).__name__ | tc.snake_case}_t'(${f"{int(field)}"})
+${type(field).__name__ | tc.snake_case}_t'(${int(field._pt_width)}'h${f"{int(field):X}"})
             %else:
-${field._pt_width}'h${f"{int(field):X}"}
+${int(field._pt_width)}'h${f"{int(field):X}"}
             %endif
         %endfor ## field, fname in reg._pt_fields.items()
 };
@@ -188,7 +188,7 @@ assign current_${rname} = '{
         %for idx, (field, fname) in enumerate(reg._pt_fields.items()):
     ${',' if idx else ' '} ${fname}: \
             %if isinstance(field, Constant):
-${field._pt_width}'h${f"{int(field):X}"}
+${int(field._pt_width)}'h${f"{int(field):X}"}
             %else:
 buffer_${rname}.${fname}
             %endif ## isinstance(field, Constant)
