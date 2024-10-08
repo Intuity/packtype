@@ -68,7 +68,7 @@ class PackedAssembly(Assembly):
         **kwds,
     ) -> None:
         super().__init__(_pt_bv=BitVector(self._PT_WIDTH) if _pt_bv is None else _pt_bv, default=default)
-        for fname, ftype, fval in self._pt_definitions():
+        for fname, ftype, fdefault in self._pt_definitions():
             lsb, msb = self._PT_RANGES[fname]
             if isinstance(ftype, ArraySpec):
                 finst = ftype.as_packed(
@@ -76,12 +76,12 @@ class PackedAssembly(Assembly):
                     _pt_bv=self._pt_bv.create_window(msb, lsb),
                 )
             else:
-                finst = ftype(default=fval, _pt_bv=self._pt_bv.create_window(msb, lsb))
+                finst = ftype(_pt_bv=self._pt_bv.create_window(msb, lsb))
             finst._PT_PARENT = self
             setattr(self, fname, finst)
             self._pt_fields[finst] = fname
             # If a value was provided, assign it
-            if (fval := kwds.get(fname, None)) is not None:
+            if (fval := kwds.get(fname, fdefault)) is not None:
                 if isinstance(finst, PackedArray):
                     if not isinstance(fval, list) or len(fval) != len(finst):
                         raise AssignmentError(
@@ -94,7 +94,8 @@ class PackedAssembly(Assembly):
                 else:
                     finst._pt_set(fval)
                 # Delete from kwds to track
-                del kwds[fname]
+                if fname in kwds:
+                    del kwds[fname]
         # Flag any unused field values
         if kwds:
             raise AssignmentError(
