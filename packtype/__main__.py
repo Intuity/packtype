@@ -186,7 +186,7 @@ def svg(ctx, selection: str, output: Path | None):
 @click.argument(
     "mode", type=click.Choice(("package", "register"), case_sensitive=False)
 )
-@click.argument("language", type=click.Choice(("sv","py"), case_sensitive=False))
+@click.argument("language", type=click.Choice(("sv","py","cpp"), case_sensitive=False))
 @click.argument("outdir", type=click.Path(file_okay=False, path_type=Path))
 @click.argument("selection", type=str, nargs=-1)
 @click.pass_context
@@ -230,6 +230,9 @@ def code(ctx, option: list[str], mode: str, language: str, outdir: Path, selecti
                 ),
                 "py": (
                     ("register_access.py.mako", "_access.py"),
+                ),
+                "cpp": (
+                    ("register_access.hpp.mako", "_access.hpp"),
                 )
             }
         case _:
