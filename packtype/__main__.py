@@ -85,7 +85,7 @@ def resolve_to_object(
 # Handle CLI
 @click.group()
 @click.option("--debug", flag_value=True, default=False, help="Enable debug messages")
-@click.argument("spec", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.argument("spec", type=str)
 @click.pass_context
 def main(ctx, debug: bool, spec: str):
     """Renders packtype definitions into different forms"""
@@ -93,11 +93,16 @@ def main(ctx, debug: bool, spec: str):
     # Set log verbosity
     if debug:
         log.setLevel(logging.DEBUG)
-    # Convert spec and outdir to pathlib objects
-    log.debug(f"Using specification: {spec.absolute()}")
-    # Import library
-    imp_spec = importlib.util.spec_from_file_location(spec.stem, spec.absolute())
-    imp_spec.loader.exec_module(importlib.util.module_from_spec(imp_spec))
+    # Does the spec look like a path?
+    if Path(spec).exists() and Path(spec).is_file():
+        spec = Path(spec)
+        log.debug(f"Importing specification as a file: {spec.absolute()}")
+        imp_spec = importlib.util.spec_from_file_location(spec.stem, spec.absolute())
+        imp_spec.loader.exec_module(importlib.util.module_from_spec(imp_spec))
+    # Otherwise, assume it is a module import
+    else:
+        log.debug(f"Importing specification as a module: {spec}")
+        importlib.import_module(spec)
     # Query the registry for packages
     baseline = list(Registry.query(Package)) + list(Registry.query(File))
     log.debug(f"Discovered {len(baseline)} baseline definitions")
