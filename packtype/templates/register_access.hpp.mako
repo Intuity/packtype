@@ -57,7 +57,7 @@ public:
     // =========================================================================
 
 %for base in sorted(base_types, key=lambda x: x.__name__):
-    ${base.__name__ | tc.camel_case} unpack_${base.__name__ | tc.snake_case} (std::uint64_t value)
+    static ${base.__name__ | tc.camel_case} unpack_${base.__name__ | tc.snake_case} (std::uint64_t value)
     {
         ${base.__name__ | tc.camel_case} unpacked;
     %for lsb, _, (name, field) in base()._pt_fields_msb_desc:
@@ -66,7 +66,7 @@ public:
         return unpacked;
     }
 
-    std::uint64_t pack_${base.__name__ | tc.snake_case} (${base.__name__ | tc.camel_case} data)
+    static std::uint64_t pack_${base.__name__ | tc.snake_case} (${base.__name__ | tc.camel_case} data)
     {
         std::uint64_t value = 0;
     %for lsb, _, (name, field) in base()._pt_fields_msb_desc:
