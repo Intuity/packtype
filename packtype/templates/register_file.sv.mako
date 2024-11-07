@@ -124,11 +124,10 @@ assign current_${rname} = '{
     %elif behav is Behaviour.DATA_X2I:
 
 ${struct} reset_${rname}, current_${rname};
-logic error_${rname}, is_read_${rname}, is_write_${rname}, strobe_${rname};
+logic error_${rname}, is_write_${rname}, strobe_${rname};
 
-assign is_read_${rname}  = is_read  && (i_address == ${rname.upper()}_OFFSET);
 assign is_write_${rname} = is_write && (i_address == ${rname.upper()}_OFFSET);
-assign error_${rname}    = is_read_${rname};
+assign error_${rname}    = 1'b0;
 
 assign reset_${rname} = '{
         %for idx, (field, fname) in enumerate(reg._pt_fields.items()):
