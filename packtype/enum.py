@@ -60,6 +60,13 @@ class Enum(Base, Numeric):
         else:
             self._pt_set(0)
 
+    def __repr__(self) -> str:
+        name = type(self)._PT_LKP_INST.get(self, "???")
+        return f"<Enum::{type(self).__name__} {name}={int(self)}>"
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
     @classmethod
     def _pt_construct(
         cls, parent: Base, mode: EnumMode, width: int, prefix: str | None, **kwds
