@@ -37,7 +37,7 @@ class Union(Assembly):
                 if isinstance(ftype.base, Primitive):
                     finst = Array(ftype, default=fval, _pt_bv=self._pt_bv)
                 else:
-                    finst = Array(ftype)
+                    finst = Array(ftype,  _pt_bv=self._pt_bv)
             elif issubclass(ftype, Primitive):
                 finst = ftype(default=fval, _pt_bv=self._pt_bv)
             else:
