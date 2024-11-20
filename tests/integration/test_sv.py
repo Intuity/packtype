@@ -33,6 +33,7 @@ def test_sv(tmp_path):
             tmp_path.as_posix(),
         ),
         check=True,
+        cwd=Path(__file__).parent.parent.parent.absolute(),
     )
     assert result.returncode == 0
     assert (tmp_path / "other_pkg.sv").exists()
@@ -55,6 +56,7 @@ def test_sv_only(tmp_path):
             "TestPkg",
         ),
         check=True,
+        cwd=Path(__file__).parent.parent.parent.absolute(),
     )
     assert result.returncode == 0
     assert not (tmp_path / "other_pkg.sv").exists()

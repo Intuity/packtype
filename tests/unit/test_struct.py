@@ -208,7 +208,7 @@ def test_struct_bad_assign():
         class TestStruct:
             ab: Scalar[12] = 123
 
-    assert str(e.value) == "TestStruct.ab cannot be assigned an initial value of 123"
+    assert str(e.value) == "TestStruct.ab cannot be assigned an initial value of 123 within a base type of Struct"
 
 
 def test_struct_bad_width():
