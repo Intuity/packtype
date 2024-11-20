@@ -21,7 +21,7 @@ from .array import ArraySpec
 from .base import Base
 from .constant import Constant
 from .enum import Enum
-from .primitive import Primitive
+from .primitive import NumericPrimitive
 from .scalar import Scalar
 from .struct import Struct
 from .union import Union
@@ -29,6 +29,7 @@ from .wrap import get_wrapper
 
 
 class Package(Base):
+    _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant]
     _PT_FIELDS: dict
 
     @classmethod
@@ -95,7 +96,7 @@ class Package(Base):
             if isinstance(obj, ArraySpec):
                 obj = obj.base
             # If it's not a primitive, immediately accept
-            if inspect.isclass(obj) and not issubclass(obj, Primitive):
+            if inspect.isclass(obj) and not issubclass(obj, NumericPrimitive):
                 return True
             # If not attached to a different package, accept
             return (

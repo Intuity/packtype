@@ -13,9 +13,10 @@
 # limitations under the License.
 
 import pytest
+
 import packtype
 from packtype import Constant, Packing, Scalar
-from packtype.assembly import WidthError, AssignmentError
+from packtype.assembly import AssignmentError, WidthError
 from packtype.primitive import PrimitiveValueError
 from packtype.wrap import BadAssignmentError, BadAttributeError
 
@@ -207,7 +208,7 @@ def test_struct_bad_assign():
         class TestStruct:
             ab: Scalar[12] = 123
 
-    assert str(e.value) == "TestStruct.ab cannot be assigned an initial value of 123"
+    assert str(e.value) == "TestStruct.ab cannot be assigned an initial value of 123 within a base type of Struct"
 
 
 def test_struct_bad_width():

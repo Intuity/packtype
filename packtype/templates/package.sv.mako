@@ -22,26 +22,26 @@ def width(obj):
 
 /* verilator lint_off UNUSEDPARAM */
 
-package ${pkg._pt_name() | tc.snake_case};
+package ${baseline._pt_name() | tc.snake_case};
 
 // =============================================================================
 // Imports
 // =============================================================================
 
-%for foreign in pkg._pt_foreign():
+%for foreign in baseline._pt_foreign():
     %if foreign._PT_ATTACHED_TO:
 <%      refers_to = foreign._PT_ATTACHED_TO._pt_lookup(foreign) %>\
 import ${foreign._PT_ATTACHED_TO._pt_name() | tc.snake_case}::${refers_to | tc.snake_case}_t;
     %else:
 import ${foreign._PT_ATTACHED_TO._pt_name() | tc.snake_case}::${foreign._pt_name() | tc.snake_case}_t;
     %endif
-%endfor ## foreign in pkg._pt_foreign()
+%endfor ## foreign in baseline._pt_foreign()
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-%for name, obj in pkg._pt_constants:
+%for name, obj in baseline._pt_constants:
 // ${name.upper()}
 localparam ${name | tc.shouty_snake_case} = 'h${f"{obj.value:08X}"};
 %endfor
@@ -50,12 +50,12 @@ localparam ${name | tc.shouty_snake_case} = 'h${f"{obj.value:08X}"};
 // Typedefs
 // =============================================================================
 
-%for name, objcls in pkg._pt_scalars:
+%for name, objcls in baseline._pt_scalars:
 <%  obj = objcls() %>\
 // ${name}
 typedef logic [${obj._pt_width-1}:0] ${name | tc.snake_case}_t;
 %endfor
-%for name, obj in pkg._pt_aliases:
+%for name, obj in baseline._pt_aliases:
 // ${name}
 typedef ${obj._PT_ALIAS._pt_name() | tc.snake_case}_t ${name | tc.snake_case}_t;
 %endfor
@@ -64,7 +64,7 @@ typedef ${obj._PT_ALIAS._pt_name() | tc.snake_case}_t ${name | tc.snake_case}_t;
 // Enumerations
 // =============================================================================
 
-%for name, objcls in pkg._pt_enums:
+%for name, objcls in baseline._pt_enums:
 <%  obj = objcls() %>\
 // ${name}
 typedef enum logic [${width(obj)}:0] {
@@ -84,7 +84,7 @@ typedef enum logic [${width(obj)}:0] {
 // Structs and Unions
 // =============================================================================
 
-%for name, objcls in pkg._pt_structs_and_unions:
+%for name, objcls in baseline._pt_structs_and_unions:
 <%  obj = objcls() %>\
 // ${name}
     %if isinstance(obj, Struct):
@@ -101,16 +101,16 @@ typedef struct packed {
 <%              pad_idx += 1 %>\
             %endif
 <%
-            array_sfx = f" [{len(field)-1}:0]" if isinstance(field, Array) else ""
-            field = field[0] if isinstance(field, Array) else field
+            array_sfx = f" [{len(field)-1}:0]" if isinstance(field, PackedArray) else ""
+            field = field[0] if isinstance(field, PackedArray) else field
 %>\
             %if isinstance(field, Scalar):
                 %if field._PT_ATTACHED_TO:
 <%                  refers_to = field._PT_ATTACHED_TO._pt_lookup(type(field)) %>\
-    ${refers_to | tc.snake_case}_t ${fname | tc.snake_case};
+    ${refers_to | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
                 %else:
 <%                  sign_sfx = " signed" if field._pt_signed else "" %>\
-    logic${sign_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${fname | tc.snake_case};
+    logic${sign_sfx}${array_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${fname | tc.snake_case};
                 %endif
             %elif isinstance(field, Alias | Enum | Struct | Union):
     ${field._pt_name() | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
@@ -126,8 +126,8 @@ typedef struct packed {
 typedef union packed {
         %for field, fname in obj._pt_fields.items():
 <%
-            array_sfx = f" [{len(field)-1}:0]" if isinstance(field, Array) else ""
-            field = field[0] if isinstance(field, Array) else field
+            array_sfx = f" [{len(field)-1}:0]" if isinstance(field, PackedArray) else ""
+            field = field[0] if isinstance(field, PackedArray) else field
 %>\
             %if isinstance(field, Scalar):
                 %if field._PT_ATTACHED_TO:
@@ -146,6 +146,6 @@ typedef union packed {
 
 %endfor
 
-endpackage : ${pkg._pt_name() | tc.snake_case}
+endpackage : ${baseline._pt_name() | tc.snake_case}
 
 /* verilator lint_on UNUSEDPARAM */

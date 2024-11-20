@@ -21,7 +21,7 @@ this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 export PYTHONPATH=${this_dir}/../..:$PYTHONPATH
 
 # Invoke packtype
-python3 -m packtype --debug spec.py code sv ${this_dir}/out
+python3 -m packtype --debug spec.py code package sv ${this_dir}/out
 
 # Render SVG
 python3 -m packtype --debug spec.py svg MyPackage.PingPongMessage ./out/out.svg

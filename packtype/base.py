@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import dataclasses
 import functools
 from collections import defaultdict
 from typing import Any
@@ -22,6 +21,7 @@ try:
 except ImportError:
     from typing_extensions import Self  # noqa: UP035
 
+from .alias import MetaAlias
 from .array import ArraySpec
 from .bitvector import BitVector
 
@@ -37,16 +37,18 @@ class MetaBase(type):
 class Base(metaclass=MetaBase):
     # The base class type
     _PT_BASE: type["Base"] | None = None
-    # Whether a default value can be assigned (e.g. constant value)
-    _PT_ALLOW_DEFAULT: bool = False
+    # What contained types are allowed to have a default value (e.g. constants)
+    _PT_ALLOW_DEFAULTS: list[type["Base"]] = []
     # Any other types to be attached to this one (e.g. struct to a package)
     _PT_ATTACH: list[type["Base"]] | None = None
     # Points upwards from an attached type to what it's attached to
     _PT_ATTACHED_TO: type["Base"] | None = None
     # Attributes specific to a type (e.g. width of a struct)
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {}
-    # The dataclass definition
-    _PT_DEF = None
+    # Bit width
+    _PT_WIDTH: int = 0
+    # The fields definition
+    _PT_DEF: dict[str, tuple[type["Base"], Any]] = {}
     # Tuple of source file and line number where the type is defined
     _PT_SOURCE: tuple[str, int] = ("?", 0)
     # Handle to parent
@@ -54,8 +56,11 @@ class Base(metaclass=MetaBase):
     # Profiling
     _PT_PROFILING: dict[str, int] = defaultdict(lambda: 0)
 
-    def __init__(self, _pt_bv: BitVector | None = None) -> None:
-        self._pt_bv = _pt_bv if _pt_bv is not None else BitVector()
+    def __init__(self, _pt_bv: BitVector | None = None, default: int | None = None) -> None:
+        self._pt_bv = _pt_bv
+        if self._pt_bv is None:
+            self._pt_bv = BitVector(width=self._PT_WIDTH)
+            self._pt_bv.set(0 if default is None else default)
         self._PT_PROFILING[type(self).__name__] += 1
 
     @classmethod
@@ -70,30 +75,34 @@ class Base(metaclass=MetaBase):
     @classmethod
     @functools.cache
     def _pt_definitions(cls) -> list[str, Any]:
-        return [(x.name, x.type, x.default) for x in dataclasses.fields(cls._PT_DEF)]
+        return [(n, t, d) for n, (t, d) in cls._PT_DEF.items()]
 
     @classmethod
     def _pt_field_types(cls) -> list[type["Base"]]:
         if cls._PT_DEF:
-            return {x.type for x in dataclasses.fields(cls._PT_DEF)}
+            return {t for t, _ in cls._PT_DEF.values()}
         else:
             return set()
 
     @classmethod
     def _pt_references(cls) -> list[type["Base"]]:
-        # If no definition, return early
-        if not cls._PT_DEF:
-            return set()
+        def _unwrap(obj):
+            # Unwrap arrays
+            if isinstance(obj, ArraySpec):
+                obj = obj.base
+            # Unwrap aliased types
+            if issubclass(type(obj), MetaAlias):
+                obj = obj._PT_ALIAS
+            return obj
         # Else iterate through core fields
         collect = set()
-        for ftype in cls._pt_field_types():
+        for ftype in map(_unwrap, cls._pt_field_types()):
             collect.update(ftype._pt_references())
-            collect.add(ftype.base if isinstance(ftype, ArraySpec) else ftype)
+            collect.add(ftype)
         # ...and through attached fields
-        for field in cls._PT_ATTACH or []:
+        for field in map(_unwrap, cls._PT_ATTACH or []):
             collect.update(field._pt_references())
-            if not isinstance(field, ArraySpec):
-                collect.add(field)
+            collect.add(field)
         return collect
 
     @property
@@ -101,7 +110,7 @@ class Base(metaclass=MetaBase):
         return self._PT_PARENT
 
     @classmethod
-    def _pt_enable_profiling(self, limit: int = 1) -> None:
+    def _pt_enable_profiling(cls, limit: int = 1) -> None:
         """
         Enable tracking of Packtype object creation
 

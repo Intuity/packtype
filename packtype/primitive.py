@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from collections import defaultdict
+from typing import Any
 
 try:
     from typing import Self
@@ -32,28 +33,24 @@ class MetaPrimitive(MetaBase):
     UNIQUE_ID: dict[tuple[int, bool], int] = defaultdict(lambda: 0)
 
     def __getitem__(self, key: int | tuple[int, bool]):
-        if isinstance(key, tuple):
-            width, signed, *_ = key
-        else:
-            width = key
-            signed = False
-        return MetaPrimitive.get_variant(self, int(width), signed)
+        segments, kwargs = self._pt_meta_key(key)
+        return MetaPrimitive.get_variant(self, segments, kwargs)
 
     @staticmethod
-    def get_variant(prim: Self, width: int, signed: bool):
+    def get_variant(prim: Self, segments: tuple[str], kwargs: dict[str, Any]):
         # NOTE: Don't share primitives between creations as this prevents the
         #       parent being distinctly tracked (a problem when they are used as
         #       typedefs on a package)
-        uid = MetaPrimitive.UNIQUE_ID[width, signed]
-        MetaPrimitive.UNIQUE_ID[width, signed] += 1
+        uid = MetaPrimitive.UNIQUE_ID[segments]
+        MetaPrimitive.UNIQUE_ID[segments] += 1
         return type(
-            prim.__name__ + f"_{width}_{['U','S'][signed]}{uid}",
+            prim.__name__ + "_" + "_".join(str(x) for x in segments) + f"_{uid}",
             (prim,),
-            {"_PT_WIDTH": width, "_PT_SIGNED": signed},
+            kwargs,
         )
 
 
-class Primitive(Base, Numeric, metaclass=MetaPrimitive):
+class NumericPrimitive(Base, Numeric, metaclass=MetaPrimitive):
     _PT_WIDTH: int = -1
     _PT_SIGNED: bool = False
 
@@ -62,9 +59,24 @@ class Primitive(Base, Numeric, metaclass=MetaPrimitive):
         default: int | None = None,
         _pt_bv: BitVector | BitVectorWindow | None = None,
     ) -> None:
-        super().__init__(_pt_bv=_pt_bv)
-        if type(self)._PT_ALLOW_DEFAULT:
-            self._pt_bv.set(0 if default is None else int(default))
+        super().__init__(_pt_bv=_pt_bv, default=default)
+
+    @classmethod
+    def _pt_meta_key(
+        cls, key: int | tuple[int, bool]
+    ) -> tuple[tuple[str], dict[str, Any]]:
+        if isinstance(key, int) or hasattr(key, "__int__"):
+            key = int(key)
+            return ((str(key),), {"_PT_WIDTH": key})
+        elif (
+            isinstance(key, tuple)
+            and (isinstance(key[0], int) or hasattr(key[0], "__int__"))
+            and (isinstance(key[1], bool) or hasattr(key[1], "__bool__"))
+        ):
+            width, signed = int(key[0]), bool(key[1])
+            return ((str(key),), {"_PT_WIDTH": width, "_PT_SIGNED": signed})
+        else:
+            raise Exception(f"Unsupported NumericPrimitive key: {key}")
 
     @property
     def _pt_width(self) -> int:

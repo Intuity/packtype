@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .primitive import Primitive
+from .primitive import NumericPrimitive
 
 
-class Scalar(Primitive):
-    pass
+class Scalar(NumericPrimitive):
+    _PT_WIDTH: int = 1

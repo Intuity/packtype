@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ast
 import importlib.util
 import logging
 import traceback
@@ -25,13 +26,17 @@ from rich.logging import RichHandler
 from rich.traceback import install
 
 from .alias import Alias
-from .array import Array
+from .array import PackedArray
 from .assembly import Packing
+from .base import Base
+from .constant import Constant
 from .enum import Enum
 from .package import Package
+from .primitive import NumericPrimitive
+from .registers import Behaviour, File, Register
 from .scalar import Scalar
 from .struct import Struct
-from .svg.render import SvgRender, SvgConfig, SvgField, ElementStyle
+from .svg.render import ElementStyle, SvgConfig, SvgField, SvgRender
 from .templates.common import snake_case
 from .union import Union
 from .wrap import Registry
@@ -47,41 +52,71 @@ log.setLevel(logging.INFO)
 install()
 
 
+def resolve_to_object(
+    baseline: list[Package],
+    *path: str,
+    acceptable: tuple[type[Base]] | None = None,
+) -> Base:
+    # Resolve to an object
+    resolved = None
+    for segment in path:
+        if resolved is None:
+            matched = [x for x in baseline if x.__name__ == segment]
+            if len(matched) != 1:
+                raise Exception(f"Cannot resolve baseline '{segment}'")
+            resolved = matched[0]
+        else:
+            if (nxt_rslv := getattr(resolved, segment, None)) is None:
+                raise Exception(
+                    f"Cannot resolve '{segment}' within '{resolved.__name__}'"
+                )
+            resolved = nxt_rslv
+    # Check the type is acceptable
+    if not hasattr(resolved, "_PT_BASE"):
+        raise Exception(f"Selection {path} resolved to a non-Packtype object")
+    elif acceptable is not None and not issubclass(resolved, acceptable):
+        raise Exception(
+            f"Selection {path} resolved to an object of type "
+            f"{resolved._PT_BASE.__name__} which cannot be rendered as an SVG"
+        )
+    return resolved
+
+
 # Handle CLI
 @click.group()
 @click.option("--debug", flag_value=True, default=False, help="Enable debug messages")
-@click.option("--only", type=str, multiple=True, help="Packages to render")
-@click.argument("spec", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.argument("spec", type=str)
 @click.pass_context
-def main(ctx, debug: bool, only: list[str], spec: str):
+def main(ctx, debug: bool, spec: str):
     """Renders packtype definitions into different forms"""
     ctx.ensure_object(dict)
     # Set log verbosity
     if debug:
         log.setLevel(logging.DEBUG)
-    # Convert spec and outdir to pathlib objects
-    log.debug(f"Using specification: {spec.absolute()}")
-    # Import library
-    imp_spec = importlib.util.spec_from_file_location(spec.stem, spec.absolute())
-    imp_spec.loader.exec_module(importlib.util.module_from_spec(imp_spec))
+    # Does the spec look like a path?
+    if Path(spec).exists() and Path(spec).is_file():
+        spec = Path(spec)
+        log.debug(f"Importing specification as a file: {spec.absolute()}")
+        imp_spec = importlib.util.spec_from_file_location(spec.stem, spec.absolute())
+        imp_spec.loader.exec_module(importlib.util.module_from_spec(imp_spec))
+    # Otherwise, assume it is a module import
+    else:
+        log.debug(f"Importing specification as a module: {spec}")
+        importlib.import_module(spec)
     # Query the registry for packages
-    pkgs = list(Registry.query(Package))
-    log.debug(f"Discovered {len(pkgs)} package definitions")
-    # Filter out just those that were selected
-    if only:
-        only = {str(x).lower() for x in only}
-        pkgs = [x for x in pkgs if x.__name__.lower() in only]
+    baseline = list(Registry.query(Package)) + list(Registry.query(File))
+    log.debug(f"Discovered {len(baseline)} baseline definitions")
     # Attach packages to context
-    ctx.obj["pkgs"] = pkgs
+    ctx.obj["baseline"] = baseline
 
 
 @main.command()
 @click.pass_context
 def inspect(ctx):
-    pkgs = SimpleNamespace(**{x.__name__: x for x in ctx.obj.get("pkgs", [])})
-    log.warning("Use the 'pkgs' namespace to inspect Packtype definitions")
+    baseline = SimpleNamespace(**{x.__name__: x for x in ctx.obj.get("baseline", [])})
+    log.warning("Use the 'baseline' namespace to inspect Packtype definitions")
     breakpoint()
-    del pkgs
+    del baseline
 
 
 @main.command()
@@ -95,31 +130,17 @@ def inspect(ctx):
 @click.pass_context
 def svg(ctx, selection: str, output: Path | None):
     # Resolve selection to a struct or union
-    resolved = None
-    for segment in selection.split("."):
-        if resolved is None:
-            matched = [x for x in ctx.obj.get("pkgs", []) if x.__name__ == segment]
-            if len(matched) != 1:
-                raise Exception(f"Cannot resolve package '{segment}'")
-            resolved = matched[0]
-        else:
-            if (nxt_rslv := getattr(resolved, segment, None)) is None:
-                raise Exception(
-                    f"Cannot resolve '{segment}' within '{resolved.__name__}'"
-                )
-            resolved = nxt_rslv
-    # Check the type is acceptable
-    if not hasattr(resolved, "_PT_BASE"):
-        raise Exception(f"Selection {selection} resolved to a non-Packtype object")
-    elif not issubclass(resolved, (Struct, Union)):
-        raise Exception(
-            f"Selection {selection} resolved to an object of type "
-            f"{resolved._PT_BASE.__name__} which cannot be rendered as an SVG"
-        )
+    resolved = resolve_to_object(
+        ctx.obj.get("baseline", []),
+        *selection.split("."),
+        acceptable=(Struct, Union),
+    )
 
     # Create a rendering instance
     cfg = SvgConfig()
-    cfg.left_annotation.width = cfg.left_annotation.style.estimate(resolved.__name__).width
+    cfg.left_annotation.width = cfg.left_annotation.style.estimate(
+        resolved.__name__
+    ).width
     cfg.left_annotation.padding = 10
     svg = SvgRender(cfg, left_annotation=resolved.__name__)
 
@@ -137,13 +158,18 @@ def svg(ctx, selection: str, output: Path | None):
             if field._PT_BASE in (Struct, Union):
                 _recurse(field, msb=msb)
             else:
-                svg.attach(SvgField(
-                    bit_width=field._pt_width,
-                    name="" if name == "_padding" else name,
-                    msb=msb,
-                    style=ElementStyle.HATCHED if name == "_padding" else ElementStyle.NORMAL,
-                ))
+                svg.attach(
+                    SvgField(
+                        bit_width=field._pt_width,
+                        name="" if name == "_padding" else name,
+                        msb=msb,
+                        style=ElementStyle.HATCHED
+                        if name == "_padding"
+                        else ElementStyle.NORMAL,
+                    )
+                )
             msb -= field._pt_width
+
     _recurse(resolved())
 
     # Run the rendering operation
@@ -154,17 +180,63 @@ def svg(ctx, selection: str, output: Path | None):
 
 
 @main.command()
-@click.argument("language", type=click.Choice(("sv",), case_sensitive=False))
-@click.argument(
-    "outdir", type=click.Path(file_okay=False, path_type=Path), default=Path.cwd()
+@click.option(
+    "-o", "--option", type=str, multiple=True, help="Options in the form <KEY>=<VALUE>",
 )
+@click.argument(
+    "mode", type=click.Choice(("package", "register"), case_sensitive=False)
+)
+@click.argument("language", type=click.Choice(("sv","py","cpp"), case_sensitive=False))
+@click.argument("outdir", type=click.Path(file_okay=False, path_type=Path))
+@click.argument("selection", type=str, nargs=-1)
 @click.pass_context
-def code(ctx, language: str, outdir: Path):
+def code(ctx, option: list[str], mode: str, language: str, outdir: Path, selection: list[str]):
     """Render Packtype package definitions using a language template"""
-    # Template map
-    tmpl_list = {
-        "sv": ("package.sv.mako", ".sv"),
-    }
+    # Digest options
+    options = {}
+    for opt_str in option:
+        if opt_str.count("=") != 1:
+            raise Exception(f"Incorrect number of = in '{opt_str}'")
+        key, value = opt_str.split("=")
+        options[key.strip().lower()] = ast.literal_eval(value.strip())
+    # Resolve selection to a struct or union
+    resolved = ctx.obj.get("baseline", [])
+    if selection:
+        all_resolved = []
+        for str_path in selection:
+            all_resolved.append(
+                resolve_to_object(
+                    resolved,
+                    *str_path.split("."),
+                    acceptable=(Package, File),
+                )
+            )
+        resolved = all_resolved
+    # Detect missing selection
+    if not resolved:
+        raise Exception("Failed to resolve any objects to render")
+    # Filter out non-matching types
+    tmpl_list = None
+    match mode.lower():
+        case "package":
+            resolved = [x for x in resolved if x._PT_BASE is Package]
+            tmpl_list = {"sv": (("package.sv.mako", ".sv"),)}
+        case "register":
+            resolved = [x for x in resolved if x._PT_BASE is File]
+            tmpl_list = {
+                "sv": (
+                    ("register_file.sv.mako", "_rf.sv"),
+                    ("register_pkg.sv.mako", "_pkg.sv"),
+                ),
+                "py": (
+                    ("register_access.py.mako", "_access.py"),
+                ),
+                "cpp": (
+                    ("register_access.hpp.mako", "_access.hpp"),
+                )
+            }
+        case _:
+            raise Exception(f"{mode} mode is not supported")
     # Create output directory if it doesn't already exist
     outdir.mkdir(parents=True, exist_ok=True)
     log.debug(f"Using output directory: {outdir.absolute()}")
@@ -179,29 +251,39 @@ def code(ctx, language: str, outdir: Path):
             "import packtype.templates.common as tc",
         ],
     )
-    context = {
-        "Alias": Alias,
-        "Array": Array,
-        "Enum": Enum,
-        "Packing": Packing,
-        "Scalar": Scalar,
-        "Struct": Struct,
-        "Union": Union,
-    }
-    # Iterate packages to render
-    for pkg_cls in ctx.obj.get("pkgs", []):
-        pkg_name = pkg_cls.__name__
-        pkg = pkg_cls()
+    context = {"options": options}
+    for cls in (
+        Alias,
+        Constant,
+        PackedArray,
+        Enum,
+        Packing,
+        Scalar,
+        Struct,
+        Union,
+        NumericPrimitive,
+        Register,
+        Behaviour,
+    ):
+        context[cls.__name__] = cls
+    # Iterate baselines to render
+    for baseline_cls in resolved:
+        base_name = baseline_cls.__name__
+        baseline = baseline_cls()
         # Iterate outputs to render
-        tmpl_name, suffix = tmpl_list[language]
-        out_path = outdir / f"{snake_case(pkg_name)}{suffix}"
-        log.debug(f"Rendering {pkg_name} as {language} to {out_path}")
-        with out_path.open("w", encoding="utf-8") as fh:
-            try:
-                fh.write(lookup.get_template(tmpl_name).render(pkg=pkg, **context))
-            except:
-                log.error(exceptions.text_error_template().render())
-                raise
+        for tmpl_name, suffix in tmpl_list[language]:
+            out_path = outdir / f"{snake_case(base_name)}{suffix}"
+            log.debug(f"Rendering {base_name} as {language} to {out_path}")
+            with out_path.open("w", encoding="utf-8") as fh:
+                try:
+                    fh.write(
+                        lookup.get_template(tmpl_name).render(
+                            baseline=baseline, **context
+                        )
+                    )
+                except:
+                    log.error(exceptions.text_error_template().render())
+                    raise
 
 
 # Catch invocation

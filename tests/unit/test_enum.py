@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest
+
 import packtype
 from packtype import Constant, EnumMode
 from packtype.enum import EnumError

@@ -12,47 +12,52 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import subprocess
 from pathlib import Path
-
-from click.testing import CliRunner
-from packtype.__main__ import main
 
 resources = Path(__file__).parent.absolute() / "resources"
 
 
 def test_sv(tmp_path):
     # Wrap around the CLI
-    result = CliRunner().invoke(
-        main,
-        [
+    result = subprocess.run(
+        (
+            "python3",
+            "-m",
+            "packtype",
             "--debug",
             (resources / "test_pkg.py").as_posix(),
             "code",
+            "package",
             "sv",
             tmp_path.as_posix(),
-        ],
-        catch_exceptions=False,
+        ),
+        check=True,
+        cwd=Path(__file__).parent.parent.parent.absolute(),
     )
-    assert result.exit_code == 0
+    assert result.returncode == 0
     assert (tmp_path / "other_pkg.sv").exists()
     assert (tmp_path / "test_pkg.sv").exists()
 
 
 def test_sv_only(tmp_path):
     # Wrap around the CLI
-    result = CliRunner().invoke(
-        main,
-        [
+    result = subprocess.run(
+        (
+            "python3",
+            "-m",
+            "packtype",
             "--debug",
-            "--only",
-            "TestPkg",
             (resources / "test_pkg.py").as_posix(),
             "code",
+            "package",
             "sv",
             tmp_path.as_posix(),
-        ],
-        catch_exceptions=False,
+            "TestPkg",
+        ),
+        check=True,
+        cwd=Path(__file__).parent.parent.parent.absolute(),
     )
-    assert result.exit_code == 0
+    assert result.returncode == 0
     assert not (tmp_path / "other_pkg.sv").exists()
     assert (tmp_path / "test_pkg.sv").exists()

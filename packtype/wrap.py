@@ -19,9 +19,10 @@ from collections import defaultdict
 from collections.abc import Callable
 from typing import Any
 
+from .alias import Alias
 from .array import ArraySpec
 from .assembly import Base
-from .primitive import Primitive
+from .primitive import NumericPrimitive
 
 
 class MissingAnnotationError(Exception):
@@ -56,6 +57,93 @@ class Registry:
         cls.ENTRIES.clear()
 
 
+def build_from_fields(
+    base: Any,
+    cname: str,
+    fields: dict[str, tuple[str, Any]],
+    kwds: dict[str, Any],
+    frame_depth: int = 1,
+    doc_str: str | None = None,
+    cls_funcs: dict[str, Callable[..., Any]] | None = None,
+    parent: Any | None = None,
+) -> Any:
+    # Check fields
+    for fname, (ftype, default) in fields.items():
+        real_type = ftype.base if isinstance(ftype, ArraySpec) else ftype
+        # Unwrap alias types
+        if issubclass(real_type, Alias):
+            real_type = real_type._PT_ALIAS
+        # Check for acceptable base type
+        if not isinstance(real_type, NumericPrimitive) and not issubclass(
+            real_type, Base | NumericPrimitive
+        ):
+            raise BadFieldTypeError(
+                f"{cname}.{fname} is of an unsupported type {real_type.__name__}"
+            )
+        # Map a missing value to None
+        if isinstance(default, dataclasses._MISSING_TYPE):
+            fields[fname] = (ftype, None)
+        # Check if assignment allowed
+        # NOTE: The subclass check is necessary for scalar/constant specialisations
+        elif default is not None and real_type not in base._PT_ALLOW_DEFAULTS and not any(issubclass(real_type, x) for x in base._PT_ALLOW_DEFAULTS):
+            raise BadAssignmentError(
+                f"{cname}.{fname} cannot be assigned an initial value of {default} "
+                f"within a base type of {base.__name__}"
+            )
+    # Check for supported attributes
+    attrs = {}
+    for key, value in kwds.items():
+        # Skip certain keys
+        if key in ("parent",):
+            continue
+        # Check if supported by the type
+        if key not in base._PT_ATTRIBUTES:
+            raise BadAttributeError(
+                f"Unsupported attribute '{key}' for {base.__name__}"
+            )
+        # Check value is acceptable
+        _, accepted = base._PT_ATTRIBUTES[key]
+        if (callable(accepted) and not accepted(value)) or (
+            isinstance(accepted, tuple) and value not in accepted
+        ):
+            raise BadAttributeError(
+                f"Unsupported value '{value}' for attribute '{key}' "
+                f"for {base.__name__}"
+            )
+        # Store attribute
+        attrs[key] = value
+    # Fill in default attributes
+    for key, (default, _) in base._PT_ATTRIBUTES.items():
+        if key not in attrs:
+            attrs[key] = default
+    # Determine source
+    frame = inspect.currentframe()
+    for _ in range(frame_depth):
+        frame = frame.f_back
+    # Create imposter class
+    imposter = type(
+        cname,
+        (base,),
+        {
+            "__doc__": doc_str,
+            "_PT_DEF": fields,
+            "_PT_ATTACH": [],
+            "_PT_ATTRIBUTES": attrs,
+            "_PT_SOURCE": (frame.f_code.co_filename, frame.f_lineno),
+            "_PT_BASE": base,
+        },
+    )
+    # Reattach functions
+    for fname, func in (cls_funcs or {}).items():
+        setattr(imposter, fname, func)
+    # Imposter construction
+    imposter._pt_construct(parent, **attrs)
+    # Register the imposter
+    Registry.register(base, imposter)
+    # Return the imposter as a substitute
+    return imposter
+
+
 @functools.cache
 def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
     def _wrapper(parent: Base | None = None, **kwds) -> Callable:
@@ -73,80 +161,17 @@ def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
             # Check for missing fields
             for field in cls_fields.difference(dc_fields.keys()):
                 raise MissingAnnotationError(f"{cls.__name__}.{field} is not annotated")
-            # Check fields
-            for fname, fdef in dc_fields.items():
-                base_type = fdef.type
-                if isinstance(base_type, ArraySpec):
-                    base_type = base_type.base
-                # Check for acceptable base type
-                if not isinstance(base_type, Primitive) and not issubclass(
-                    base_type, Base | Primitive
-                ):
-                    raise BadFieldTypeError(
-                        f"{cls.__name__}.{fname} is of an unsupported type "
-                        f"{base_type.__name__}"
-                    )
-                # Map a missing value to None
-                if isinstance(fdef.default, dataclasses._MISSING_TYPE):
-                    fdef.default = None
-                # Check if assignment allowed
-                if fdef.default is not None and not fdef.type._PT_ALLOW_DEFAULT:
-                    raise BadAssignmentError(
-                        f"{cls.__name__}.{fname} cannot be assigned an initial "
-                        f"value of {fdef.default}"
-                    )
-            # Check for supported attributes
-            attrs = {}
-            for key, value in kwds.items():
-                # Skip certain keys
-                if key in ("parent",):
-                    continue
-                # Check if supported by the type
-                if key not in base._PT_ATTRIBUTES:
-                    raise BadAttributeError(
-                        f"Unsupported attribute '{key}' for {base.__name__}"
-                    )
-                # Check value is acceptable
-                _, accepted = base._PT_ATTRIBUTES[key]
-                if (callable(accepted) and not accepted(value)) or (
-                    isinstance(accepted, tuple) and value not in accepted
-                ):
-                    raise BadAttributeError(
-                        f"Unsupported value '{value}' for attribute '{key}' "
-                        f"for {base.__name__}"
-                    )
-                # Store attribute
-                attrs[key] = value
-            # Fill in default attributes
-            for key, (default, _) in base._PT_ATTRIBUTES.items():
-                if key not in attrs:
-                    attrs[key] = default
-            # Determine source
-            frame = inspect.currentframe()
-            for _ in range(frame_depth):
-                frame = frame.f_back
-            # Create imposter class
-            imposter = type(
-                cls.__name__,
-                (base,),
-                {
-                    "__doc__": cls.__doc__,
-                    "_PT_DEF": dc,
-                    "_PT_ATTACH": [],
-                    "_PT_ATTRIBUTES": attrs,
-                    "_PT_SOURCE": (frame.f_code.co_filename, frame.f_lineno),
-                    "_PT_BASE": base,
-                },
+            # Construct the imposter
+            return build_from_fields(
+                base=base,
+                cname=cls.__name__,
+                fields={x: (y.type, y.default) for x, y in dc_fields.items()},
+                kwds=kwds,
+                frame_depth=frame_depth,
+                doc_str=cls.__doc__,
+                cls_funcs={x: getattr(cls, x) for x in cls_funcs},
+                parent=parent,
             )
-            # Reattach functions
-            for fname in cls_funcs:
-                setattr(imposter, fname, getattr(cls, fname))
-            # Imposter construction
-            imposter._pt_construct(parent, **attrs)
-            # Register the imposter
-            Registry.register(base, imposter)
-            # Return the imposter as a substitute
-            return imposter
 
         return _inner
 
