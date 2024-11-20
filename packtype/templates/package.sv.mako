@@ -43,7 +43,11 @@ import ${foreign._PT_ATTACHED_TO._pt_name() | tc.snake_case}::${foreign._pt_name
 
 %for name, obj in baseline._pt_constants:
 // ${name.upper()}
+    %if obj.value >= (1 << 32):
+localparam ${name | tc.shouty_snake_case} = 64'h${f"{obj.value:08X}"};
+    %else:
 localparam ${name | tc.shouty_snake_case} = 'h${f"{obj.value:08X}"};
+    %endif
 %endfor
 
 // =============================================================================
