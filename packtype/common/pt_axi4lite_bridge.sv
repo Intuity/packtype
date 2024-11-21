@@ -23,9 +23,14 @@ module pt_axi4lite_bridge #(
     , localparam STRB_W         = DATA_W / 8
     , localparam PROT_W         =  3
     , localparam RESP_W         =  2
+    , localparam ALIGN_Q_DEPTH  = 2
 ) (
       input  logic                  i_clk
     , input  logic                  i_rst
+    // =========================================================================
+    // Status
+    // =========================================================================
+    , output logic                  o_idle
     // =========================================================================
     // AX4-Lite Upstream
     // =========================================================================
@@ -76,85 +81,112 @@ typedef enum logic [RESP_W-1:0] {
     , RESP_DECERR
 } axi_resp_t;
 
+typedef struct packed {
+    logic [AXI_ADDR_W-1:0] axaddr;
+} ax_req_t;
+
+typedef struct packed {
+    logic [DATA_W-1:0] wdata;
+    logic [STRB_W-1:0] wstrb;
+} w_req_t;
+
 // =============================================================================
 // Signals
 // =============================================================================
 
-logic [AXI_ADDR_W-1:0] next_awaddr, awaddr_d, awaddr_q,
-                       next_araddr, araddr_d, araddr_q;
-logic [DATA_W-1:0]     next_wdata, wdata_d, wdata_q;
-logic                  next_awvalid, awvalid_d, awvalid_q,
-                       next_arvalid, arvalid_d, arvalid_q,
-                       next_wvalid,  wvalid_d,  wvalid_q;
+// Alignment
+ax_req_t aw_wr_data, aw_rd_data;
+w_req_t  w_wr_data, w_rd_data;
+logic    aw_rd_valid, aw_rd_ready, awq_idle, wq_idle, w_rd_valid, w_rd_ready;
 
+// Request arbitration
 logic accept_write, accept_read;
 logic pending_read_q, pending_write_q;
+logic write_strobe_error_d, write_strobe_error_q;
 
+// Response buffer
 response_t rb_wr_data, rb_rd_data;
-logic      rb_wr_valid, rb_rd_valid, rb_rd_ready, rb_hwm;
+logic      rb_wr_valid, rb_rd_valid, rb_rd_ready, rb_hwm, rb_idle;
+
+// =============================================================================
+// AXI4-Lite Request Alignment
+// =============================================================================
+
+assign aw_wr_data = '{ axaddr: i_awaddr };
+assign w_wr_data  = '{ wdata : i_wdata,  wstrb : i_wstrb  };
+
+vc_fifo_sync_flop #(
+      .DATA_T     ( ax_req_t      )
+    , .DEPTH      ( ALIGN_Q_DEPTH )
+) u_aw_align_q (
+      .i_clk      ( i_clk         )
+    , .i_rst      ( i_rst         )
+    // Push interface
+    , .i_wr_data  ( aw_wr_data    )
+    , .i_wr_valid ( i_awvalid     )
+    , .o_wr_ready ( o_awready     )
+    // Pop interface
+    , .o_rd_data  ( aw_rd_data    )
+    , .o_rd_valid ( aw_rd_valid   )
+    , .i_rd_ready ( aw_rd_ready   )
+    // Status
+    , .o_level    (               )
+    , .o_empty    ( awq_idle      )
+    , .o_hwm      (               )
+    , .o_full     (               )
+);
+
+vc_fifo_sync_flop #(
+      .DATA_T     ( w_req_t       )
+    , .DEPTH      ( ALIGN_Q_DEPTH )
+) u_w_align_q (
+      .i_clk      ( i_clk         )
+    , .i_rst      ( i_rst         )
+    // Push interface
+    , .i_wr_data  ( w_wr_data     )
+    , .i_wr_valid ( i_wvalid      )
+    , .o_wr_ready ( o_wready      )
+    // Pop interface
+    , .o_rd_data  ( w_rd_data     )
+    , .o_rd_valid ( w_rd_valid    )
+    , .i_rd_ready ( w_rd_ready    )
+    // Status
+    , .o_level    (               )
+    , .o_empty    ( wq_idle       )
+    , .o_hwm      (               )
+    , .o_full     (               )
+);
 
 // =============================================================================
 // AXI4-Lite Request to Register Interface
 // =============================================================================
 
-// Write address capturing
-assign next_awaddr  = awvalid_q ? awaddr_q : i_awaddr;
-assign next_awvalid = i_awvalid || awvalid_q;
-assign o_awready    = !awvalid_q;
-
-assign awaddr_d     = next_awaddr;
-assign awvalid_d    = i_awvalid && !o_awready;
-
-// Write data capturing
-assign next_wdata   = wvalid_q  ? wdata_q  : i_wdata;
-assign next_wvalid  = i_wvalid || wvalid_q;
-assign o_wready     = !wvalid_q;
-
-assign wdata_d      = next_wdata;
-assign wvalid_d     = i_wvalid && !o_wready;
-
-// Read address capturing
-assign next_araddr  = arvalid_q ? araddr_q : i_araddr;
-assign next_arvalid = i_arvalid || arvalid_q;
-assign o_arready    = !arvalid_q;
-
-assign araddr_d     = next_araddr;
-assign arvalid_d    = i_arvalid && !o_arready;
-
-// Decide what we're accepting
-assign accept_write = (!pending_write_q || !next_arvalid) &&
-                      next_awvalid &&
-                      next_wvalid &&
+// Decide what we're accepting (alternates between reads and writes)
+assign accept_write = (!pending_write_q || !i_arvalid) &&
+                      aw_rd_valid &&
+                      w_rd_valid &&
                       !rb_hwm;
 assign accept_read  = !accept_write &&
-                      next_arvalid &&
+                      i_arvalid &&
                       !rb_hwm;
 
-// Form request
-assign o_rf_address = accept_write ? next_awaddr[RF_ADDR_W-1:0]
-                                   : next_araddr[RF_ADDR_W-1:0];
-assign o_rf_wr_data = next_wdata;
-assign o_rf_write   = accept_write;
-assign o_rf_enable  = accept_write || accept_read;
+// Error if not all strobe lines set
+assign write_strobe_error_d = (w_rd_data.wstrb != {STRB_W{1'b1}});
 
-// Register any unhandled requests
-always_ff @(posedge i_clk, posedge i_rst) begin : ff_access
-    if (i_rst) begin
-        awaddr_q  <= AXI_ADDR_W'(0);
-        araddr_q  <= AXI_ADDR_W'(0);
-        wdata_q   <= DATA_W'(0);
-        awvalid_q <= 1'b0;
-        arvalid_q <= 1'b0;
-        wvalid_q  <= 1'b0;
-    end else begin
-        awaddr_q  <= awaddr_d;
-        araddr_q  <= araddr_d;
-        wdata_q   <= wdata_d;
-        awvalid_q <= awvalid_d;
-        arvalid_q <= arvalid_d;
-        wvalid_q  <= wvalid_d;
-    end
-end
+// Accept traffic
+assign aw_rd_ready = accept_write;
+assign w_rd_ready  = accept_write;
+assign o_arready   = accept_read && |{ !aw_rd_valid
+                                     , !w_rd_valid
+                                     , !pending_write_q };
+
+// Form request
+// NOTE: Suppress write if a strobe error detected
+assign o_rf_address = accept_write ? RF_ADDR_W'(aw_rd_data.axaddr)
+                                   : RF_ADDR_W'(i_araddr);
+assign o_rf_wr_data = w_rd_data.wdata;
+assign o_rf_write   = accept_write;
+assign o_rf_enable  = (!write_strobe_error_d && accept_write) || accept_read;
 
 // =============================================================================
 // Response Capture and Buffering
@@ -167,11 +199,18 @@ always_ff @(posedge i_clk, posedge i_rst)
     else
         { pending_read_q, pending_write_q } <= { accept_read, accept_write };
 
+// Pipeline strobe error
+always_ff @(posedge i_clk, posedge i_rst)
+    if (i_rst)
+        write_strobe_error_q <= 1'b0;
+    else
+        write_strobe_error_q <= write_strobe_error_d;
+
 // Fill in response
 assign rb_wr_data = '{
       write: pending_write_q
     , data : i_rf_rd_data
-    , error: i_rf_error
+    , error: i_rf_error || write_strobe_error_q
 };
 
 assign rb_wr_valid = pending_read_q || pending_write_q;
@@ -195,7 +234,7 @@ pt_fifo #(
     , .o_level    (                )
     , .o_full     (                )
     , .o_hwm      ( rb_hwm         )
-    , .o_empty    (                )
+    , .o_empty    ( rb_idle        )
 );
 
 // =============================================================================
@@ -214,10 +253,21 @@ assign rb_rd_ready = (i_bready &&  rb_rd_data.write) ||
                      (i_rready && !rb_rd_data.write);
 
 // =============================================================================
-// Unused
+// Status
 // =============================================================================
 
-// TODO @intuity: Raise a SLVERR if not all strobe bits set
+assign o_idle = &{ !i_awvalid
+                 , !i_wvalid
+                 , !i_arvalid
+                 , awq_idle
+                 , wq_idle
+                 , !pending_write_q
+                 , !pending_read_q
+                 , rb_idle };
+
+// =============================================================================
+// Unused
+// =============================================================================
 
 logic _unused;
 assign _unused = &{
