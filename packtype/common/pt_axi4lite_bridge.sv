@@ -115,7 +115,7 @@ logic      rb_wr_valid, rb_rd_valid, rb_rd_ready, rb_hwm, rb_idle;
 assign aw_wr_data = '{ axaddr: i_awaddr };
 assign w_wr_data  = '{ wdata : i_wdata,  wstrb : i_wstrb  };
 
-vc_fifo_sync_flop #(
+pt_fifo #(
       .DATA_T     ( ax_req_t      )
     , .DEPTH      ( ALIGN_Q_DEPTH )
 ) u_aw_align_q (
@@ -136,7 +136,7 @@ vc_fifo_sync_flop #(
     , .o_full     (               )
 );
 
-vc_fifo_sync_flop #(
+pt_fifo #(
       .DATA_T     ( w_req_t       )
     , .DEPTH      ( ALIGN_Q_DEPTH )
 ) u_w_align_q (
