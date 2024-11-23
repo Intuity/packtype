@@ -24,7 +24,7 @@ def snake_case(raw: str) -> str:
     :returns:   A snake_case string
     """
     parts = filter(lambda x: len(x) > 0, RGX_CAMEL.split(raw))
-    return "_".join(x.lower() for x in parts)
+    return "_".join(x.lower().strip("_") for x in parts)
 
 
 def shouty_snake_case(raw: str) -> str:
