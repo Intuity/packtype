@@ -110,7 +110,7 @@ class PackedAssembly(Assembly):
 
     def __str__(self) -> str:
         lines = [
-            f"{type(self).__name__} - width: {self._PT_WIDTH}, raw: 0x{int(self):X}"
+            f"{type(self).__name__}: 0x{int(self):X}"
         ]
         max_bits = int(math.ceil(math.log(self._PT_WIDTH, 10)))
         max_name = max(map(len, self._pt_fields.values()))
