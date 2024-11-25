@@ -148,10 +148,6 @@ class Enum(Base, Numeric):
         return (1 << self._pt_width) - 1
 
     @property
-    def _pt_as_dict(self) -> dict:
-        return {n: int(v) for v, n in self._PT_LKP_INST.items()}
-
-    @property
     def value(self) -> int:
         return int(self._pt_bv)
 
@@ -164,6 +160,10 @@ class Enum(Base, Numeric):
 
     def __int__(self) -> int:
         return int(self._pt_bv)
+
+    @classmethod
+    def _pt_as_dict(cls) -> dict:
+        return {n: int(v) for v, n in cls._PT_LKP_INST.items()}
 
     @classmethod
     def _pt_cast(cls, value: int) -> None:
