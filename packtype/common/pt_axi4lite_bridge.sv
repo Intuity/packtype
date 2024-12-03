@@ -210,7 +210,7 @@ always_ff @(posedge i_clk, posedge i_rst)
 assign rb_wr_data = '{
       write: pending_write_q
     , data : i_rf_rd_data
-    , error: i_rf_error || write_strobe_error_q
+    , error: i_rf_error || (pending_write_q && write_strobe_error_q)
 };
 
 assign rb_wr_valid = pending_read_q || pending_write_q;
