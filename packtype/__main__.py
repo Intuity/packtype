@@ -36,7 +36,7 @@ from .primitive import NumericPrimitive
 from .registers import Behaviour, File, Register
 from .scalar import Scalar
 from .struct import Struct
-from .svg.render import ElementStyle, SvgConfig, SvgField, SvgRender
+from .svg.render import ElementStyle, SvgConfig, SvgField, SvgRender, Point
 from .templates.common import snake_case
 from .union import Union
 from .wrap import Registry
@@ -186,7 +186,7 @@ def svg(ctx, selection: str, output: Path | None):
 @click.argument(
     "mode", type=click.Choice(("package", "register"), case_sensitive=False)
 )
-@click.argument("language", type=click.Choice(("sv","py","cpp"), case_sensitive=False))
+@click.argument("language", type=click.Choice(("sv","py","cpp","html"), case_sensitive=False))
 @click.argument("outdir", type=click.Path(file_okay=False, path_type=Path))
 @click.argument("selection", type=str, nargs=-1)
 @click.pass_context
@@ -233,7 +233,10 @@ def code(ctx, option: list[str], mode: str, language: str, outdir: Path, selecti
                 ),
                 "cpp": (
                     ("register_access.hpp.mako", "_access.hpp"),
-                )
+                ),
+                "html": (
+                    ("register_file.html.mako", ".html"),
+                ),
             }
         case _:
             raise Exception(f"{mode} mode is not supported")
@@ -264,6 +267,11 @@ def code(ctx, option: list[str], mode: str, language: str, outdir: Path, selecti
         NumericPrimitive,
         Register,
         Behaviour,
+        ElementStyle,
+        SvgConfig,
+        SvgField,
+        SvgRender,
+        Point,
     ):
         context[cls.__name__] = cls
     # Iterate baselines to render
