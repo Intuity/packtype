@@ -20,10 +20,11 @@ module pt_axi4lite_bridge #(
     , parameter  RF_ADDR_W      = 32
     , parameter  DATA_W         = 64
     , parameter  RSP_BUFF_DEPTH =  8
+    , parameter  RF_PIPELINING  =  1
     , localparam STRB_W         = DATA_W / 8
     , localparam PROT_W         =  3
     , localparam RESP_W         =  2
-    , localparam ALIGN_Q_DEPTH  = 2
+    , localparam ALIGN_Q_DEPTH  =  2
 ) (
       input  logic                  i_clk
     , input  logic                  i_rst
@@ -100,9 +101,8 @@ w_req_t  w_wr_data, w_rd_data;
 logic    aw_rd_valid, aw_rd_ready, awq_idle, wq_idle, w_rd_valid, w_rd_ready;
 
 // Request arbitration
-logic accept_write, accept_read;
-logic pending_read_q, pending_write_q;
-logic write_strobe_error_d, write_strobe_error_q;
+logic accept_write, accept_read, write_strobe_error;
+logic [RF_PIPELINING-1:0] pending_read_q, pending_write_q, write_strobe_error_q;
 
 // Response buffer
 response_t rb_wr_data, rb_rd_data;
@@ -162,7 +162,7 @@ pt_fifo #(
 // =============================================================================
 
 // Decide what we're accepting (alternates between reads and writes)
-assign accept_write = (!pending_write_q || !i_arvalid) &&
+assign accept_write = (!(|pending_write_q) || !i_arvalid) &&
                       aw_rd_valid &&
                       w_rd_valid &&
                       !rb_hwm;
@@ -171,14 +171,14 @@ assign accept_read  = !accept_write &&
                       !rb_hwm;
 
 // Error if not all strobe lines set
-assign write_strobe_error_d = (w_rd_data.wstrb != {STRB_W{1'b1}});
+assign write_strobe_error = (w_rd_data.wstrb != {STRB_W{1'b1}});
 
 // Accept traffic
 assign aw_rd_ready = accept_write;
 assign w_rd_ready  = accept_write;
 assign o_arready   = accept_read && |{ !aw_rd_valid
                                      , !w_rd_valid
-                                     , !pending_write_q };
+                                     , !(|pending_write_q) };
 
 // Form request
 // NOTE: Suppress write if a strobe error detected
@@ -186,34 +186,55 @@ assign o_rf_address = accept_write ? RF_ADDR_W'(aw_rd_data.axaddr)
                                    : RF_ADDR_W'(i_araddr);
 assign o_rf_wr_data = w_rd_data.wdata;
 assign o_rf_write   = accept_write;
-assign o_rf_enable  = (!write_strobe_error_d && accept_write) || accept_read;
+assign o_rf_enable  = (!write_strobe_error && accept_write) || accept_read;
 
 // =============================================================================
 // Response Capture and Buffering
 // =============================================================================
 
 // Track pending request
-always_ff @(posedge i_clk, posedge i_rst)
-    if (i_rst)
-        { pending_read_q, pending_write_q } <= 2'd0;
-    else
-        { pending_read_q, pending_write_q } <= { accept_read, accept_write };
+generate
+if (RF_PIPELINING > 1) begin : gen_pipe_gt_1
 
-// Pipeline strobe error
-always_ff @(posedge i_clk, posedge i_rst)
-    if (i_rst)
-        write_strobe_error_q <= 1'b0;
-    else
-        write_strobe_error_q <= write_strobe_error_d;
+    always_ff @(posedge i_clk, posedge i_rst) begin : ff_pipeline
+        if (i_rst) begin
+            pending_read_q <= '0;
+            pending_write_q <= '0;
+            write_strobe_error_q <= '0;
+        end else begin
+            pending_read_q  <= { pending_read_q[RF_PIPELINING-2:0],  accept_read  };
+            pending_write_q <= { pending_write_q[RF_PIPELINING-2:0], accept_write };
+            write_strobe_error_q <= { write_strobe_error_q[RF_PIPELINING-2:0], write_strobe_error };
+        end
+    end
+
+end else begin : gen_pt_eq_1
+
+    always_ff @(posedge i_clk, posedge i_rst) begin : ff_no_pipeline
+        if (i_rst) begin
+            pending_read_q <= '0;
+            pending_write_q <= '0;
+            write_strobe_error_q <= '0;
+        end else begin
+            pending_read_q <= accept_read;
+            pending_write_q <= accept_write;
+            write_strobe_error_q <= write_strobe_error;
+        end
+    end
+
+end
+endgenerate
 
 // Fill in response
 assign rb_wr_data = '{
-      write: pending_write_q
+      write: pending_write_q[RF_PIPELINING-1]
     , data : i_rf_rd_data
-    , error: i_rf_error || (pending_write_q && write_strobe_error_q)
+    , error: i_rf_error || (pending_write_q[RF_PIPELINING-1] &&
+                            write_strobe_error_q[RF_PIPELINING-1])
 };
 
-assign rb_wr_valid = pending_read_q || pending_write_q;
+assign rb_wr_valid = pending_read_q[RF_PIPELINING-1] ||
+                     pending_write_q[RF_PIPELINING-1];
 
 // Response buffer
 pt_fifo #(
@@ -261,8 +282,8 @@ assign o_idle = &{ !i_awvalid
                  , !i_arvalid
                  , awq_idle
                  , wq_idle
-                 , !pending_write_q
-                 , !pending_read_q
+                 , !(|pending_write_q)
+                 , !(|pending_read_q)
                  , rb_idle };
 
 // =============================================================================
