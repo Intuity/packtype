@@ -91,13 +91,13 @@ class PackedAssembly(Assembly):
                     finst._pt_set(fval)
             except AttributeError as e:
                 raise AssignmentError(
-                    f"{type(self).__name__} does not contain a field called {fname}"
+                    f"{type(self).__name__} does not contain a field called '{fname}'"
                 ) from e
 
     @property
     @functools.lru_cache()
     def _pt_fields(self) -> dict:
-        base = super()._pt_fields()
+        base = super()._pt_fields
         if self._PT_PADDING > 0:
             base.update({ self._padding: "_padding" })
         return base
