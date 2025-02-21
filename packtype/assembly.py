@@ -225,8 +225,7 @@ class PackedAssembly(Assembly):
     @functools.cache
     def _pt_fields_lsb_asc(self) -> list[tuple[int, int, tuple[str, Base]]]:
         pairs = []
-        for fname in self._PT_DEF.keys():
-            finst = getattr(self, fname)
+        for finst, fname in self._pt_fields.items():
             if isinstance(finst, PackedArray):
                 lsb = min(self._PT_RANGES[(fname, x)][0] for x in range(len(finst)))
                 msb = max(self._PT_RANGES[(fname, x)][1] for x in range(len(finst)))
@@ -239,8 +238,7 @@ class PackedAssembly(Assembly):
     @functools.cache
     def _pt_fields_msb_desc(self) -> list[tuple[int, int, tuple[str, Base]]]:
         pairs = []
-        for fname in self._PT_DEF.keys():
-            finst = getattr(self, fname)
+        for finst, fname in self._pt_fields.items():
             if isinstance(finst, PackedArray):
                 lsb = min(self._PT_RANGES[(fname, x)][0] for x in range(len(finst)))
                 msb = max(self._PT_RANGES[(fname, x)][1] for x in range(len(finst)))
