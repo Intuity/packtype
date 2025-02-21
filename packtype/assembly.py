@@ -1,4 +1,4 @@
-# Copyright 2023, Peter Birch, mailto:peter@intuity.io
+# Copyright 2023-2025, Peter Birch, mailto:peter@intuity.io
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ from .bitvector import BitVector, BitVectorWindow
 from .constant import Constant
 from .numeric import Numeric
 from .packing import Packing
-from .primitive import NumericPrimitive
 from .scalar import Scalar
 
 
@@ -37,18 +36,25 @@ class AssignmentError(Exception):
 class Assembly(Base, Numeric):
     _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant]
 
-    def __init__(self, _pt_bv: BitVector | BitVectorWindow | None = None, default: int | None = None) -> None:
-        self._pt_fields = {}
+    def __init__(self, _pt_bv: BitVector | BitVectorWindow | None = None, default: int | None = None):
         super().__init__(_pt_bv=_pt_bv, default=default)
 
-    def __setattr__(self, name: str, value: Any) -> None:
-        try:
-            return getattr(self, name)._pt_set(value)
-        except AttributeError:
+    def _pt_force_set(self, name: str, value: Any):
+        super().__setattr__(name, value)
+
+    def __setattr__(self, name: str, value: Any):
+        if name in self._PT_DEF.keys():
+            getattr(self, name)._pt_set(value)
+        else:
             return super().__setattr__(name, value)
 
     def _pt_lookup(self, field: type[Base] | Base) -> str:
         return self._pt_fields[field]
+
+    @property
+    @functools.lru_cache()
+    def _pt_fields(self) -> dict:
+        return { getattr(self, x): x for x in self._PT_DEF.keys() }
 
 
 class PackedAssembly(Assembly):
@@ -66,22 +72,12 @@ class PackedAssembly(Assembly):
         _pt_bv: BitVector | BitVectorWindow | None = None,
         default: int | None = None,
         **kwds,
-    ) -> None:
+    ):
         super().__init__(_pt_bv=BitVector(self._PT_WIDTH) if _pt_bv is None else _pt_bv, default=default)
-        for fname, ftype, fdefault in self._pt_definitions():
-            lsb, msb = self._PT_RANGES[fname]
-            if isinstance(ftype, ArraySpec):
-                finst = ftype.as_packed(
-                    packing=self._PT_PACKING,
-                    _pt_bv=self._pt_bv.create_window(msb, lsb),
-                )
-            else:
-                finst = ftype(_pt_bv=self._pt_bv.create_window(msb, lsb))
-            finst._PT_PARENT = self
-            setattr(self, fname, finst)
-            self._pt_fields[finst] = fname
-            # If a value was provided, assign it
-            if (fval := kwds.get(fname, fdefault)) is not None:
+        # Attempt to assign keyword values to fields
+        for fname, fval in kwds.items():
+            try:
+                finst = getattr(self, fname)
                 if isinstance(finst, PackedArray):
                     if not isinstance(fval, list) or len(fval) != len(finst):
                         raise AssignmentError(
@@ -93,28 +89,58 @@ class PackedAssembly(Assembly):
                         sub_field._pt_set(sub_val)
                 else:
                     finst._pt_set(fval)
-                # Delete from kwds to track
-                if fname in kwds:
-                    del kwds[fname]
-        # Flag any unused field values
-        if kwds:
-            raise AssignmentError(
-                f"{type(self).__name__} does not contain fields called "
-                + ", ".join(f"'{x}'" for x in kwds.keys())
-            )
-        # Create padding field
+            except AttributeError as e:
+                raise AssignmentError(
+                    f"{type(self).__name__} does not contain a field called '{fname}'"
+                ) from e
+
+    @property
+    @functools.lru_cache()
+    def _pt_fields(self) -> dict:
+        base = super()._pt_fields
         if self._PT_PADDING > 0:
-            padding = Scalar[self._PT_PADDING](_pt_bv=self._pt_bv)
-            self._padding = padding
-            self._pt_fields[padding] = "_padding"
+            base.update({ self._padding: "_padding" })
+        return base
+
+    def __getattribute__(self, fname: str):
+        # Attempt to resolve the attribute from existing properties
+        try:
+            return super().__getattribute__(fname)
+        # If that fails...
+        except AttributeError as e:
+            # Is this a known field that hasn't yet been instanced?
+            if fpair := type(self)._PT_DEF.get(fname, None):
+                ftype, fval = fpair
+                lsb, msb = self._PT_RANGES[fname]
+                window = self._pt_bv.create_window(msb, lsb)
+                if isinstance(ftype, ArraySpec):
+                    finst = ftype.as_packed(packing=self._PT_PACKING, _pt_bv=window)
+                else:
+                    finst = ftype(_pt_bv=window)
+                finst._PT_PARENT = self
+                self._pt_force_set(fname, finst)
+                # If a value was provided, assign it
+                if fval is not None:
+                    finst._pt_set(fval)
+                # Return it
+                return finst
+            # Is this the padding field?
+            elif fname == "_padding" and self._PT_PADDING > 0:
+                padding = Scalar[self._PT_PADDING](_pt_bv=self._pt_bv)
+                self._pt_force_set("_padding", padding)
+                return padding
+            # If not resolved, forward the attribute error
+            else:
+                raise e
 
     def __str__(self) -> str:
         lines = [
             f"{type(self).__name__}: 0x{int(self):X}"
         ]
         max_bits = int(math.ceil(math.log(self._PT_WIDTH, 10)))
-        max_name = max(map(len, self._pt_fields.values()))
-        for finst, fname in self._pt_fields.items():
+        max_name = max(map(len, self._PT_DEF.keys()))
+        for fname in self._PT_DEF.keys():
+            finst = getattr(self, fname)
             lsb, msb = self._PT_RANGES[fname]
             lines.append(
                 f" - [{msb:{max_bits}}:{lsb:{max_bits}}] {fname:{max_name}} "
@@ -197,7 +223,7 @@ class PackedAssembly(Assembly):
 
     @property
     @functools.cache
-    def _pt_fields_lsb_asc(self) -> list[Base]:
+    def _pt_fields_lsb_asc(self) -> list[tuple[int, int, tuple[str, Base]]]:
         pairs = []
         for finst, fname in self._pt_fields.items():
             if isinstance(finst, PackedArray):
@@ -210,7 +236,7 @@ class PackedAssembly(Assembly):
 
     @property
     @functools.cache
-    def _pt_fields_msb_desc(self) -> list[Base]:
+    def _pt_fields_msb_desc(self) -> list[tuple[int, int, tuple[str, Base]]]:
         pairs = []
         for finst, fname in self._pt_fields.items():
             if isinstance(finst, PackedArray):

@@ -1,4 +1,4 @@
-# Copyright 2023, Peter Birch, mailto:peter@intuity.io
+# Copyright 2023-2025, Peter Birch, mailto:peter@intuity.io
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ class Enum(Base, Numeric):
             self._pt_set(value)
         elif default is not None:
             self._pt_set(default)
-        else:
+        elif _pt_bv is None:
             self._pt_set(0)
 
     def __repr__(self) -> str:

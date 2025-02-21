@@ -1,4 +1,4 @@
-# Copyright 2023, Peter Birch, mailto:peter@intuity.io
+# Copyright 2023-2025, Peter Birch, mailto:peter@intuity.io
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,19 +37,36 @@ class Union(Assembly):
         super().__init__(_pt_bv=_pt_bv, default=default if value is None else value)
         if value is None:
             value = 0 if default is None else default
-        for fname, ftype, fval in self._pt_definitions():
-            if isinstance(ftype, ArraySpec):
-                if isinstance(ftype.base, NumericPrimitive):
-                    finst = ftype.as_packed(default=fval, _pt_bv=self._pt_bv)
+        # NOTE: Fields are not constructed at this point, instead they are filled
+        #       in lazily as they are requested by the consumer
+
+    def __getattribute__(self, fname: str):
+        # Attempt to resolve the attribute from existing properties
+        try:
+            return super().__getattribute__(fname)
+        # If that fails...
+        except AttributeError as e:
+            # Is this a known field that hasn't yet been instanced?
+            if fpair := type(self)._PT_DEF.get(fname, None):
+                ftype, fval = fpair
+                # Generate an instance of the field
+                if isinstance(ftype, ArraySpec):
+                    if isinstance(ftype.base, NumericPrimitive):
+                        finst = ftype.as_packed(default=fval, _pt_bv=self._pt_bv)
+                    else:
+                        finst = ftype.as_packed(_pt_bv=self._pt_bv)
+                elif issubclass(ftype, NumericPrimitive):
+                    finst = ftype(default=fval, _pt_bv=self._pt_bv)
                 else:
-                    finst = ftype.as_packed(_pt_bv=self._pt_bv)
-            elif issubclass(ftype, NumericPrimitive):
-                finst = ftype(default=fval, _pt_bv=self._pt_bv)
+                    finst = ftype(_pt_bv=self._pt_bv)
+                # Attach the instance to the parent
+                finst._PT_PARENT = self
+                self._pt_force_set(fname, finst)
+                # Return it
+                return finst
+            # If not resolved, forward the attribute error
             else:
-                finst = ftype(_pt_bv=self._pt_bv)
-            finst._PT_PARENT = self
-            setattr(self, fname, finst)
-            self._pt_fields[finst] = fname
+                raise e
 
     @classmethod
     def _pt_construct(cls, parent: Base | None):
