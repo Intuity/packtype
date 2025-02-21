@@ -1,4 +1,4 @@
-# Copyright 2024, Peter Birch, mailto:peter@intuity.io
+# Copyright 2023-2025, Peter Birch, mailto:peter@intuity.io
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ from .array import ArraySpec, PackedArray
 from .base import Base
 from .bitvector import BitVector, BitVectorWindow
 from .constant import Constant
-from .enum import Enum
 from .numeric import Numeric
 from .packing import Packing
 from .scalar import Scalar
