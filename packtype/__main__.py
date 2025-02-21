@@ -20,8 +20,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import click
-from mako import exceptions
-from mako.lookup import TemplateLookup
 from rich.logging import RichHandler
 from rich.traceback import install
 
@@ -36,8 +34,6 @@ from .primitive import NumericPrimitive
 from .registers import Behaviour, File, Register
 from .scalar import Scalar
 from .struct import Struct
-from .svg.render import ElementStyle, SvgConfig, SvgField, SvgRender
-from .templates.common import snake_case
 from .union import Union
 from .wrap import Registry
 
@@ -129,6 +125,9 @@ def inspect(ctx):
 )
 @click.pass_context
 def svg(ctx, selection: str, output: Path | None):
+    # Deferred imports for optional libraries
+    from .svg.render import ElementStyle, SvgConfig, SvgField, SvgRender
+
     # Resolve selection to a struct or union
     resolved = resolve_to_object(
         ctx.obj.get("baseline", []),
@@ -192,6 +191,12 @@ def svg(ctx, selection: str, output: Path | None):
 @click.pass_context
 def code(ctx, option: list[str], mode: str, language: str, outdir: Path, selection: list[str]):
     """Render Packtype package definitions using a language template"""
+
+    # Deferred imports for optional libraries
+    from mako import exceptions
+    from mako.lookup import TemplateLookup
+    from .templates.common import snake_case
+
     # Digest options
     options = {}
     for opt_str in option:
