@@ -24,6 +24,7 @@ except ImportError:
 from .alias import MetaAlias
 from .array import ArraySpec
 from .bitvector import BitVector
+from ordered_set import OrderedSet as OSet
 
 
 class MetaBase(type):
@@ -80,9 +81,9 @@ class Base(metaclass=MetaBase):
     @classmethod
     def _pt_field_types(cls) -> list[type["Base"]]:
         if cls._PT_DEF:
-            return {t for t, _ in cls._PT_DEF.values()}
+            return OSet(t for t, _ in cls._PT_DEF.values())
         else:
-            return set()
+            return OSet()
 
     @classmethod
     def _pt_references(cls) -> list[type["Base"]]:
@@ -95,7 +96,7 @@ class Base(metaclass=MetaBase):
                 obj = obj._PT_ALIAS
             return obj
         # Else iterate through core fields
-        collect = set()
+        collect = OSet()
         for ftype in map(_unwrap, cls._pt_field_types()):
             collect.update(ftype._pt_references())
             collect.add(ftype)
