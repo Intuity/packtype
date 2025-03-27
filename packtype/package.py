@@ -26,6 +26,7 @@ from .scalar import Scalar
 from .struct import Struct
 from .union import Union
 from .wrap import get_wrapper
+from ordered_set import OrderedSet as OSet
 
 
 class Package(Base):
@@ -88,7 +89,7 @@ class Package(Base):
         # Get all referenced types
         all_refs = cls._pt_references()
         # Exclude directly attached types
-        foreign = all_refs.difference(set(cls._PT_ATTACH).union(cls._pt_field_types()))
+        foreign = all_refs.difference(OSet(cls._PT_ATTACH).union(cls._pt_field_types()))
 
         # Exclude non-typedef primitives
         def _is_a_type(obj: Any) -> bool:
@@ -103,7 +104,7 @@ class Package(Base):
                 obj._PT_ATTACHED_TO is not None and type(obj._PT_ATTACHED_TO) is not cls
             )
 
-        return set(filter(_is_a_type, foreign))
+        return OSet(filter(_is_a_type, foreign))
 
     @property
     def _pt_fields(self) -> dict:

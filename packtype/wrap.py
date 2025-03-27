@@ -23,7 +23,7 @@ from .alias import Alias
 from .array import ArraySpec
 from .assembly import Base
 from .primitive import NumericPrimitive
-
+from ordered_set import OrderedSet as OSet
 
 class MissingAnnotationError(Exception):
     pass
@@ -149,7 +149,7 @@ def get_wrapper(base: Any, frame_depth: int = 1) -> Callable:
     def _wrapper(parent: Base | None = None, **kwds) -> Callable:
         def _inner(cls):
             # Work out the fields defined within the class
-            cls_fields = set(dir(cls)).difference(dir(object))
+            cls_fields = OSet(dir(cls)).difference(dir(object))
             # Filter out any dunder entries
             cls_fields = {x for x in cls_fields if not x.startswith("__")}
             # Filter out any functions

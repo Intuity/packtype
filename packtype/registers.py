@@ -16,6 +16,7 @@ from .primitive import NumericPrimitive
 from .scalar import Scalar
 from .struct import Struct
 from .wrap import build_from_fields, get_wrapper
+from ordered_set import OrderedSet as OSet
 
 # NOTE 1: Consider sign extension vs zero extension behaviours, i.e. do we want
 #         to offer automatic field expansion?
@@ -378,7 +379,7 @@ class File(Group):
         # Get all referenced types
         all_refs = cls._pt_references()
         # Exclude directly attached types
-        foreign = all_refs.difference(set(cls._PT_ATTACH).union(cls._pt_field_types()))
+        foreign = all_refs.difference(OSet(cls._PT_ATTACH).union(cls._pt_field_types()))
 
         # Exclude non-typedef primitives
         def _is_a_type(obj: Any) -> bool:
@@ -395,7 +396,7 @@ class File(Group):
                 obj._PT_ATTACHED_TO is not None and type(obj._PT_ATTACHED_TO) is not cls
             )
 
-        return set(filter(_is_a_type, foreign))
+        return OSet(filter(_is_a_type, foreign))
 
 
 file = get_wrapper(File)
