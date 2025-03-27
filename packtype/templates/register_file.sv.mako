@@ -16,8 +16,11 @@ limitations under the License.
 <%include file="header.mako" args="delim='//'" />\
 <%namespace name="blocks" file="blocks.mako" />\
 <%
+import math
 base_types  = {x for x in baseline._pt_references() if x._PT_BASE is Register}
 widest_type = max(len(tc.snake_case(x.__name__)) for x in base_types) + 2
+pipelining  = options.get("pipelining", 1)
+primaries   = list(filter(lambda x: x._PT_BEHAVIOUR.is_primary, baseline))
 %>\
 
 module ${type(baseline).__name__ | tc.snake_case}_rf
@@ -90,6 +93,12 @@ import   ${type(baseline).__name__ | tc.snake_case}_pkg::offset_t\
 );
 
 // =============================================================================
+// Typedefs
+// =============================================================================
+
+typedef logic [DATA_W-1:0] _pt_rf_data_t;
+
+// =============================================================================
 // Access Handling
 // =============================================================================
 
@@ -98,7 +107,7 @@ logic is_read, is_write;
 assign is_read  = i_enable && !i_write;
 assign is_write = i_enable &&  i_write;
 
-%for reg in filter(lambda x: x._PT_BEHAVIOUR.is_primary, baseline):
+%for reg in primaries:
 <%
     behav  = reg._PT_BEHAVIOUR
     struct = tc.snake_case(type(reg).__name__) + "_t"
@@ -279,50 +288,133 @@ assign o_${sub._pt_fullname | tc.underscore} = level_${rname};
 // =============================================================================
 // Access Response
 // =============================================================================
+<%
+# Determine the fan-in rate required across the available pipelining (i.e. how
+# many entries will fan into a mux at each stage)
+per_mux = int(math.ceil(len(primaries) ** (1 / pipelining)))
 
-logic [DATA_W-1:0] read_data_d, read_data_q;
-logic              error_d, error_q;
+# Split registers into muxes at the first stage
+muxes = []
+which_mux = {}
+for entry in primaries:
+    # Get the mux to append into
+    if len(muxes) == 0 or len(muxes[-1]) >= per_mux:
+        muxes.append([])
+    # Append register into the last mux
+    muxes[-1].append(entry)
+    which_mux[entry] = len(muxes) - 1
+%>\
 
-assign o_rd_data = read_data_q;
-assign o_error   = error_q;
+// Register access handling
+localparam NUM_MUXES_0 = ${len(muxes)};
+_pt_rf_data_t read_data [NUM_MUXES_0-1:0];
+logic [NUM_MUXES_0-1:0] active, error;
 
 always_comb begin : comb_access
-    read_data_d = read_data_q;
-    error_d     = error_q;
+    for (int idx = 0; idx < NUM_MUXES_0; idx++) read_data[idx] = _pt_rf_data_t'(0);
+    active = NUM_MUXES_0'(0);
+    error = NUM_MUXES_0'(0);
+
     case (i_address)
-%for reg in filter(lambda x: x._PT_BEHAVIOUR.is_primary, baseline):
+%for reg in primaries:
+<%  mux_idx = which_mux[reg] %>\
         ${reg._pt_fullname.upper() | tc.underscore}_OFFSET: begin
+            active[${mux_idx}] = 1'b1;
     %if reg._PT_BEHAVIOUR.external_read:
-            read_data_d = DATA_W'(current_${reg._pt_fullname | tc.underscore});
+            read_data[${mux_idx}] = DATA_W'(current_${reg._pt_fullname | tc.underscore});
     %else:
-            read_data_d = DATA_W'(0);
+            read_data[${mux_idx}] = DATA_W'(0);
     %endif
-            error_d     = error_${reg._pt_fullname | tc.underscore};
+            error[${mux_idx}] = error_${reg._pt_fullname | tc.underscore};
         end
     %for behav, sub in reg._pt_paired.items():
         ${sub._pt_fullname.upper() | tc.underscore}_OFFSET: begin
+            active[${mux_idx}] = 1'b1;
         %if behav is Behaviour.LEVEL:
-            read_data_d = DATA_W'(level_${reg._pt_fullname | tc.underscore});
-            error_d     = is_write;
+            read_data[${mux_idx}] = DATA_W'(level_${reg._pt_fullname | tc.underscore});
+            error[${mux_idx}] = is_write;
         %endif
         end
     %endfor ## behav, sub in reg._pt_paired.items()
 %endfor ## reg in baseline
+        // If no other channel has responded, flag an error
         default: begin
-            read_data_d = DATA_W'(0);
-            error_d     = 1'b1;
+            active = NUM_MUXES_0'(1);
+            error = {NUM_MUXES_0{1'b1}};
         end
     endcase
 end
 
-always_ff @(posedge i_clk, posedge i_rst) begin : ff_access
+// Pipeling stage 0
+_pt_rf_data_t read_pipe_0_q [NUM_MUXES_0-1:0];
+logic [NUM_MUXES_0-1:0] active_pipe_0_q, error_pipe_0_q;
+
+always_ff @(posedge i_clk, posedge i_rst) begin : ff_pipe_0
     if (i_rst) begin
-        read_data_q <= DATA_W'(0);
-        error_q     <= 1'b0;
+        for (int idx = 0; idx < NUM_MUXES_0; idx++) read_pipe_0_q[idx] <= _pt_rf_data_t'(0);
+        active_pipe_0_q <= NUM_MUXES_0'(0);
+        error_pipe_0_q <= NUM_MUXES_0'(0);
     end else begin
-        read_data_q <= read_data_d;
-        error_q     <= error_d;
+        for (int idx = 0; idx < NUM_MUXES_0; idx++) read_pipe_0_q[idx] <= read_data[idx];
+        active_pipe_0_q <= active;
+        error_pipe_0_q <= error;
     end
 end
+
+<% prev_muxes = len(muxes) %>\
+%for idx_pipe in range(1, pipelining):
+<%
+    # Figure out number of muxes in this pipelining stage (round up)
+    num_muxes = ((prev_muxes + per_mux - 1) // per_mux)
+%>\
+// Pipeling stage ${idx_pipe}
+localparam NUM_MUXES_${idx_pipe} = ${num_muxes};
+
+_pt_rf_data_t read_pipe_${idx_pipe}_d [NUM_MUXES_${idx_pipe}-1:0];
+_pt_rf_data_t read_pipe_${idx_pipe}_q [NUM_MUXES_${idx_pipe}-1:0];
+logic [${num_muxes-1}:0] active_pipe_${idx_pipe}_d, active_pipe_${idx_pipe}_q,
+      error_pipe_${idx_pipe}_d, error_pipe_${idx_pipe}_q;
+
+always_comb begin : comb_pipe_${idx_pipe}
+    for (int idx = 0; idx < NUM_MUXES_${idx_pipe}; idx++) read_pipe_${idx_pipe}_d[idx] = _pt_rf_data_t'(0);
+    active_pipe_${idx_pipe}_d = NUM_MUXES_${idx_pipe}'(0);
+    error_pipe_${idx_pipe}_d = NUM_MUXES_${idx_pipe}'(0);
+
+    unique case (active_pipe_${idx_pipe-1}_q)
+    %for idx_prev_mux in range(prev_muxes):
+<%      idx_curr_mux = idx_prev_mux // per_mux %>\
+        ${prev_muxes}'b${f"{1 << idx_prev_mux:0{prev_muxes}b}"}: begin
+            active_pipe_${idx_pipe}_d[${idx_curr_mux}] = 1'b1;
+            read_pipe_${idx_pipe}_d[${idx_curr_mux}] = read_pipe_${idx_pipe-1}_q[${idx_prev_mux}];
+            error_pipe_${idx_pipe}_d[${idx_curr_mux}] = error_pipe_${idx_pipe-1}_q[${idx_prev_mux}];
+        end
+    %endfor ## idx_prev_mux in range(prev_muxes)
+        default: begin
+            active_pipe_${idx_pipe}_d = NUM_MUXES_${idx_pipe}'(1);
+            error_pipe_${idx_pipe}_d = {NUM_MUXES_${idx_pipe}{|error_pipe_${idx_pipe-1}_q}};
+        end
+    endcase
+end
+
+always_ff @(posedge i_clk, posedge i_rst) begin : ff_pipe_${idx_pipe}
+    if (i_rst) begin
+        for (int idx = 0; idx < NUM_MUXES_${idx_pipe}; idx++) read_pipe_${idx_pipe}_q[idx] <= _pt_rf_data_t'(0);
+        active_pipe_${idx_pipe}_q <= NUM_MUXES_${idx_pipe}'(0);
+        error_pipe_${idx_pipe}_q <= NUM_MUXES_${idx_pipe}'(0);
+    end else begin
+        for (int idx = 0; idx < NUM_MUXES_${idx_pipe}; idx++) read_pipe_${idx_pipe}_q[idx] <= read_pipe_${idx_pipe}_d[idx];
+        active_pipe_${idx_pipe}_q <= active_pipe_${idx_pipe}_d;
+        error_pipe_${idx_pipe}_q <= error_pipe_${idx_pipe}_d;
+    end
+end
+
+<%
+    # Remember how many muxes were in the previous stage
+    prev_muxes = num_muxes
+%>\
+%endfor ## idx in range(1, pipelining)
+// Drive outputs
+assign o_rd_data = read_pipe_${pipelining-1}_q[0];
+assign o_error   = |{active_pipe_${pipelining-1}_q[0] & error_pipe_${pipelining-1}_q[0]};
 
 endmodule : ${type(baseline).__name__ | tc.snake_case}_rf
