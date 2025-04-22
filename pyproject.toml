@@ -19,6 +19,7 @@ svg-py = "^1.4.3"
 ordered-set = "^4.1.0"
 
 [tool.poetry.group.dev.dependencies]
+python = ">=3.11"
 pytest = "^7.4.3"
 pytest-runner = "^6.0.1"
 pytest-cov = "^4.1.0"
