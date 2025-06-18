@@ -60,7 +60,6 @@ def build_from_fields(
     # Check fields
     for fname, (ftype, default) in fields.items():
         real_type = ftype.base if isinstance(ftype, ArraySpec) else ftype
-        breakpoint()
         # Unwrap alias types
         if issubclass(real_type, Alias):
             real_type = real_type._PT_ALIAS
