@@ -15,10 +15,6 @@ limitations under the License.
 </%doc>\
 <%include file="header.mako" args="delim='//'" />\
 <%namespace name="blocks" file="blocks.mako" />\
-<%
-def width(obj):
-    return int(obj._pt_width) - 1
-%>\
 
 /* verilator lint_off UNUSEDPARAM */
 
@@ -43,7 +39,9 @@ import ${foreign._PT_ATTACHED_TO._pt_name() | tc.snake_case}::${foreign._pt_name
 
 %for name, obj in baseline._pt_constants:
 // ${name.upper()}
-    %if obj.value >= (1 << 32):
+    %if utils.width(obj) > 0:
+localparam bit [${utils.width(obj)-1}:0] ${name | tc.shouty_snake_case} = ${utils.width(obj)}'h${f"{obj.value:0{(utils.width(obj)+3)//4}X}"};
+    %elif obj.value >= (1 << 32):
 localparam ${name | tc.shouty_snake_case} = 64'h${f"{obj.value:08X}"};
     %else:
 localparam ${name | tc.shouty_snake_case} = 'h${f"{obj.value:08X}"};
@@ -57,7 +55,7 @@ localparam ${name | tc.shouty_snake_case} = 'h${f"{obj.value:08X}"};
 %for name, objcls in baseline._pt_scalars:
 <%  obj = objcls() %>\
 // ${name}
-typedef logic [${obj._pt_width-1}:0] ${name | tc.snake_case}_t;
+typedef logic [${utils.width(obj)-1}:0] ${name | tc.snake_case}_t;
 %endfor
 %for name, obj in baseline._pt_aliases:
 // ${name}
@@ -71,14 +69,14 @@ typedef ${obj._PT_ALIAS._pt_name() | tc.snake_case}_t ${name | tc.snake_case}_t;
 %for name, objcls in baseline._pt_enums:
 <%  obj = objcls() %>\
 // ${name}
-typedef enum logic [${width(obj)}:0] {
+typedef enum logic [${utils.width(obj)-1}:0] {
 <%  sep = " " %>\
     %for field, fname in obj._PT_LKP_INST.items():
 <%
         prefix = tc.snake_case(obj._PT_PREFIX).upper()
         prefix += ["", "_"][len(prefix) > 0]
 %>\
-    ${sep} ${prefix}${tc.snake_case(fname).upper()} = ${int(obj._pt_width)}'d${field.value}
+    ${sep} ${prefix}${tc.snake_case(fname).upper()} = ${utils.width(obj)}'d${field.value}
 <%      sep = "," %>\
     %endfor
 } ${name | tc.snake_case}_t;
@@ -95,7 +93,7 @@ typedef enum logic [${width(obj)}:0] {
 typedef struct packed {
 <%
         msb_pack = (obj._PT_PACKING == Packing.FROM_MSB)
-        next_pos = obj._pt_width - 1
+        next_pos = utils.width(obj) - 1
         pad_idx  = 0
 %>\
         %for flsb, fmsb, (fname, field) in obj._pt_fields_msb_desc:
@@ -114,7 +112,7 @@ typedef struct packed {
     ${refers_to | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
                 %else:
 <%                  sign_sfx = " signed" if field._pt_signed else "" %>\
-    logic${sign_sfx}${array_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${fname | tc.snake_case};
+    logic${sign_sfx}${array_sfx}${f" [{width(field)}:0]" if utils.width(field) > 1 else ""} ${fname | tc.snake_case};
                 %endif
             %elif isinstance(field, Alias | Enum | Struct | Union):
     ${field._pt_name() | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
@@ -139,7 +137,7 @@ typedef union packed {
     ${refers_to | tc.snake_case}_t ${fname | tc.snake_case};
                 %else:
 <%                  sign_sfx = " signed" if field._pt_signed else "" %>\
-    logic${sign_sfx}${f" [{width(field)}:0]" if field._pt_width > 1 else ""} ${fname | tc.snake_case};
+    logic${sign_sfx}${f" [{width(field)}:0]" if utils.width(field) > 1 else ""} ${fname | tc.snake_case};
                 %endif
             %elif isinstance(field, Enum | Struct | Alias | Union):
     ${field._pt_name() | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};

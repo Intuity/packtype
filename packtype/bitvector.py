@@ -18,7 +18,7 @@ class BitVector:
 
     def __init__(self, width: int | None = None, value: int = 0) -> None:
         self.__width = width
-        self.__value = value
+        self.set(value)
 
     @property
     def width(self) -> int:
@@ -70,6 +70,11 @@ class BitVector:
         """
         # Coerce the value to an integer
         value = int(value)
+        # Check the value is within the bounds of the bit vector
+        if self.__width is not None and self.__width >= 0 and (value < 0 or value > (1 << self.__width)):
+            raise ValueError(
+                f"{value} is out of {self.__width} bit range (0 to {(1 << self.__width) - 1})"
+            )
         # If no MSB/LSB provided, overwrite the entire value
         if msb is None and lsb is None:
             self.__value = value

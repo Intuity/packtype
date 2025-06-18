@@ -12,5 +12,5 @@ class DateConsts:
 
     DAYS_PER_YEAR: Constant = 365
     DAYS_PER_WEEK: Constant = 7
-    HOURS_PER_DAY: Constant = 24
+    HOURS_PER_DAY: Constant[8] = 24
     MINS_PER_HOUR: Constant = 60
