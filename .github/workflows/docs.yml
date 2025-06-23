@@ -1,4 +1,4 @@
-name: Forastero Documentation
+name: Packtype Documentation
 
 on:
   pull_request:

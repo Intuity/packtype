@@ -23,12 +23,12 @@ def clog2(x: int) -> int:
 
 
 def width(ptype: type[Base]) -> int:
-    """Get the width of a PackType definition"""
+    """Get the width of a Packtype definition"""
     if isinstance(ptype, Base):
         return ptype._pt_width
     elif issubclass(ptype, Base):
         return ptype._PT_WIDTH
     else:
-        raise TypeError(f"{ptype} is not a PackType definition")
+        raise TypeError(f"{ptype} is not a Packtype definition")
 
 
