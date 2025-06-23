@@ -1,6 +1,6 @@
-Packages separate [constants](constant.md), [enumerations](enum.md), 
-[structs](struct.md), and [unions](union.md) into distinct namespaces - 
-definitions cannot otherwise exist outside of a package. 
+Packages separate [aliases](alias.md), [constants](constant.md), 
+[enumerations](enum.md), [structs](struct.md), and [unions](union.md) into 
+distinct namespaces - definitions cannot otherwise exist outside of a package. 
 
 ## Example
 

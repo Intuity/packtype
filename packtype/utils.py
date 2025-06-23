@@ -30,5 +30,3 @@ def width(ptype: type[Base]) -> int:
         return ptype._PT_WIDTH
     else:
         raise TypeError(f"{ptype} is not a Packtype definition")
-
-
