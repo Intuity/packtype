@@ -1,0 +1,28 @@
+package my_package {
+
+    MESSAGE_WIDTH  : Constant = 32
+    MSG_TYPE_WIDTH : Constant = 12
+    ID_WIDTH       : Constant = 8
+
+    id_t : Scalar[ID_WIDTH]
+
+    enum gray {
+        "Gray-coded states of the decoder FSM"
+        DISABLED
+        IDLE
+        HEADER
+        PAYLOAD
+    } decoder_state_t
+
+    enum [MSG_TYPE_WIDTH] {
+        pingpong = 0x123
+        shutdown = 0x439
+        powerup = 0x752
+    } message_type_t
+
+    struct [MESSAGE_WIDTH] {
+        target_id : id_t
+        msg_type : message_type_t
+    } message_header_t
+
+}

@@ -1,0 +1,40 @@
+// My package
+package my_package {
+    "Describes the purpose of this package"
+
+    import other_package::other_type_t
+
+    local_type_t : other_type_t
+
+    SIZED_CONSTANT    : Constant[8] = 0x83
+    UNSIGNED_CONSTANT : Constant = 0x12345678
+    CALCULATED        : Constant = (SIZED_CONSTANT + UNSIGNED_CONSTANT) / 4
+
+    simple_type_t : Scalar[SIZED_CONSTANT]
+    single_bit_t  : Scalar
+
+    SOME_ENUM_W : Constant = 4
+
+    enum onehot [SOME_ENUM_W] some_enum_e {
+        "This enum does something!"
+        VALUE_A
+        VALUE_B
+        VALUE_C
+        VALUE_D
+    }
+
+    SOME_STRUCT_W : Constant = 8 + 1 + SOME_ENUM_W + 1
+
+    struct [SOME_STRUCT_W] my_struct_t {
+        field_a : simple_type_t
+        field_b : single_bit_t
+        field_c : some_enum_e
+        field_d : other_type_t
+    }
+
+    union my_union_t {
+        raw : Scalar[SOME_STRUCT_W]
+        my_struct : my_struct_t
+    }
+
+}
