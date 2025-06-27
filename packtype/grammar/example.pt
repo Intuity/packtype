@@ -6,14 +6,15 @@ package my_package {
 
     local_type_t : other_type_t
 
-    SIZED_CONSTANT    : Constant[8] = 0x83
-    UNSIGNED_CONSTANT : Constant = 0x12345678
-    CALCULATED        : Constant = (SIZED_CONSTANT + UNSIGNED_CONSTANT) / 4
+    SIZED_CONSTANT   : constant[8] = 0x83
+    UNSIZED_CONSTANT : constant = 0x12345678
+    CALCULATED       : constant = (SIZED_CONSTANT + UNSIZED_CONSTANT) / 4
 
-    simple_type_t : Scalar[SIZED_CONSTANT]
-    single_bit_t  : Scalar
+    simple_type_t : scalar[SIZED_CONSTANT]
+    signed_type_t : signed scalar[SIZED_CONSTANT]
+    single_bit_t  : scalar
 
-    SOME_ENUM_W : Constant = 4
+    SOME_ENUM_W : constant = 4
 
     enum onehot [SOME_ENUM_W] some_enum_e {
         "This enum does something!"
@@ -23,17 +24,25 @@ package my_package {
         VALUE_D
     }
 
-    SOME_STRUCT_W : Constant = 8 + 1 + SOME_ENUM_W + 1
+    SOME_STRUCT_W : constant = 8 + 1 + SOME_ENUM_W + 1
 
-    struct [SOME_STRUCT_W] my_struct_t {
+    struct unsized_t {
+        "Implicitly sized structure"
         field_a : simple_type_t
-        field_b : single_bit_t
-        field_c : some_enum_e
-        field_d : other_type_t
+        field_b : signed scalar[2]
+        field_c : single_bit_t
+    }
+
+    struct [SOME_STRUCT_W] sized_t {
+        field_a : simple_type_t
+        field_b : signed scalar[2]
+        field_c : single_bit_t
+        field_d : some_enum_e
+        field_e : other_type_t
     }
 
     union my_union_t {
-        raw : Scalar[SOME_STRUCT_W]
+        raw : scalar[SOME_STRUCT_W]
         my_struct : my_struct_t
     }
 

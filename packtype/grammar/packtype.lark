@@ -32,11 +32,23 @@ COMMENT: /\/\/[^\n]*/
 %ignore COMMENT
 
 // =============================================================================
+// Utilities
+// =============================================================================
+
+?signed: "signed"
+?unsigned: "unsigned"
+
+?width: "[" expr "]"
+
+?name: CNAME
+descr: ESCAPED_STRING
+
+// =============================================================================
 // Root Nodes
 // =============================================================================
 
 // Allowable root nodes
-root: decl_package
+?root: decl_package
     // | decl_regblock
 
 // =============================================================================
@@ -44,10 +56,7 @@ root: decl_package
 // =============================================================================
 
 // Define package outer
-decl_package: "package" package_name "{" package_descr? package_body* "}"
-
-?package_name: IDENTIFIER
-?package_descr: ESCAPED_STRING
+decl_package: "package" name "{" descr? package_body* "}"
 
 ?package_body: decl_import
              | decl_alias
@@ -62,26 +71,21 @@ decl_package: "package" package_name "{" package_descr? package_body* "}"
 // =============================================================================
 
 // Example: import other_pkg::VALUE_A
-decl_import: "import" import_name
-
-?import_name: package_name "::" type
+decl_import: "import" name "::" name
 
 // =============================================================================
 // Simple Declarations
 // =============================================================================
 
 // Example: local_type_t : foreign_type_t
-decl_alias: type ":" type
+decl_alias: name ":" name
 
-// Example: MY_CONSTANT : Constant[8] = 123
-decl_constant: type ":" "Constant" width? "=" expr
+// Example: MY_CONSTANT : constant[8] = 123
+decl_constant: name ":" "constant" width? "=" expr
 
-// Example: simple_type_t : Scalar[8]
-decl_scalar: type ":" "Scalar" width?
+// Example: simple_type_t : scalar[8]
+decl_scalar: name ":" (signed|unsigned)? "scalar"  width?
 
-?width: "[" expr "]"
-
-?type: IDENTIFIER
 
 // =============================================================================
 // Enumerations
@@ -96,17 +100,19 @@ decl_scalar: type ":" "Scalar" width?
 //
 // =============================================================================
 
-decl_enum: "enum" enum_mode? width? type "{" enum_descr? enum_body* "}"
+decl_enum: "enum" enum_mode? width? name "{" enum_descr? enum_body* "}"
 
-?enum_mode: "indexed"
-          | "onehot"
-          | "gray"
+?enum_mode: enum_mode_indexed
+          | enum_mode_onehot
+          | enum_mode_gray
 
-?enum_descr: ESCAPED_STRING
-?enum_body: field (":" "Constant")? enum_assign?
+enum_mode_indexed: "indexed"
+enum_mode_onehot: "onehot"
+enum_mode_gray: "gray"
+
+enum_descr: ESCAPED_STRING
+?enum_body: name (":" "Constant")? enum_assign?
 ?enum_assign: "=" expr
-
-?field: IDENTIFIER
 
 // =============================================================================
 // Structs
@@ -119,11 +125,10 @@ decl_enum: "enum" enum_mode? width? type "{" enum_descr? enum_body* "}"
 //
 // =============================================================================
 
-decl_struct: "struct" width? type "{" struct_descr? struct_body* "}"
+field: name ":" name
+     | decl_scalar
 
-?struct_descr: ESCAPED_STRING
-?struct_body: field ":" type
-            | decl_scalar
+decl_struct: "struct" width? name "{" descr? field* "}"
 
 // =============================================================================
 // Unions
@@ -136,25 +141,20 @@ decl_struct: "struct" width? type "{" struct_descr? struct_body* "}"
 //
 // =============================================================================
 
-decl_union: "union" type "{" union_descr? union_body* "}"
-
-?union_descr: ESCAPED_STRING
-?union_body: field ":" type
-           | decl_scalar
+decl_union: "union" name "{" descr? field* "}"
 
 // =============================================================================
 // Expressions
 // =============================================================================
 
-?expr: expr_term (OPERATOR expr_term)*
+expr: expr_term (OPERATOR expr_term)*
 
-?expr_term: type
+?expr_term: name
           | INT
           | SIGNED_INT
           | HEX
           | "(" expr ")"
 
-IDENTIFIER: CNAME
 HEX: "0x" ("a".."f"|"A".."F"|"0".."9")*
 OPERATOR: "+"
         | "-"
