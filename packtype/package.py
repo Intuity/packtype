@@ -31,7 +31,7 @@ class Package(Base):
             if issubclass(ftype, Constant):
                 cls._pt_attach_constant(ftype(default=fval))
             else:
-                cls._pt_attach_scalar(ftype)
+                cls._pt_attach_named(fname, ftype)
 
     @classmethod
     def _pt_attach_constant(cls, fname: str, finst: Constant) -> Constant:
@@ -41,14 +41,14 @@ class Package(Base):
         return finst
 
     @classmethod
-    def _pt_attach_scalar(cls, fname: str, ftype: Type[Scalar]) -> Type[Scalar]:
+    def _pt_attach_named(cls, fname: str, ftype: Type[Base]) -> Type[Scalar]:
         setattr(cls, fname, ftype)
         ftype._PT_ATTACHED_TO = cls
         cls._PT_FIELDS[ftype] = fname
         return ftype
 
     @classmethod
-    def _pt_attach_field(cls, field: Type[Base]) -> Base:
+    def _pt_attach(cls, field: Type[Base]) -> Base:
         cls._PT_ATTACH.append(field)
         field._PT_ATTACHED_TO = cls
         setattr(cls, field.__name__, field)
@@ -58,21 +58,21 @@ class Package(Base):
     @classmethod
     def enum(cls, **kwds):
         def _inner(ptcls: Any):
-            return cls._pt_attach_field(get_wrapper(Enum, frame_depth=2)(**kwds)(ptcls))
+            return cls._pt_attach(get_wrapper(Enum, frame_depth=2)(**kwds)(ptcls))
 
         return _inner
 
     @classmethod
     def struct(cls, **kwds):
         def _inner(ptcls: Any):
-            return cls._pt_attach_field(get_wrapper(Struct, frame_depth=2)(**kwds)(ptcls))
+            return cls._pt_attach(get_wrapper(Struct, frame_depth=2)(**kwds)(ptcls))
 
         return _inner
 
     @classmethod
     def union(cls, **kwds):
         def _inner(ptcls: Any):
-            return cls._pt_attach_field(get_wrapper(Union, frame_depth=2)(**kwds)(ptcls))
+            return cls._pt_attach(get_wrapper(Union, frame_depth=2)(**kwds)(ptcls))
 
         return _inner
 

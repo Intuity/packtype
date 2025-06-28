@@ -1,8 +1,8 @@
 // My package
-package my_package {
+package package_b {
     "Describes the purpose of this package"
 
-    import other_package::other_type_t
+    import package_a::other_type_t
 
     local_type_t : other_type_t
 
@@ -43,10 +43,10 @@ package my_package {
 
     struct msb [SOME_STRUCT_W] sized_t {
         field_a : simple_type_t
-        field_b : signed scalar[2]
+        field_b : scalar[1]
         field_c : single_bit_t
         field_d : gray_enum_e
-        // field_e : other_type_t
+        field_e : other_type_t
     }
 
     union my_union_t {

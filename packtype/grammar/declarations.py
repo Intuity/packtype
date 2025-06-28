@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Type
 
+from packtype.alias import Alias
 from packtype.base import Base
 from packtype.grammar.expression import DeclExpr
 from packtype.constant import Constant
@@ -51,8 +52,15 @@ class DeclImport:
 @dataclass()
 class DeclAlias:
     position: Position
-    local: str
+    type: str
     foreign: str
+
+    def to_class(
+        self,
+        cb_rslv_const: Callable[[str, ], int],
+        cb_rslv_type: Callable[[str, ], Type[Base]],
+    ) -> Type[Alias]:
+        return Alias[cb_rslv_type(self.foreign)]
 
 
 @dataclass()

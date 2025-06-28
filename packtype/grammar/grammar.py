@@ -44,66 +44,79 @@ def create_parser():
     return parser
 
 
-def parse(path: Path) -> Package:
+def parse(path: Path, namespaces: dict[str, Package]) -> Package:
     # Parse the definition
     with path.open("r", encoding="utf-8") as fh:
         defn = PacktypeTransformer().transform(create_parser().parse(fh.read()))
     # Gather declarations
-    local_constants: dict[str, int] = {}
-    local_types: dict[str, Type[Base]] = {}
+    known_constants: dict[str, int] = {}
+    known_types: dict[str, Type[Base]] = {}
 
     def _rslv_const(name: str) -> int:
-        nonlocal local_constants
-        if name in local_constants:
-            return local_constants[name]
+        nonlocal known_constants
+        if name in known_constants:
+            return known_constants[name]
         raise ValueError(f"Failed to resolve '{name}' to a known constant")
 
     def _rslv_type(name: str) -> Type[Base]:
-        nonlocal local_types
-        if name in local_types:
-            return local_types[name]
+        nonlocal known_types
+        if name in known_types:
+            return known_types[name]
         raise ValueError(f"Failed to resolve '{name}' to a known type")
 
     # Create placeholder package
-    package = build_from_fields(Package, defn.name, {}, {})
+    package : Package = build_from_fields(Package, defn.name, {}, {})
 
     # Run through the declarations
     for decl in defn.declarations:
         match decl:
             # Imports
             case DeclImport():
-                print("TODO: Handle import")
+                # Resolve the package
+                if (foreign_pkg := namespaces.get(decl.package, None)) is None:
+                    raise ValueError(f"Unknown package '{decl.package}'")
+                # Resolve the type
+                if (foreign_type := getattr(foreign_pkg, decl.type, None)) is None:
+                    raise ValueError(f"Type '{decl.type}' not declared in package '{decl.package}'")
+                # Remember this type
+                known_types[decl.type] = foreign_type
             # Aliases
             case DeclAlias():
-                print("TODO: Handle alias")
+                package._pt_attach_named(
+                    decl.type,
+                    scalar := decl.to_class(_rslv_const, _rslv_type),
+                )
+                known_types[decl.type] = scalar
             # Build constants
             case DeclConstant():
                 package._pt_attach_constant(
                     decl.type,
                     constant := decl.to_instance(_rslv_const)
                 )
-                local_constants[decl.type] = int(constant)
-            # Build scalars
-            case DeclScalar():
-                package._pt_attach_scalar(
+                known_constants[decl.type] = int(constant)
+            # Build aliases and scalars
+            case DeclScalar() | DeclAlias():
+                package._pt_attach_named(
                     decl.type,
-                    scalar := decl.to_class(_rslv_const, _rslv_type),
+                    obj := decl.to_class(_rslv_const, _rslv_type),
                 )
-                local_types[decl.type] = scalar
+                known_types[decl.type] = obj
             # Build enums, structs, and unions
             case DeclEnum() | DeclStruct() | DeclUnion():
-                package._pt_attach_field(obj := decl.to_class(
+                package._pt_attach(obj := decl.to_class(
                     path,
                     _rslv_const,
                     _rslv_type,
                 ))
-                local_types[decl.type] = obj
+                known_types[decl.type] = obj
             case _:
                 raise Exception(f"Unhandled declaration: {decl}")
 
     return package
 
 EXAMPLE = Path(__file__).parent / "example.pt"
-package = parse(EXAMPLE)
+
+package_a = parse(Path(__file__).parent / "package_a.pt", {})
+package_b = parse(Path(__file__).parent / "package_b.pt", {"package_a": package_a})
 
 breakpoint()
