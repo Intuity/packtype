@@ -90,7 +90,7 @@ def parse(path: Path) -> Package:
                     scalar := decl.to_class(_rslv_const, _rslv_type),
                 )
                 local_types[decl.type] = scalar
-            # Build enums, structs, and unions (delayed association)
+            # Build enums, structs, and unions
             case DeclEnum() | DeclStruct() | DeclUnion():
                 package._pt_attach_field(obj := decl.to_class(_rslv_const, _rslv_type))
                 local_types[decl.type] = obj

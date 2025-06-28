@@ -21,6 +21,7 @@ from packtype.constant import Constant
 from packtype.scalar import Scalar
 from packtype.enum import Enum, EnumMode
 from packtype.struct import Struct
+from packtype.assembly import Packing
 from packtype.union import Union
 from packtype.wrap import build_from_fields
 
@@ -165,6 +166,7 @@ class DeclField:
 class DeclStruct:
     position: Position
     type: str
+    packing: Packing
     width: DeclExpr | None
     description: str
     fields: list[str]
@@ -191,7 +193,10 @@ class DeclStruct:
             Struct,
             self.type,
             fields=fields,
-            kwds={ "width": width, },
+            kwds={
+                "width": width,
+                "packing": self.packing,
+            },
             doc_str=self.description,
         )
 

@@ -90,10 +90,11 @@
 			}
 		},
 		{
-			"match": "\\b(struct)\\s+(?:\\[\\s*(\\w+)\\s*\\])?\\s*(\\w+)\\b",
+			"match": "\\b(struct)\\s+(msb|lsb)?\\s*(?:\\[\\s*(\\w+)\\s*\\])?\\s*(\\w+)\\b",
 			"captures": {
 				"1": { "name": "storage.type.packtype" },
-				"2": {
+				"2": { "name": "storage.modifier.packtype" },
+				"3": {
 					"patterns": [
 						{
 							"name": "constant.numeric.packtype",
@@ -105,7 +106,7 @@
 						}
 					]
 				},
-				"3": { "name": "entity.name.type.packtype" }
+				"4": { "name": "entity.name.type.packtype" }
 			}
 		},
 		{

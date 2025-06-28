@@ -41,7 +41,7 @@ package my_package {
         field_c : single_bit_t
     }
 
-    struct [SOME_STRUCT_W] sized_t {
+    struct msb [SOME_STRUCT_W] sized_t {
         field_a : simple_type_t
         field_b : signed scalar[2]
         field_c : single_bit_t

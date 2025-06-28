@@ -131,7 +131,13 @@ enum_mode_gray: "gray"
 field: name ":" name
      | decl_scalar
 
-decl_struct: "struct" width? name "{" descr? field* "}"
+decl_struct: "struct" packing_mode? width? name "{" descr? field* "}"
+
+?packing_mode: packing_mode_msb
+             | packing_mode_lsb
+
+packing_mode_msb: "msb"
+packing_mode_lsb: "lsb"
 
 // =============================================================================
 // Unions

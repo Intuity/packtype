@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from itertools import groupby
-
 from lark import Transformer, v_args
 
 from packtype.enum import EnumMode
+from packtype.assembly import Packing
 from packtype.grammar.expression import DeclExpr
 from packtype.grammar.declarations import (
     Signed,
@@ -62,6 +61,12 @@ class PacktypeTransformer(Transformer):
 
     def enum_mode_gray(self, *_):
         return EnumMode.GRAY
+
+    def packing_mode_lsb(self, *_):
+        return Packing.FROM_LSB
+
+    def packing_mode_msb(self, *_):
+        return Packing.FROM_MSB
 
     def CNAME(self, body):
         return str(body)
@@ -130,9 +135,15 @@ class PacktypeTransformer(Transformer):
 
     @v_args(meta=True)
     def decl_struct(self, meta, body):
+        remainder = body
+        # Extract packing mode if given
+        if isinstance(remainder[0], Packing):
+            packing, *remainder = remainder
+        else:
+            packing = Packing.FROM_LSB
         # Extract width if given
-        if isinstance(body[0], DeclExpr):
-            width, name, *remainder = body
+        if isinstance(remainder[0], DeclExpr):
+            width, name, *remainder = remainder
         else:
             width = None
             name, *remainder = body
@@ -142,7 +153,7 @@ class PacktypeTransformer(Transformer):
         else:
             description = None
             fields = remainder
-        return DeclStruct(Position(meta.line, meta.column), name, width, description, fields)
+        return DeclStruct(Position(meta.line, meta.column), name, packing, width, description, fields)
 
     @v_args(meta=True)
     def decl_union(self, meta, body):
