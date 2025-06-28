@@ -6,7 +6,7 @@ package my_package {
 
     local_type_t : other_type_t
 
-    SIZED_CONSTANT   : constant[8] = 0x83
+    SIZED_CONSTANT   : constant[8] = 4
     UNSIZED_CONSTANT : constant = 0x12345678
     CALCULATED       : constant = (SIZED_CONSTANT + UNSIZED_CONSTANT) / 4
 
@@ -14,14 +14,14 @@ package my_package {
     signed_type_t : signed scalar[SIZED_CONSTANT]
     single_bit_t  : scalar
 
-    SOME_ENUM_W : constant = 4
+    SOME_ENUM_W : constant = 2
 
-    enum onehot [SOME_ENUM_W] gray_enum_e {
+    enum gray [SOME_ENUM_W] gray_enum_e {
         "This enum is implicitly assigned with Gray code values"
         VALUE_A
         VALUE_B
-        VALUE_C
-        VALUE_D
+        VALUE_C : constant
+        VALUE_D : constant
     }
 
     enum indexed_enum_e {
@@ -46,12 +46,12 @@ package my_package {
         field_b : signed scalar[2]
         field_c : single_bit_t
         field_d : gray_enum_e
-        field_e : other_type_t
+        // field_e : other_type_t
     }
 
     union my_union_t {
         raw : scalar[SOME_STRUCT_W]
-        my_struct : my_struct_t
+        my_struct : sized_t
     }
 
 }

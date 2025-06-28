@@ -60,7 +60,7 @@ class Assembly(Base, Numeric):
 class PackedAssembly(Assembly):
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {
         "packing": (Packing.FROM_LSB, [Packing.FROM_LSB, Packing.FROM_MSB]),
-        "width": (-1, lambda x: int(x) > 0),
+        "width": (-1, lambda x: x is None or int(x) > 0),
     }
     _PT_PACKING: Packing
     _PT_WIDTH: int
@@ -152,12 +152,12 @@ class PackedAssembly(Assembly):
         return self.__str__()
 
     @classmethod
-    def _pt_construct(cls, parent: Base, packing: Packing, width: int):
+    def _pt_construct(cls, parent: Base, packing: Packing, width: int | None):
         cls._PT_PACKING = packing
-        cls._PT_WIDTH = int(width)
+        cls._PT_WIDTH = None if width is None else int(width)
         cls._PT_RANGES = {}
         # Check for oversized fields
-        if cls._PT_WIDTH < 0:
+        if cls._PT_WIDTH is None or cls._PT_WIDTH < 0:
             cls._PT_WIDTH = cls._pt_field_width()
         elif cls._PT_WIDTH < cls._pt_field_width():
             raise WidthError(

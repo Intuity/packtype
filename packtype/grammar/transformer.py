@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from itertools import groupby
+
 from lark import Transformer, v_args
 
 from packtype.enum import EnumMode
 from packtype.grammar.expression import DeclExpr
 from packtype.grammar.declarations import (
-    Signedness,
+    Signed,
+    Unsigned,
     Position,
     DeclImport,
     DeclAlias,
@@ -43,16 +46,13 @@ class PacktypeTransformer(Transformer):
         return str(body)
 
     def expr(self, body):
-        if len(body) == 3:
-            return DeclExpr.operate(*body)
-        else:
-            return DeclExpr(body[0])
+        return DeclExpr.digest(body)
 
     def signed(self, *_):
-        return Signedness.SIGNED
+        return Signed
 
     def unsigned(self, *_):
-        return Signedness.UNSIGNED
+        return Unsigned
 
     def enum_mode_indexed(self, *_):
         return EnumMode.INDEXED
@@ -93,17 +93,19 @@ class PacktypeTransformer(Transformer):
 
     @v_args(meta=True)
     def decl_enum(self, meta, body):
-        e_type, *remainder = body
+        remainder = body
         # Pickup mode if given
         if remainder and isinstance(remainder[0], EnumMode):
             mode, *remainder = remainder
         else:
             mode = EnumMode.INDEXED
         # Pickup width if given
-        if remainder and isinstance(remainder[0], int):
+        if remainder and isinstance(remainder[0], DeclExpr):
             width, *remainder = remainder
         else:
             width = None
+        # Pickup type
+        e_type, *remainder = remainder
         # Pickup description if given
         if remainder and isinstance(remainder[0], str):
             description, *remainder = remainder
@@ -115,21 +117,21 @@ class PacktypeTransformer(Transformer):
     def decl_scalar(self, meta, body):
         s_type, *remainder = body
         # Pickup signedness
-        if remainder and isinstance(remainder[0], Signedness):
+        if remainder and (remainder[0] is Signed or remainder[0] is Unsigned):
             signed, *remainder = remainder
         else:
-            signed = Signedness.UNSIGNED
+            signed = Unsigned
         # Pickup width
         if remainder:
             width = remainder[0]
         else:
-            width = 1
+            width = DeclExpr(1)
         return DeclScalar(Position(meta.line, meta.column), s_type, signed, width)
 
     @v_args(meta=True)
     def decl_struct(self, meta, body):
         # Extract width if given
-        if isinstance(body[0], int):
+        if isinstance(body[0], DeclExpr):
             width, name, *remainder = body
         else:
             width = None

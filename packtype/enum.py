@@ -36,7 +36,7 @@ class Enum(Base, Numeric):
     _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant]
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {
         "mode": (EnumMode.INDEXED, list(EnumMode)),
-        "width": (-1, lambda x: int(x) > 0),
+        "width": (-1, lambda x: x is None or int(x) > 0),
         "prefix": (None, lambda x: isinstance(x, str)),
     }
 
@@ -114,7 +114,7 @@ class Enum(Base, Numeric):
                     )
                 assignments[fname] = fval
         # Determine width
-        if cls._PT_WIDTH < 0:
+        if cls._PT_WIDTH is None or cls._PT_WIDTH < 0:
             cls._PT_WIDTH = math.ceil(math.log2(max(assignments.values()) + 1))
         # Final checks
         used = []

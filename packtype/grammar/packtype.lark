@@ -100,7 +100,7 @@ decl_scalar: name ":" (signed|unsigned)? "scalar"  width?
 //
 // =============================================================================
 
-decl_enum: "enum" enum_mode? width? name "{" enum_descr? enum_body* "}"
+decl_enum: "enum" enum_mode? width? name "{" descr? enum_body* "}"
 
 ?enum_mode: enum_mode_indexed
           | enum_mode_onehot
@@ -110,8 +110,11 @@ enum_mode_indexed: "indexed"
 enum_mode_onehot: "onehot"
 enum_mode_gray: "gray"
 
-enum_descr: ESCAPED_STRING
-?enum_body: name (":" "constant")? enum_assign?
+?enum_body: enum_body_simple
+          | enum_body_typed
+          | decl_constant
+?enum_body_simple: name
+?enum_body_typed: name ":" "constant"
 ?enum_assign: "=" expr
 
 // =============================================================================

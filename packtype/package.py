@@ -4,7 +4,7 @@
 
 import inspect
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, Type
 
 from .alias import Alias
 from .array import ArraySpec
@@ -29,48 +29,50 @@ class Package(Base):
         cls._PT_FIELDS = {}
         for fname, ftype, fval in cls._pt_definitions():
             if issubclass(ftype, Constant):
-                finst = ftype(default=fval)
-                setattr(cls, fname, finst)
-                finst._PT_ATTACHED_TO = cls
-                cls._PT_FIELDS[finst] = fname
+                cls._pt_attach_constant(ftype(default=fval))
             else:
-                setattr(cls, fname, ftype)
-                ftype._PT_ATTACHED_TO = cls
-                cls._PT_FIELDS[ftype] = fname
+                cls._pt_attach_scalar(ftype)
+
+    @classmethod
+    def _pt_attach_constant(cls, fname: str, finst: Constant) -> Constant:
+        setattr(cls, fname, finst)
+        finst._PT_ATTACHED_TO = cls
+        cls._PT_FIELDS[finst] = fname
+        return finst
+
+    @classmethod
+    def _pt_attach_scalar(cls, fname: str, ftype: Type[Scalar]) -> Type[Scalar]:
+        setattr(cls, fname, ftype)
+        ftype._PT_ATTACHED_TO = cls
+        cls._PT_FIELDS[ftype] = fname
+        return ftype
+
+    @classmethod
+    def _pt_attach_field(cls, field: Type[Base]) -> Base:
+        cls._PT_ATTACH.append(field)
+        field._PT_ATTACHED_TO = cls
+        setattr(cls, field.__name__, field)
+        cls._PT_FIELDS[field] = field.__name__
+        return field
 
     @classmethod
     def enum(cls, **kwds):
         def _inner(ptcls: Any):
-            enum = get_wrapper(Enum, frame_depth=2)(**kwds)(ptcls)
-            cls._PT_ATTACH.append(enum)
-            enum._PT_ATTACHED_TO = cls
-            setattr(cls, enum.__name__, enum)
-            cls._PT_FIELDS[enum] = enum.__name__
-            return enum
+            return cls._pt_attach_field(get_wrapper(Enum, frame_depth=2)(**kwds)(ptcls))
 
         return _inner
 
     @classmethod
     def struct(cls, **kwds):
         def _inner(ptcls: Any):
-            struct = get_wrapper(Struct, frame_depth=2)(**kwds)(ptcls)
-            cls._PT_ATTACH.append(struct)
-            struct._PT_ATTACHED_TO = cls
-            setattr(cls, struct.__name__, struct)
-            cls._PT_FIELDS[struct] = struct.__name__
-            return struct
+            return cls._pt_attach_field(get_wrapper(Struct, frame_depth=2)(**kwds)(ptcls))
 
         return _inner
 
     @classmethod
     def union(cls, **kwds):
         def _inner(ptcls: Any):
-            union = get_wrapper(Union, frame_depth=2)(**kwds)(ptcls)
-            cls._PT_ATTACH.append(union)
-            union._PT_ATTACHED_TO = cls
-            setattr(cls, union.__name__, union)
-            cls._PT_FIELDS[union] = union.__name__
-            return union
+            return cls._pt_attach_field(get_wrapper(Union, frame_depth=2)(**kwds)(ptcls))
 
         return _inner
 

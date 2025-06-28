@@ -17,6 +17,49 @@ from typing import Self, Callable
 
 class DeclExpr:
 
+    OP_ADD = "+"
+    OP_SUB = "-"
+    OP_MUL = "*"
+    OP_TRUEDIV ="/"
+    OP_FLOORDIV = "//"
+    OP_MOD = "%"
+    OP_POW = "**"
+    OP_LSHIFT = "<<"
+    OP_RSHIFT = ">>"
+    OP_AND = "&"
+    OP_XOR = "^"
+    OP_OR = "|"
+    OP_INV = "~"
+    OP_LT = "<"
+    OP_LE = "<="
+    OP_EQ = "=="
+    OP_NE = "!="
+    OP_GT = ">"
+    OP_GE = ">="
+
+    # Matched to: https://docs.python.org/3/reference/expressions.html#operator-precedence
+    OP_PRECEDENCE = [
+        OP_POW,
+        OP_INV,
+        OP_MUL,
+        OP_TRUEDIV,
+        OP_FLOORDIV,
+        OP_MOD,
+        OP_ADD,
+        OP_SUB,
+        OP_LSHIFT,
+        OP_RSHIFT,
+        OP_AND,
+        OP_XOR,
+        OP_OR,
+        OP_LT,
+        OP_LE,
+        OP_GT,
+        OP_GE,
+        OP_NE,
+        OP_EQ,
+    ]
+
     def __init__(
         self,
         lhs: str | int | float | Self = None,
@@ -58,7 +101,40 @@ class DeclExpr:
         if self.operator is None:
             return str(self.lhs)
         else:
-            return f"{self.lhs} {self.operator} {self.rhs}"
+            return f"({self.lhs}) {self.operator} ({self.rhs})"
+
+    @classmethod
+    def digest(cls, expr: list[str | int | float | Self]) -> Self:
+        """
+        Digest an expression based on operator precedence, and progressively
+        reduce it to a single DeclExpr instance. Note that this does not handle
+        brackets in the expression as this is expected to be handled by the
+        parser before this point.
+
+        :param expr: Expression as a list of strings (operators or variables),
+                     integers, floats, or DeclExpr instances.
+        :return: A single DeclExpr instance representing the expression.
+        """
+        # Take a copy so as not to mutate the original
+        expr = list(expr)
+        # Search for each operator in precedence order
+        for search_op in cls.OP_PRECEDENCE:
+            # If only a single term remains, break out early
+            if len(expr) == 1:
+                break
+            # Look for every position an operator could exist (every other term)
+            offset = 0
+            for op_pos in [x for x in range(1, len(expr), 2) if expr[x] == search_op]:
+                # Replace the term with a DeclExpr instance
+                *before, lhs = expr[:op_pos+offset]
+                rhs, *after = expr[op_pos+offset+1:]
+                expr = before + [cls.operate(lhs, search_op, rhs)] + after
+                offset -= 2
+        # Ensure that even a single term is returned as a DeclExpr instance
+        expr = expr[0]
+        if not isinstance(expr, cls):
+            expr = cls(lhs=expr)
+        return expr
 
     @classmethod
     def operate(
@@ -68,45 +144,43 @@ class DeclExpr:
         rhs: str | int | float | Self,
     ) -> Callable:
         match operator:
-            case "+":
+            case cls.OP_ADD:
                 return cls(lhs).__add__(rhs)
-            case "-":
+            case cls.OP_SUB:
                 return cls(lhs).__sub__(rhs)
-            case "*":
+            case cls.OP_MUL:
                 return cls(lhs).__mul__(rhs)
-            case "/":
+            case cls.OP_TRUEDIV:
                 return cls(lhs).__truediv__(rhs)
-            case "//":
+            case cls.OP_FLOORDIV:
                 return cls(lhs).__floordiv__(rhs)
-            case "%":
+            case cls.OP_MOD:
                 return cls(lhs).__mod__(rhs)
-            case "divmod":
-                return cls(lhs).__divmod__(rhs)
-            case "**":
+            case cls.OP_POW:
                 return cls(lhs).__pow__(rhs)
-            case "<<":
+            case cls.OP_LSHIFT:
                 return cls(lhs).__lshift__(rhs)
-            case ">>":
+            case cls.OP_RSHIFT:
                 return cls(lhs).__rshift__(rhs)
-            case "&":
+            case cls.OP_AND:
                 return cls(lhs).__and__(rhs)
-            case "^":
+            case cls.OP_XOR:
                 return cls(lhs).__xor__(rhs)
-            case "|":
+            case cls.OP_OR:
                 return cls(lhs).__or__(rhs)
-            case "~":
+            case cls.OP_INV:
                 return cls(lhs).__invert__(rhs)
-            case "<":
+            case cls.OP_LT:
                 return cls(lhs).__lt__(rhs)
-            case "<=":
+            case cls.OP_LE:
                 return cls(lhs).__le__(rhs)
-            case "==":
+            case cls.OP_EQ:
                 return cls(lhs).__eq__(rhs)
-            case "!=":
+            case cls.OP_NE:
                 return cls(lhs).__ne__(rhs)
-            case ">":
+            case cls.OP_GT:
                 return cls(lhs).__gt__(rhs)
-            case ">=":
+            case cls.OP_GE:
                 return cls(lhs).__ge__(rhs)
             case _:
                 raise ValueError(f"Operator '{operator}' is not supported by operate")
