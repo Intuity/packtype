@@ -16,4 +16,3 @@ python3 -m packtype --debug code package sv ${this_dir}/out datastructures.py
 
 # Invoke packtype to generate registers
 python3 -m packtype --debug code register sv ${this_dir}/out registers.py
-
