@@ -92,13 +92,16 @@ def parse(path: Path) -> Package:
                 local_types[decl.type] = scalar
             # Build enums, structs, and unions
             case DeclEnum() | DeclStruct() | DeclUnion():
-                package._pt_attach_field(obj := decl.to_class(_rslv_const, _rslv_type))
+                package._pt_attach_field(obj := decl.to_class(
+                    path,
+                    _rslv_const,
+                    _rslv_type,
+                ))
                 local_types[decl.type] = obj
             case _:
                 raise Exception(f"Unhandled declaration: {decl}")
 
     return package
-    breakpoint()
 
 EXAMPLE = Path(__file__).parent / "example.pt"
 package = parse(EXAMPLE)

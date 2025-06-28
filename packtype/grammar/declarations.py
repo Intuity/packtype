@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable, Type
 
 from packtype.base import Base
@@ -104,13 +105,10 @@ class DeclScalar:
         cb_rslv_const: Callable[[str, ], int],
         cb_rslv_type: Callable[[str, ], Type[Base]],
     ) -> Type[Scalar]:
-        try:
-            return Scalar[
-                self.resolve_width(cb_rslv_const),
-                (self.signedness is Signed),
-            ]
-        except:
-            breakpoint()
+        return Scalar[
+            self.resolve_width(cb_rslv_const),
+            (self.signedness is Signed),
+        ]
 
 
 @dataclass()
@@ -124,6 +122,7 @@ class DeclEnum:
 
     def to_class(
         self,
+        source_file: Path,
         cb_rslv_const: Callable[[str, ], int],
         cb_rslv_type: Callable[[str, ], Type[Base]],
     ) -> Type[Enum]:
@@ -152,6 +151,7 @@ class DeclEnum:
                 "width": width,
             },
             doc_str=self.description,
+            source=(source_file.as_posix(), self.position.line),
         )
 
 
@@ -173,6 +173,7 @@ class DeclStruct:
 
     def to_class(
         self,
+        source_file: Path,
         cb_rslv_const: Callable[[str, ], int],
         cb_rslv_type: Callable[[str, ], Type[Base]],
     ) -> Type[Struct]:
@@ -198,6 +199,7 @@ class DeclStruct:
                 "packing": self.packing,
             },
             doc_str=self.description,
+            source=(source_file.as_posix(), self.position.line),
         )
 
 
@@ -210,6 +212,7 @@ class DeclUnion:
 
     def to_class(
         self,
+        source_file: Path,
         cb_rslv_const: Callable[[str, ], int],
         cb_rslv_type: Callable[[str, ], Type[Base]],
     ) -> Type[Union]:
@@ -228,6 +231,7 @@ class DeclUnion:
             fields=fields,
             kwds={},
             doc_str=self.description,
+            source=(source_file.as_posix(), self.position.line),
         )
 
 

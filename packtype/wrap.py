@@ -56,6 +56,7 @@ def build_from_fields(
     doc_str: str | None = None,
     cls_funcs: dict[str, Callable[..., Any]] | None = None,
     parent: Any | None = None,
+    source: tuple[str, int] | None = None,
 ) -> Any:
     # Check fields
     for fname, (ftype, default) in fields.items():
@@ -106,10 +107,12 @@ def build_from_fields(
     for key, (default, _) in base._PT_ATTRIBUTES.items():
         if key not in attrs:
             attrs[key] = default
-    # Determine source
-    frame = inspect.currentframe()
-    for _ in range(frame_depth):
-        frame = frame.f_back
+    # If source not given, use the frame to determine it
+    if source is None:
+        frame = inspect.currentframe()
+        for _ in range(frame_depth):
+            frame = frame.f_back
+        source = (frame.f_code.co_filename, frame.f_lineno)
     # Create imposter class
     imposter = type(
         cname,
@@ -119,7 +122,7 @@ def build_from_fields(
             "_PT_DEF": fields,
             "_PT_ATTACH": [],
             "_PT_ATTRIBUTES": attrs,
-            "_PT_SOURCE": (frame.f_code.co_filename, frame.f_lineno),
+            "_PT_SOURCE": source,
             "_PT_BASE": base,
         },
     )
