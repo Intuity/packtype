@@ -16,16 +16,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Type
 
-from packtype.alias import Alias
-from packtype.base import Base
-from packtype.grammar.expression import DeclExpr
-from packtype.constant import Constant
-from packtype.scalar import Scalar
-from packtype.enum import Enum, EnumMode
-from packtype.struct import Struct
-from packtype.assembly import Packing
-from packtype.union import Union
-from packtype.wrap import build_from_fields
+from ..alias import Alias
+from ..base import Base
+from ..grammar.expression import DeclExpr
+from ..constant import Constant
+from ..scalar import Scalar
+from ..enum import Enum, EnumMode
+from ..struct import Struct
+from ..assembly import Packing
+from ..union import Union
+from ..wrap import build_from_fields
 
 
 class Signed:

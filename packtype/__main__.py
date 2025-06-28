@@ -17,7 +17,6 @@ import importlib.util
 import logging
 import traceback
 from pathlib import Path
-from types import SimpleNamespace
 
 import click
 from rich.logging import RichHandler
@@ -28,6 +27,7 @@ from .array import PackedArray
 from .assembly import Packing
 from .base import Base
 from .constant import Constant
+from .grammar import parse
 from .enum import Enum
 from .package import Package
 from .primitive import NumericPrimitive
@@ -79,38 +79,54 @@ def resolve_to_object(
     return resolved
 
 
-# Handle CLI
-@click.group()
-@click.option("--debug", flag_value=True, default=False, help="Enable debug messages")
-@click.argument("spec", type=str)
-@click.pass_context
-def main(ctx, debug: bool, spec: str):
-    """Renders packtype definitions into different forms"""
-    ctx.ensure_object(dict)
-    # Set log verbosity
-    if debug:
-        log.setLevel(logging.DEBUG)
-    # Does the spec look like a path?
-    if Path(spec).exists() and Path(spec).is_file():
-        spec = Path(spec)
-        log.debug(f"Importing specification as a file: {spec.absolute()}")
-        imp_spec = importlib.util.spec_from_file_location(spec.stem, spec.absolute())
-        imp_spec.loader.exec_module(importlib.util.module_from_spec(imp_spec))
-    # Otherwise, assume it is a module import
-    else:
-        log.debug(f"Importing specification as a module: {spec}")
-        importlib.import_module(spec)
+def load_specification(spec_files: list[str]):
+    # If multiple specifications are provided, check they all use .pt format
+    if len(spec_files) > 1:
+        if any(not x.lower().endswith((".pt", ".packtype", ".ptype")) for x in spec_files):
+            raise Exception(
+                "Multiple specifications provided, but not all are Packtype grammar"
+            )
+
+    # For each specification, parse and track
+    namespaces = {}
+    for item in spec_files:
+        # Packtype grammar files
+        if item.lower().endswith((".pt", ".packtype", ".ptype")):
+            package = parse(Path(item), namespaces)
+            namespaces[package.__name__] = package
+        # If it ends with `.py` assume it's Python
+        elif item.endswith(".py"):
+            item = Path(item)
+            log.debug(f"Importing specification as a file: {item.absolute()}")
+            imp_spec = importlib.util.spec_from_file_location(item.stem, item.absolute())
+            imp_spec.loader.exec_module(importlib.util.module_from_spec(imp_spec))
+        # Otherwise, assume it is a module import
+        else:
+            log.debug(f"Importing specification as a module: {item}")
+            importlib.import_module(item)
+
     # Query the registry for packages
     baseline = list(Registry.query(Package)) + list(Registry.query(File))
     log.debug(f"Discovered {len(baseline)} baseline definitions")
-    # Attach packages to context
-    ctx.obj["baseline"] = baseline
+
+    return baseline
+
+
+# Handle CLI
+@click.group()
+@click.option("--debug", flag_value=True, default=False, help="Enable debug messages")
+def main(debug: bool):
+    """Renders packtype definitions into different forms"""
+    # Set log verbosity
+    if debug:
+        log.setLevel(logging.DEBUG)
+
 
 
 @main.command()
-@click.pass_context
-def inspect(ctx):
-    baseline = SimpleNamespace(**{x.__name__: x for x in ctx.obj.get("baseline", [])})
+@click.argument("spec_files", type=str, nargs=-1)
+def inspect(spec_files: list[str]):
+    baseline = load_specification(spec_files)
     log.warning("Use the 'baseline' namespace to inspect Packtype definitions")
     breakpoint()
     del baseline
@@ -118,20 +134,18 @@ def inspect(ctx):
 
 @main.command()
 @click.argument("selection", type=str)
-@click.argument(
-    "output",
-    type=click.Path(dir_okay=False, path_type=Path),
-    default=None,
-    required=False,
+@click.option(
+    "-o", "--output", type=click.Path(dir_okay=False, path_type=Path), default=None, required=False,
+    help="Output file to write the SVG to. If not provided, prints to stdout."
 )
-@click.pass_context
-def svg(ctx, selection: str, output: Path | None):
+@click.argument("spec_files", type=str, nargs=-1)
+def svg(selection: str, output: Path | None, spec_files: list[str]):
     # Deferred imports for optional libraries
     from .svg.render import ElementStyle, SvgConfig, SvgField, SvgRender
 
     # Resolve selection to a struct or union
     resolved = resolve_to_object(
-        ctx.obj.get("baseline", []),
+        load_specification(spec_files),
         *selection.split("."),
         acceptable=(Struct, Union),
     )
@@ -183,15 +197,29 @@ def svg(ctx, selection: str, output: Path | None):
 @click.option(
     "-o", "--option", type=str, multiple=True, help="Options in the form <KEY>=<VALUE>",
 )
+@click.option(
+    "-s", "--select", type=str, multiple=True, help="Select objects to render",
+)
 @click.argument(
     "mode", type=click.Choice(("package", "register"), case_sensitive=False)
 )
-@click.argument("language", type=click.Choice(("sv","py","cpp"), case_sensitive=False))
+@click.argument(
+    "language", type=click.Choice(("sv","py","cpp"), case_sensitive=False), required=True,
+)
 @click.argument("outdir", type=click.Path(file_okay=False, path_type=Path))
-@click.argument("selection", type=str, nargs=-1)
-@click.pass_context
-def code(ctx, option: list[str], mode: str, language: str, outdir: Path, selection: list[str]):
+@click.argument("spec_files", type=str, nargs=-1)
+def code(
+    option: list[str],
+    select: list[str],
+    mode: str,
+    language: str,
+    outdir: Path,
+    spec_files: list[str],
+):
     """Render Packtype package definitions using a language template"""
+
+    # Load the baseline
+    resolved = load_specification(spec_files)
 
     # Deferred imports for optional libraries
     from mako import exceptions
@@ -205,11 +233,11 @@ def code(ctx, option: list[str], mode: str, language: str, outdir: Path, selecti
             raise Exception(f"Incorrect number of = in '{opt_str}'")
         key, value = opt_str.split("=")
         options[key.strip().lower()] = ast.literal_eval(value.strip())
-    # Resolve selection to a struct or union
-    resolved = ctx.obj.get("baseline", [])
-    if selection:
+
+    # Resolve selections
+    if select:
         all_resolved = []
-        for str_path in selection:
+        for str_path in select:
             all_resolved.append(
                 resolve_to_object(
                     resolved,
@@ -218,9 +246,11 @@ def code(ctx, option: list[str], mode: str, language: str, outdir: Path, selecti
                 )
             )
         resolved = all_resolved
-    # Detect missing selection
+
+    # Detect missing select
     if not resolved:
         raise Exception("Failed to resolve any objects to render")
+
     # Filter out non-matching types
     tmpl_list = None
     match mode.lower():
@@ -243,9 +273,11 @@ def code(ctx, option: list[str], mode: str, language: str, outdir: Path, selecti
             }
         case _:
             raise Exception(f"{mode} mode is not supported")
+
     # Create output directory if it doesn't already exist
     outdir.mkdir(parents=True, exist_ok=True)
     log.debug(f"Using output directory: {outdir.absolute()}")
+
     # Render
     tmpl_dir = Path(__file__).absolute().parent / "templates"
     lookup = TemplateLookup(
@@ -272,6 +304,7 @@ def code(ctx, option: list[str], mode: str, language: str, outdir: Path, selecti
         Behaviour,
     ):
         context[cls.__name__] = cls
+
     # Iterate baselines to render
     for baseline_cls in resolved:
         base_name = baseline_cls.__name__

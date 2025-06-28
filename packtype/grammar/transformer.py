@@ -14,10 +14,10 @@
 
 from lark import Transformer, v_args
 
-from packtype.enum import EnumMode
-from packtype.assembly import Packing
-from packtype.grammar.expression import DeclExpr
-from packtype.grammar.declarations import (
+from ..enum import EnumMode
+from ..assembly import Packing
+from .expression import DeclExpr
+from .declarations import (
     Signed,
     Unsigned,
     Position,

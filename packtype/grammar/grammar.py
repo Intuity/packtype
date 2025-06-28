@@ -18,11 +18,7 @@ from typing import Type
 
 from lark import Lark
 
-from packtype.grammar.transformer import PacktypeTransformer
-from packtype import Package
-from packtype.base import Base
-from packtype.wrap import build_from_fields
-from packtype.grammar.declarations import (
+from .declarations import (
     DeclImport,
     DeclAlias,
     DeclConstant,
@@ -31,6 +27,10 @@ from packtype.grammar.declarations import (
     DeclStruct,
     DeclUnion,
 )
+from .transformer import PacktypeTransformer
+from ..package import Package
+from ..base import Base
+from ..wrap import build_from_fields
 
 
 @functools.cache
@@ -64,7 +64,7 @@ def parse(path: Path, namespaces: dict[str, Package]) -> Package:
             return known_types[name]
         raise ValueError(f"Failed to resolve '{name}' to a known type")
 
-    # Create placeholder package
+    # Create the package
     package : Package = build_from_fields(Package, defn.name, {}, {})
 
     # Run through the declarations
@@ -113,10 +113,3 @@ def parse(path: Path, namespaces: dict[str, Package]) -> Package:
                 raise Exception(f"Unhandled declaration: {decl}")
 
     return package
-
-EXAMPLE = Path(__file__).parent / "example.pt"
-
-package_a = parse(Path(__file__).parent / "package_a.pt", {})
-package_b = parse(Path(__file__).parent / "package_b.pt", {"package_a": package_a})
-
-breakpoint()
