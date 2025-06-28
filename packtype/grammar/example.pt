@@ -16,12 +16,20 @@ package my_package {
 
     SOME_ENUM_W : constant = 4
 
-    enum onehot [SOME_ENUM_W] some_enum_e {
+    enum onehot [SOME_ENUM_W] gray_enum_e {
         "This enum does something!"
         VALUE_A
         VALUE_B
         VALUE_C
         VALUE_D
+    }
+
+    enum indexed_enum_e {
+        "This enum does something!"
+        VALUE_A : constant = 1
+        VALUE_B : constant = 2
+        VALUE_C : constant = 3
+        VALUE_D : constant = 4
     }
 
     SOME_STRUCT_W : constant = 8 + 1 + SOME_ENUM_W + 1
@@ -37,7 +45,7 @@ package my_package {
         field_a : simple_type_t
         field_b : signed scalar[2]
         field_c : single_bit_t
-        field_d : some_enum_e
+        field_d : gray_enum_e
         field_e : other_type_t
     }
 
