@@ -82,9 +82,9 @@ def parse(path: Path, namespaces: dict[str, Package]) -> Package:
                 known_types[decl.type] = foreign_type
             # Aliases
             case DeclAlias():
-                package._pt_attach_named(
-                    decl.type,
+                package._pt_attach(
                     scalar := decl.to_class(_rslv_const, _rslv_type),
+                    name=decl.type,
                 )
                 known_types[decl.type] = scalar
             # Build constants
@@ -96,9 +96,9 @@ def parse(path: Path, namespaces: dict[str, Package]) -> Package:
                 known_constants[decl.type] = int(constant)
             # Build aliases and scalars
             case DeclScalar() | DeclAlias():
-                package._pt_attach_named(
-                    decl.type,
+                package._pt_attach(
                     obj := decl.to_class(_rslv_const, _rslv_type),
+                    name=decl.type,
                 )
                 known_types[decl.type] = obj
             # Build enums, structs, and unions

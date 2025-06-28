@@ -34,3 +34,11 @@ class MetaAlias(type):
 
 class Alias(metaclass=MetaAlias):
     _PT_ALIAS: Any | None = None
+
+    @classmethod
+    def _pt_name(cls) -> str:
+        breakpoint()
+        if cls._PT_ATTACHED_TO is not None:
+            return cls._PT_ATTACHED_TO._pt_lookup(cls)
+        else:
+            return cls._PT_ALIAS._pt_name()

@@ -108,7 +108,7 @@ typedef struct packed {
 %>\
             %if isinstance(field, Scalar):
                 %if field._PT_ATTACHED_TO:
-<%                  refers_to = field._PT_ATTACHED_TO._pt_lookup(type(field)) %>\
+<%                  refers_to = field._pt_name() %>\
     ${refers_to | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
                 %else:
 <%                  sign_sfx = " signed" if field._pt_signed else "" %>\
@@ -133,7 +133,7 @@ typedef union packed {
 %>\
             %if isinstance(field, Scalar):
                 %if field._PT_ATTACHED_TO:
-<%                  refers_to = field._PT_ATTACHED_TO._pt_lookup(type(field)) %>\
+<%                  refers_to = field._pt_name() %>\
     ${refers_to | tc.snake_case}_t ${fname | tc.snake_case};
                 %else:
 <%                  sign_sfx = " signed" if field._pt_signed else "" %>\

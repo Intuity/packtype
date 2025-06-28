@@ -29,9 +29,9 @@ class Package(Base):
         cls._PT_FIELDS = {}
         for fname, ftype, fval in cls._pt_definitions():
             if issubclass(ftype, Constant):
-                cls._pt_attach_constant(ftype(default=fval))
+                cls._pt_attach_constant(fname, ftype(default=fval))
             else:
-                cls._pt_attach_named(fname, ftype)
+                cls._pt_attach(ftype, name=fname)
 
     @classmethod
     def _pt_attach_constant(cls, fname: str, finst: Constant) -> Constant:
@@ -41,18 +41,11 @@ class Package(Base):
         return finst
 
     @classmethod
-    def _pt_attach_named(cls, fname: str, ftype: Type[Base]) -> Type[Scalar]:
-        setattr(cls, fname, ftype)
-        ftype._PT_ATTACHED_TO = cls
-        cls._PT_FIELDS[ftype] = fname
-        return ftype
-
-    @classmethod
-    def _pt_attach(cls, field: Type[Base]) -> Base:
+    def _pt_attach(cls, field: Type[Base], name: str | None = None) -> Base:
         cls._PT_ATTACH.append(field)
         field._PT_ATTACHED_TO = cls
-        setattr(cls, field.__name__, field)
-        cls._PT_FIELDS[field] = field.__name__
+        setattr(cls, name or field.__name__, field)
+        cls._PT_FIELDS[field] = name or field.__name__
         return field
 
     @classmethod
