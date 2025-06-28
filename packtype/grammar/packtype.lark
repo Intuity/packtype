@@ -111,7 +111,7 @@ enum_mode_onehot: "onehot"
 enum_mode_gray: "gray"
 
 enum_descr: ESCAPED_STRING
-?enum_body: name (":" "Constant")? enum_assign?
+?enum_body: name (":" "constant")? enum_assign?
 ?enum_assign: "=" expr
 
 // =============================================================================

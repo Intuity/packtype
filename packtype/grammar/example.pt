@@ -17,7 +17,7 @@ package my_package {
     SOME_ENUM_W : constant = 4
 
     enum onehot [SOME_ENUM_W] gray_enum_e {
-        "This enum does something!"
+        "This enum is implicitly assigned with Gray code values"
         VALUE_A
         VALUE_B
         VALUE_C
@@ -25,11 +25,11 @@ package my_package {
     }
 
     enum indexed_enum_e {
-        "This enum does something!"
-        VALUE_A : constant = 1
-        VALUE_B : constant = 2
-        VALUE_C : constant = 3
-        VALUE_D : constant = 4
+        "This enum is explicitly assigned with values"
+        VALUE_A : constant = 0
+        VALUE_B : constant = 1
+        VALUE_C : constant = 2
+        VALUE_D : constant = 3
     }
 
     SOME_STRUCT_W : constant = 8 + 1 + SOME_ENUM_W + 1
