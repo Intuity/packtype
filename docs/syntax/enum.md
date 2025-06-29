@@ -6,7 +6,7 @@ or inferred from the largest value encoded within it.
 
 ## Example
 
-The packtpe definition:
+The packtype definition:
 
 ```python linenums="1"
 import packtype
