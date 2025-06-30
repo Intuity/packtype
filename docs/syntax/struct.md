@@ -1,6 +1,6 @@
 Structs are defined using the `@<PACKAGE>.struct()` decorator, which processes
 the definition and attaches it to the [package](package.md). Fields of a struct
-may be declared as [scalars](scalar.md) or reference other [enums](enum.md),
+may be declared as [scalars](scalar.md) or reference [enums](enum.md), other
 structs, or [unions](union.md).
 
 ## Example
