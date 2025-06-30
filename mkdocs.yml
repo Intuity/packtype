@@ -1,0 +1,42 @@
+site_name: Packtype
+repo_name: intuity/packtype
+repo_url: https://github.com/intuity/packtype
+theme:
+  name: material
+  # logo: assets/logo.svg
+  palette:
+    scheme: slate
+    primary: blue grey
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: sphinx
+markdown_extensions:
+  - attr_list
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+nav:
+  - Packtype: index.md
+  - Syntax:
+    - Alias: syntax/alias.md
+    - Constants: syntax/constant.md
+    - Enumerations: syntax/enum.md
+    - Packages: syntax/package.md
+    - Scalars: syntax/scalar.md
+    - Structs: syntax/struct.md
+    - Unions: syntax/union.md

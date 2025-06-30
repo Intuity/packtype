@@ -4,15 +4,6 @@
 
 Packtype is a Python framework for describing packed data structures for use in low-level hardware design, verification, and firmware development. From this single specification, equivalent implementations for different languages can be generated (for example SystemVerilog).
 
-The support matrix below shows the current support:
-
-| Language      | Constants | Enums | Structs | Unions | Packages |
-|---------------|:---------:|:-----:|:-------:|:------:|:--------:|
-| Python        | Yes       | Yes   | Yes     | Yes    | Yes      |
-| SystemVerilog | Yes       | Yes   | Yes     | Yes    | Yes      |
-
-**NOTE** Support for C and C++ is currently missing from version 2, but was present in version 1 - this regression will be addressed in a future revision.
-
 ## Installation
 
 The easiest way to install Packtype is to use PyPI:
@@ -24,7 +15,7 @@ $> python3 -m pip install packtype
 Alternatively, you can install the latest version directly from this repository:
 
 ```
-$> python3 -m pip install git+git://github.com/Intuity/packtype
+$> python3 -m pip install git+https://github.com/Intuity/packtype
 ```
 
 ## Using Packtype

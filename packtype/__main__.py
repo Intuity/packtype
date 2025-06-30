@@ -36,6 +36,7 @@ from .scalar import Scalar
 from .struct import Struct
 from .union import Union
 from .wrap import Registry
+from . import utils
 
 # Setup logging
 logging.basicConfig(
@@ -256,7 +257,7 @@ def code(ctx, option: list[str], mode: str, language: str, outdir: Path, selecti
             "import packtype.templates.common as tc",
         ],
     )
-    context = {"options": options}
+    context = {"options": options, "utils": utils}
     for cls in (
         Alias,
         Constant,

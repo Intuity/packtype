@@ -33,6 +33,14 @@ cocotb = "^1.9.1"
 forastero = "^1.0"
 forastero-io = { git = "https://github.com/VyperCore/forastero-io.git" }
 
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.6.1"
+mkdocs-material = "^9.6.9"
+mkdocstrings = {extras = ["python"], version = "^0.29.0"}
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 testpaths = ["tests"]
