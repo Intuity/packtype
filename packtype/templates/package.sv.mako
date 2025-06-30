@@ -112,7 +112,7 @@ typedef struct packed {
     ${refers_to | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
                 %else:
 <%                  sign_sfx = " signed" if field._pt_signed else "" %>\
-    logic${sign_sfx}${array_sfx}${f" [{width(field)}:0]" if utils.width(field) > 1 else ""} ${fname | tc.snake_case};
+    logic${sign_sfx}${array_sfx}${f" [{utils.width(field)}:0]" if utils.width(field) > 1 else ""} ${fname | tc.snake_case};
                 %endif
             %elif isinstance(field, Alias | Enum | Struct | Union):
     ${field._pt_name() | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
@@ -137,7 +137,7 @@ typedef union packed {
     ${refers_to | tc.snake_case}_t ${fname | tc.snake_case};
                 %else:
 <%                  sign_sfx = " signed" if field._pt_signed else "" %>\
-    logic${sign_sfx}${f" [{width(field)}:0]" if utils.width(field) > 1 else ""} ${fname | tc.snake_case};
+    logic${sign_sfx}${f" [{utils.width(field)}:0]" if utils.width(field) > 1 else ""} ${fname | tc.snake_case};
                 %endif
             %elif isinstance(field, Enum | Struct | Alias | Union):
     ${field._pt_name() | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
