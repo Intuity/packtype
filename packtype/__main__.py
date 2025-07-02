@@ -3,6 +3,7 @@
 #
 
 import ast
+import functools
 import importlib.util
 import logging
 import traceback
@@ -22,6 +23,7 @@ from .enum import Enum
 from .package import Package
 from .primitive import NumericPrimitive
 from .registers import Behaviour, File, Register
+from .templates.common import snake_case, camel_case
 from .scalar import Scalar
 from .struct import Struct
 from .union import Union
@@ -190,6 +192,20 @@ def svg(selection: str, output: Path | None, spec_files: list[str]):
 @click.option(
     "-s", "--select", type=str, multiple=True, help="Select objects to render",
 )
+@click.option(
+    "--constant-filter",
+    multiple=True,
+    type=click.Choice(("snake", "camel", "upper", "lower", "suffix"), case_sensitive=False),
+    default=["snake", "upper"],
+    help="Select filters to apply to type names",
+)
+@click.option(
+    "--type-filter",
+    multiple=True,
+    type=click.Choice(("snake", "camel", "upper", "lower", "suffix"), case_sensitive=False),
+    default=["snake", "lower", "suffix"],
+    help="Select filters to apply to type names",
+)
 @click.argument(
     "mode", type=click.Choice(("package", "register"), case_sensitive=False)
 )
@@ -201,6 +217,8 @@ def svg(selection: str, output: Path | None, spec_files: list[str]):
 def code(
     option: list[str],
     select: list[str],
+    constant_filter: list[str],
+    type_filter: list[str],
     mode: str,
     language: str,
     outdir: Path,
@@ -236,6 +254,30 @@ def code(
                 )
             )
         resolved = all_resolved
+
+    # Resolve constant and type filters
+    all_filters = {
+        "snake": snake_case,
+        "camel": camel_case,
+        "upper": lambda x: x.upper(),
+        "lower": lambda x: x.lower(),
+    }
+
+    type_filters = {**all_filters, "suffix": lambda x: f"{x}_t"}
+
+    cmpd_constant = functools.reduce(
+        lambda f, g: lambda x: f(g(x)),
+        [all_filters[x] for x in constant_filter][::-1],
+        lambda x: x,
+    )
+
+    cmpd_type = functools.reduce(
+        lambda f, g: lambda x: f(g(x)),
+        [type_filters[x] for x in type_filter][::-1],
+        lambda x: x,
+    )
+
+    breakpoint()
 
     # Detect missing select
     if not resolved:
