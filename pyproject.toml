@@ -19,7 +19,6 @@ typing-extensions = "^4.8.0"
 svg-py = "^1.4.3"
 ordered-set = "^4.1.0"
 lark = "^1.2.2"
-case-converter = "^1.2.0"
 
 [tool.poetry.group.dev]
 optional = true
