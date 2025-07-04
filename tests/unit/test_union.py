@@ -161,7 +161,7 @@ def test_union_bad_widths():
             b: Scalar[11]
 
     assert str(e.value) == (
-        "Union member b has a width of 11 that differs from the expected width " "of 12"
+        "Union member b has a width of 11 that differs from the expected width of 12"
     )
 
 

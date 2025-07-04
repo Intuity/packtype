@@ -1,16 +1,6 @@
 # Copyright 2023-2025, Peter Birch, mailto:peter@intuity.io
+# SPDX-License-Identifier: Apache-2.0
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 import enum
 import math
@@ -36,7 +26,7 @@ class Enum(Base, Numeric):
     _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant]
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {
         "mode": (EnumMode.INDEXED, list(EnumMode)),
-        "width": (-1, lambda x: int(x) > 0),
+        "width": (-1, lambda x: x is None or int(x) > 0),
         "prefix": (None, lambda x: isinstance(x, str)),
     }
 
@@ -96,9 +86,7 @@ class Enum(Base, Numeric):
                 if fval is None:
                     fval = next_val
                 if (math.log2(fval) % 1) != 0:
-                    raise EnumError(
-                        f"Enum entry {fname} has value {fval} that is not " f"one-hot"
-                    )
+                    raise EnumError(f"Enum entry {fname} has value {fval} that is not one-hot")
                 next_val = fval << 1
                 assignments[fname] = fval
         # Gray code
@@ -114,7 +102,7 @@ class Enum(Base, Numeric):
                     )
                 assignments[fname] = fval
         # Determine width
-        if cls._PT_WIDTH < 0:
+        if cls._PT_WIDTH is None or cls._PT_WIDTH < 0:
             cls._PT_WIDTH = math.ceil(math.log2(max(assignments.values()) + 1))
         # Final checks
         used = []

@@ -33,7 +33,7 @@ class BitVector:
     def __int__(self) -> int:
         return self.__value
 
-    @functools.lru_cache
+    @functools.lru_cache  # noqa: B019
     def create_window(self, msb: int, lsb: int) -> "BitVectorWindow":
         """
         Create a window into a section of the bit vector that can be used to
@@ -44,9 +44,9 @@ class BitVector:
         :param lsb: LSB of the window
         :returns:   A BitVectorWindow matching the request
         """
-        assert (
-            self.__width is None or msb < self.__width
-        ), f"MSB of {msb} exceeds width {self.__width}"
+        assert self.__width is None or msb < self.__width, (
+            f"MSB of {msb} exceeds width {self.__width}"
+        )
         assert lsb >= 0, f"LSB of {lsb} is not supported"
         return BitVectorWindow(self, msb, lsb)
 
@@ -71,7 +71,11 @@ class BitVector:
         # Coerce the value to an integer
         value = int(value)
         # Check the value is within the bounds of the bit vector
-        if self.__width is not None and self.__width >= 0 and (value < 0 or value > (1 << self.__width)):
+        if (
+            self.__width is not None
+            and self.__width >= 0
+            and (value < 0 or value > (1 << self.__width))
+        ):
             raise ValueError(
                 f"{value} is out of {self.__width} bit range (0 to {(1 << self.__width) - 1})"
             )
@@ -83,7 +87,7 @@ class BitVector:
             # If width is not set, attempt to infer it
             width = self.__width
             if width is None:
-                width = int(ceil(log2(max(value, self.__value))))
+                width = ceil(log2(max(value, self.__value)))
             # Default LSB/MSB
             lsb = lsb if lsb is not None else 0
             msb = msb if msb is not None else (width - 1)

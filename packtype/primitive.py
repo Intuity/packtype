@@ -52,9 +52,7 @@ class NumericPrimitive(Base, Numeric, metaclass=MetaPrimitive):
         super().__init__(_pt_bv=_pt_bv, default=default)
 
     @classmethod
-    def _pt_meta_key(
-        cls, key: int | tuple[int, bool]
-    ) -> tuple[tuple[str], dict[str, Any]]:
+    def _pt_meta_key(cls, key: int | tuple[int, bool]) -> tuple[tuple[str], dict[str, Any]]:
         if isinstance(key, int) or hasattr(key, "__int__"):
             key = int(key)
             return ((str(key),), {"_PT_WIDTH": key})
@@ -64,7 +62,8 @@ class NumericPrimitive(Base, Numeric, metaclass=MetaPrimitive):
             and (isinstance(key[1], bool) or hasattr(key[1], "__bool__"))
         ):
             width, signed = int(key[0]), bool(key[1])
-            return ((str(key),), {"_PT_WIDTH": width, "_PT_SIGNED": signed})
+            key = f"{width}{'S' if signed else 'U'}"
+            return ((key,), {"_PT_WIDTH": width, "_PT_SIGNED": signed})
         else:
             raise Exception(f"Unsupported NumericPrimitive key: {key}")
 

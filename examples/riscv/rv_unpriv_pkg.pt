@@ -1,0 +1,275 @@
+// Copyright 2023-2025, Peter Birch, mailto:peter@intuity.io
+// SPDX-License-Identifier: Apache-2.0
+//
+
+package rv_unpriv_pkg {
+    "RISC-V Unprivileged ISA definitions"
+
+    // === Constants ===
+
+    // Compressed instruction width
+    C_INSTR_W : constant = 16
+    // Width of 5-bit immediate field
+    IMM5_W : constant = 5
+    // Width of 7-bit immediate field
+    IMM7_W : constant = 7
+    // Width of 12-bit immediate field
+    IMM12_W : constant = 12
+    // Width of 20-bit immediate field
+    IMM20_W : constant = 20
+    // Complete instruction width
+    INSTR_W : constant = 32
+    // Width of funct3 specifier
+    F3_W : constant = 3
+    // Width of funct7 specifier
+    F7_W : constant = 7
+    // Width of opcode specifier
+    OPCODE_W : constant = 7
+    // Width of Quad specifier
+    QUAD_W : constant = 2
+    // Width of register selector fields
+    REGSEL_W : constant = 5
+    // Register width definition
+    XLEN : constant = 64
+    // Shift amount width (based on XLEN)
+    SHAMT_W : constant = clog2(XLEN)
+
+    // === Simple Typedefs ===
+
+    // Register selector
+    regsel_t : scalar[REGSEL_W]
+    // Shift amount
+    shamt_t : scalar[SHAMT_W]
+
+    // =========================================================================
+    // Opcode Enumeration
+    // =========================================================================
+
+    enum [OPCODE_W] opcode_t {
+        // Load upper immediate
+        LUI    : constant = 0b0110111
+        // Add unsigned immediate to PC
+        AUIPC  : constant = 0b0010111
+        // Jump-and-link using immediate offset
+        JAL    : constant = 0b1101111
+        // Jump-and-link using address from register
+        JALR   : constant = 0b1100111
+        // Conditional relative branch
+        BRANCH : constant = 0b1100011
+        // Signed/unsigned load operations for doubleword, word, halfword, byte
+        LOAD   : constant = 0b0000011
+        // Store operations for doubleword, word, halfword, byte
+        STORE  : constant = 0b0100011
+        // Register-immediate arithmetic
+        ALU_I  : constant = 0b0010011
+        // Register-register aritmethic
+        ALU_R  : constant = 0b0110011
+        // Fence/control type operations
+        FENCE  : constant = 0b0001111
+        // System calls
+        ECALL  : constant = 0b1110011
+    }
+
+    enum [QUAD_W] quad_t {
+        Q0 : constant = 0b00
+        Q1 : constant = 0b01
+        Q2 : constant = 0b10
+        Q3 : constant = 0b11
+    }
+
+    // =========================================================================
+    // Funct3
+    // =========================================================================
+
+    enum [F3_W] f3_branch_t {
+        "Funct3 encodings of branch conditions"
+        EQ  : constant = 0b000
+        NE  : constant = 0b001
+        LT  : constant = 0b100
+        GE  : constant = 0b101
+        LTU : constant = 0b110
+        GEU : constant = 0b111
+    }
+
+    enum [F3_W] f3_atom_t {
+        "Funct3 encodings of load/store atom size"
+        // Byte
+        B  : constant = 0b000
+        // Half-word (two bytes)
+        H  : constant = 0b001
+        // Word (four bytes)
+        W  : constant = 0b010
+        // Doubleword (eight bytes)
+        D  : constant = 0b011
+        // Byte unsigned
+        BU : constant = 0b100
+        // Half-word (two bytes) unsigned
+        HU : constant = 0b101
+        // Word (four bytes) unsigned
+        WU : constant = 0b110
+    }
+
+    enum [F3_W] f3_arith_t {
+        "Funct3 encodings of arithmetic/logical operations"
+        ADD_SUB : constant = 0b000
+        SLL     : constant = 0b001
+        SLT     : constant = 0b010
+        SLTU    : constant = 0b011
+        XOR     : constant = 0b100
+        SRL_SRA : constant = 0b101
+        OR      : constant = 0b110
+        AND     : constant = 0b111
+    }
+
+    union f3_t {
+        "Funct3 encoding union"
+        branch : f3_branch_t
+        atom   : f3_atom_t
+        arith  : f3_arith_t
+    }
+
+    // =========================================================================
+    // Funct7
+    // =========================================================================
+
+    enum [F7_W] f7_arith_t {
+        "Funct7 encoding for arithmetic/logical operations"
+        NORMAL  : constant = 0b0000000
+        SUB_SRA : constant = 0b0100000
+    }
+
+    union f7_t {
+        "Funct7 encoding union"
+        arith : f7_arith_t
+    }
+
+    // =========================================================================
+    // Immediate Encodings
+    // =========================================================================
+
+    struct [IMM5_W] imm5s_t {
+        imm_4_0 : scalar[5]
+    }
+
+    struct [IMM5_W] imm5b_t {
+        imm_11  : scalar[1]
+        imm_4_1 : scalar[4]
+    }
+
+    union imm5_t {
+        s : imm5s_t
+        b : imm5b_t
+    }
+
+    struct [IMM7_W] imm7s_t {
+        imm_11_5 : scalar[7]
+    }
+
+    struct [IMM7_W] imm7b_t {
+        imm_10_5 : scalar[6]
+        imm_12   : scalar[1]
+    }
+
+    union imm7_t {
+        s : imm7s_t
+        b : imm7b_t
+    }
+
+    struct [IMM12_W] imm12i_t {
+        imm_11_0 : scalar[12]
+    }
+
+    struct [IMM12_W] imm12shift_t {
+        shamt : shamt_t
+    }
+
+    union imm12_t {
+        i     : imm12i_t
+        shift : imm12shift_t
+    }
+
+    struct [IMM20_W] imm20u_t {
+        imm_31_12 : scalar[20]
+    }
+
+    struct [IMM20_W] imm20j_t {
+        imm_19_12 : scalar[8]
+        imm_11    : scalar[1]
+        imm_10_1  : scalar[10]
+        imm_20    : scalar[1]
+    }
+
+    union imm20_t {
+        u : imm20u_t
+        j : imm20j_t
+    }
+
+    // =========================================================================
+    // Encoding Formats
+    // =========================================================================
+
+    struct [C_INSTR_W] c_t {
+        quad : quad_t
+    }
+
+    struct [INSTR_W] padded_c_t {
+        c : c_t
+    }
+
+    struct [INSTR_W] r_t {
+        opcode : opcode_t
+        rd     : regsel_t
+        f3     : f3_t
+        rs1    : regsel_t
+        rs2    : regsel_t
+        f7     : f7_t
+    }
+
+    struct [INSTR_W] i_t {
+        opcode : opcode_t
+        rd     : regsel_t
+        f3     : f3_t
+        rs1    : regsel_t
+        imm12  : imm12_t
+    }
+
+    struct [INSTR_W] s_t {
+        opcode : opcode_t
+        imm5   : imm5_t
+        f3     : f3_t
+        rs1    : regsel_t
+        rs2    : regsel_t
+        imm7   : imm7_t
+    }
+
+    struct [INSTR_W] b_t {
+        opcode : opcode_t
+        imm5   : imm5_t
+        f3     : f3_t
+        rs1    : regsel_t
+        rs2    : regsel_t
+        imm7   : imm7_t
+    }
+
+    struct [INSTR_W] u_t {
+        opcode : opcode_t
+        rd     : regsel_t
+        imm20  : imm20_t
+    }
+
+    struct [INSTR_W] j_t {
+        opcode : opcode_t
+        rd     : regsel_t
+        imm20  : imm20_t
+    }
+
+    union encoding_t {
+        c : padded_c_t
+        r : r_t
+        i : i_t
+        s : s_t
+        b : b_t
+        u : u_t
+        j : j_t
+    }
+}

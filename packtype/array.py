@@ -16,7 +16,7 @@ class ArraySpec:
         self.dimension = dimension
 
     @property
-    def _PT_WIDTH(self) -> int:
+    def _PT_WIDTH(self) -> int:  # noqa: N802
         return self.base._PT_WIDTH * self.dimension
 
     @property
@@ -42,9 +42,7 @@ class PackedArray:
         spec: ArraySpec,
         *args,
         _pt_bv: BitVector | BitVectorWindow | None = None,
-        _pt_per_inst: Callable[
-            [int, list[Any], dict[str, Any]], tuple[list[Any], dict[str, Any]]
-        ]
+        _pt_per_inst: Callable[[int, list[Any], dict[str, Any]], tuple[list[Any], dict[str, Any]]]
         | None = None,
         packing: Packing = Packing.FROM_LSB,
         **kwds,
@@ -55,16 +53,12 @@ class PackedArray:
             lsb = 0
             for idx in range(spec.dimension):
                 inst_args, inst_kwds = (
-                    _pt_per_inst(idx, *args, **kwds)
-                    if callable(_pt_per_inst)
-                    else (args, kwds)
+                    _pt_per_inst(idx, *args, **kwds) if callable(_pt_per_inst) else (args, kwds)
                 )
                 self._pt_entries.append(
                     entry := spec.base(
                         *inst_args,
-                        _pt_bv=self._pt_bv.create_window(
-                            lsb + spec.base._PT_WIDTH - 1, lsb
-                        ),
+                        _pt_bv=self._pt_bv.create_window(lsb + spec.base._PT_WIDTH - 1, lsb),
                         **inst_kwds,
                     )
                 )
@@ -73,16 +67,12 @@ class PackedArray:
             msb = spec._pt_width - 1
             for idx in range(spec.dimension):
                 inst_args, inst_kwds = (
-                    _pt_per_inst(idx, *args, **kwds)
-                    if callable(_pt_per_inst)
-                    else (args, kwds)
+                    _pt_per_inst(idx, *args, **kwds) if callable(_pt_per_inst) else (args, kwds)
                 )
                 self._pt_entries.append(
                     entry := spec.base(
                         *inst_args,
-                        _pt_bv=self._pt_bv.create_window(
-                            msb, msb - spec.base._PT_WIDTH + 1
-                        ),
+                        _pt_bv=self._pt_bv.create_window(msb, msb - spec.base._PT_WIDTH + 1),
                         **inst_kwds,
                     )
                 )
@@ -101,7 +91,7 @@ class PackedArray:
         return len(self._pt_entries)
 
     @property
-    @functools.cache
+    @functools.cache  # noqa: B019
     def _pt_width(self) -> int:
         return sum(x._pt_width for x in self._pt_entries)
 
@@ -111,18 +101,14 @@ class UnpackedArray:
         self,
         spec: ArraySpec,
         *args,
-        _pt_per_inst: Callable[
-            [int, list[Any], dict[str, Any]], tuple[list[Any], dict[str, Any]]
-        ]
+        _pt_per_inst: Callable[[int, list[Any], dict[str, Any]], tuple[list[Any], dict[str, Any]]]
         | None = None,
         **kwds,
     ):
         self._pt_entries = []
         for idx in range(spec.dimension):
             inst_args, inst_kwds = (
-                _pt_per_inst(idx, *args, **kwds)
-                if callable(_pt_per_inst)
-                else (args, kwds)
+                _pt_per_inst(idx, *args, **kwds) if callable(_pt_per_inst) else (args, kwds)
             )
             self._pt_entries.append(spec.base(*inst_args, **inst_kwds))
 

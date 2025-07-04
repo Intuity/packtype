@@ -11,10 +11,11 @@ try:
 except ImportError:
     from typing_extensions import Self  # noqa: UP035
 
+from ordered_set import OrderedSet as OSet
+
 from .alias import MetaAlias
 from .array import ArraySpec
 from .bitvector import BitVector
-from ordered_set import OrderedSet as OSet
 
 
 class MetaBase(type):
@@ -85,6 +86,7 @@ class Base(metaclass=MetaBase):
             if issubclass(type(obj), MetaAlias):
                 obj = obj._PT_ALIAS
             return obj
+
         # Else iterate through core fields
         collect = OSet()
         for ftype in map(_unwrap, cls._pt_field_types()):
@@ -110,11 +112,9 @@ class Base(metaclass=MetaBase):
         import atexit
 
         def _list_objs():
-            print("Packtype object creation counts:")
-            for obj, cnt in sorted(
-                Base._PT_PROFILING.items(), key=lambda x: x[1], reverse=True
-            ):
+            print("Packtype object creation counts:")  # noqa: T201
+            for obj, cnt in sorted(Base._PT_PROFILING.items(), key=lambda x: x[1], reverse=True):
                 if cnt > limit:
-                    print(f"{cnt:10d}: {obj}")
+                    print(f"{cnt:10d}: {obj}")  # noqa: T201
 
         atexit.register(_list_objs)
