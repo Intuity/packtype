@@ -3,6 +3,7 @@
 #
 
 import functools
+import inspect
 from pathlib import Path
 from typing import Type
 
@@ -42,13 +43,8 @@ class ParseError(Exception):
     pass
 
 
-class UnknownConstantError(Exception):
-    """Exception raised when a constant is referenced but not defined."""
-    pass
-
-
-class UnknownTypeError(Exception):
-    """Exception raised when a type is referenced but not defined."""
+class UnknownEntityError(Exception):
+    """Exception raised when a constant or type is referenced but not defined."""
     pass
 
 
@@ -82,35 +78,23 @@ def parse_string(
             f"\n\n{exc.get_context(definition)}\n{exc}"
         ) from exc
     # Gather declarations
-    known_constants: dict[str, tuple[Constant, Position]] = {}
-    known_types: dict[str, tuple[Type[Base], Position]] = {}
+    known_entities: dict[str, tuple[Type[Base] | Constant, Position]] = {}
 
     def _check_collision(name: str) -> None:
-        nonlocal known_types, known_constants
-        if (existing := known_types.get(name, None)) is not None:
+        nonlocal known_entities
+        if (existing := known_entities.get(name, None)) is not None:
             ref, pos = existing
+            ref_name = ref.__name__ if inspect.isclass(ref) else type(ref).__name__
             raise RedefinitionError(
-                f"'{name}' is already defined as a {ref.__name__} in "
-                f"{source or 'N/A'} on line {pos.line}"
-            )
-        elif (existing := known_constants.get(name, None)) is not None:
-            _, pos = existing
-            raise RedefinitionError(
-                f"'{name}' is already defined as a constant in {source or 'N/A'} "
+                f"'{name}' is already defined as a {ref_name} in {source or 'N/A'} "
                 f"on line {pos.line}"
             )
 
-    def _rslv_const(name: str) -> int:
-        nonlocal known_constants
-        if name in known_constants:
-            return known_constants[name][0]
-        raise UnknownConstantError(f"Failed to resolve '{name}' to a known constant")
-
-    def _rslv_type(name: str) -> Type[Base]:
-        nonlocal known_types
-        if name in known_types:
-            return known_types[name][0]
-        raise UnknownTypeError(f"Failed to resolve '{name}' to a known type")
+    def _resolve(name: str) -> int:
+        nonlocal known_entities
+        if name in known_entities:
+            return known_entities[name][0]
+        raise UnknownEntityError(f"Failed to resolve '{name}' to a known constant or type")
 
     # Create the package
     package : Package = build_from_fields(
@@ -136,50 +120,46 @@ def parse_string(
                 _check_collision(decl.type)
                 # Remember this type
                 if isinstance(foreign_type, Constant):
-                    known_constants[decl.type] = (foreign_type, decl.position)
+                    known_entities[decl.type] = (foreign_type, decl.position)
                 else:
-                    known_types[decl.type] = (foreign_type, decl.position)
+                    known_entities[decl.type] = (foreign_type, decl.position)
             # Aliases
             case DeclAlias():
                 package._pt_attach(
-                    scalar := decl.to_class(_rslv_const, _rslv_type),
+                    scalar := decl.to_class(_resolve),
                     name=decl.type,
                 )
                 # Check for name collisions
                 _check_collision(decl.type)
                 # Remember this type
-                known_types[decl.type] = (scalar, decl.position)
+                known_entities[decl.type] = (scalar, decl.position)
             # Build constants
             case DeclConstant():
                 package._pt_attach_constant(
                     decl.type,
-                    constant := decl.to_instance(_rslv_const)
+                    constant := decl.to_instance(_resolve)
                 )
                 # Check for name collisions
                 _check_collision(decl.type)
                 # Remember this constant
-                known_constants[decl.type] = (constant, decl.position)
+                known_entities[decl.type] = (constant, decl.position)
             # Build aliases and scalars
             case DeclScalar() | DeclAlias():
                 package._pt_attach(
-                    obj := decl.to_class(_rslv_const, _rslv_type),
+                    obj := decl.to_class(_resolve),
                     name=decl.type,
                 )
                 # Check for name collisions
                 _check_collision(decl.type)
                 # Remember this type
-                known_types[decl.type] = (obj, decl.position)
+                known_entities[decl.type] = (obj, decl.position)
             # Build enums, structs, and unions
             case DeclEnum() | DeclStruct() | DeclUnion():
-                package._pt_attach(obj := decl.to_class(
-                    source,
-                    _rslv_const,
-                    _rslv_type,
-                ))
+                package._pt_attach(obj := decl.to_class(source, _resolve))
                 # Check for name collisions
                 _check_collision(decl.type)
                 # Remember this type
-                known_types[decl.type] = (obj, decl.position)
+                known_entities[decl.type] = (obj, decl.position)
             case _:
                 raise Exception(f"Unhandled declaration: {decl}")
 

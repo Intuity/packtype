@@ -56,12 +56,8 @@ class DeclAlias:
     type: str
     foreign: str
 
-    def to_class(
-        self,
-        cb_rslv_const: Callable[[str, ], int],
-        cb_rslv_type: Callable[[str, ], Type[Base]],
-    ) -> Type[Alias]:
-        return Alias[cb_rslv_type(self.foreign)]
+    def to_class(self, cb_resolve: Callable[[str, ], int | Type[Base]]) -> Type[Alias]:
+        return Alias[cb_resolve(self.foreign)]
 
 
 @dataclass()
@@ -71,13 +67,13 @@ class DeclConstant:
     width: DeclExpr
     expr: DeclExpr
 
-    def to_instance(self, cb_rslv_const: Callable[[str, ], int]) -> Constant:
+    def to_instance(self, cb_resolve: Callable[[str, ], int | Type[Base]]) -> Constant:
         # Resolve width
         width = self.width
         if isinstance(width, DeclExpr):
-            width = width.evaluate(cb_rslv_const)
+            width = width.evaluate(cb_resolve)
         # Evaluate the expression referring to known constants
-        value = self.expr.evaluate(cb_rslv_const)
+        value = self.expr.evaluate(cb_resolve)
         # Create instance
         if width is None:
             return Constant(default=value)
@@ -92,9 +88,9 @@ class DeclScalar:
     signedness: Type[Signed | Unsigned]
     width: DeclExpr
 
-    def resolve_width(self, cb_rslv_const: Callable[[str, ], int]) -> int:
+    def resolve_width(self, cb_resolve: Callable[[str, ], int | Type[Base]]) -> int:
         if isinstance(self.width, DeclExpr):
-            return self.width.evaluate(cb_rslv_const)
+            return self.width.evaluate(cb_resolve)
         elif self.width is None:
             return 1
         else:
@@ -102,20 +98,16 @@ class DeclScalar:
 
     def to_field_def(
         self,
-        cb_rslv_const: Callable[[str, ], int],
+        cb_resolve: Callable[[str, ], int | Type[Base]],
     ) -> tuple[Type[Scalar], int | None]:
         return (
-            self.to_class(cb_rslv_const, lambda _: None),
+            self.to_class(cb_resolve),
             None,
         )
 
-    def to_class(
-        self,
-        cb_rslv_const: Callable[[str, ], int],
-        cb_rslv_type: Callable[[str, ], Type[Base]],
-    ) -> Type[Scalar]:
+    def to_class(self, cb_resolve: Callable[[str, ], int | Type[Base]]) -> Type[Scalar]:
         return Scalar[
-            self.resolve_width(cb_rslv_const),
+            self.resolve_width(cb_resolve),
             (self.signedness is Signed),
         ]
 
@@ -130,22 +122,19 @@ class DeclEnum:
     values: list
 
     def to_class(
-        self,
-        source_file: Path,
-        cb_rslv_const: Callable[[str, ], int],
-        cb_rslv_type: Callable[[str, ], Type[Base]],
+        self, source_file: Path, cb_resolve: Callable[[str, ], int | Type[Base]],
     ) -> Type[Enum]:
         # Resolve width
         width = self.width
         if isinstance(width, DeclExpr):
-            width = width.evaluate(cb_rslv_const)
+            width = width.evaluate(cb_resolve)
         # Process entries
         entries = {}
         for value in self.values:
             if isinstance(value, DeclConstant):
                 entries[value.type] = (
                     Constant,
-                    None if value.expr is None else value.expr.evaluate(cb_rslv_const)
+                    None if value.expr is None else value.expr.evaluate(cb_resolve)
                 )
             elif isinstance(value, str):
                 entries[value] = (Constant, None)
@@ -183,20 +172,19 @@ class DeclStruct:
     def to_class(
         self,
         source_file: Path,
-        cb_rslv_const: Callable[[str, ], int],
-        cb_rslv_type: Callable[[str, ], Type[Base]],
+        cb_resolve: Callable[[str, ], int | Type[Base]],
     ) -> Type[Struct]:
         # Resolve width
         width = self.width
         if isinstance(width, DeclExpr):
-            width = width.evaluate(cb_rslv_const)
+            width = width.evaluate(cb_resolve)
         # Process entries
         fields = {}
         for fdecl in self.fields:
             if isinstance(fdecl, DeclScalar):
-                fields[fdecl.type] = fdecl.to_field_def(cb_rslv_const)
+                fields[fdecl.type] = fdecl.to_field_def(cb_resolve)
             elif isinstance(fdecl, DeclField):
-                fields[fdecl.name] = (cb_rslv_type(fdecl.type), None)
+                fields[fdecl.name] = (cb_resolve(fdecl.type), None)
             else:
                 raise ValueError(f"Unexpected struct field type: {fdecl}")
         return build_from_fields(
@@ -222,16 +210,15 @@ class DeclUnion:
     def to_class(
         self,
         source_file: Path,
-        cb_rslv_const: Callable[[str, ], int],
-        cb_rslv_type: Callable[[str, ], Type[Base]],
+        cb_resolve: Callable[[str, ], int | Type[Base]],
     ) -> Type[Union]:
         # Process entries
         fields = {}
         for fdecl in self.fields:
             if isinstance(fdecl, DeclScalar):
-                fields[fdecl.type] = fdecl.to_field_def(cb_rslv_const)
+                fields[fdecl.type] = fdecl.to_field_def(cb_resolve)
             elif isinstance(fdecl, DeclField):
-                fields[fdecl.name] = (cb_rslv_type(fdecl.type), None)
+                fields[fdecl.name] = (cb_resolve(fdecl.type), None)
             else:
                 raise ValueError(f"Unexpected struct field type: {fdecl}")
         return build_from_fields(

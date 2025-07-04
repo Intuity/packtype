@@ -48,7 +48,7 @@ def test_parse_package_collision():
             }
             """
         )
-    with pytest.raises(RedefinitionError, match="'the_name' is already defined as a constant"):
+    with pytest.raises(RedefinitionError, match="'the_name' is already defined as a Constant"):
         parse_string(
             """
             package the_package {

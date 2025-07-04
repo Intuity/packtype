@@ -24,6 +24,7 @@ from .declarations import (
     DeclUnion,
     DeclPackage,
 )
+from .. import utils
 
 
 class PacktypeTransformer(Transformer):
@@ -45,6 +46,8 @@ class PacktypeTransformer(Transformer):
         match method.lower():
             case "clog2":
                 method_func = lambda x: math.ceil(math.log2(x))
+            case "width":
+                method_func = utils.width
             case _:
                 method_func = getattr(math, method, None)
         return DeclExprFunction(method_func, *args)

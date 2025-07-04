@@ -6,7 +6,7 @@ import pytest
 
 from packtype.assembly import Packing, WidthError
 from packtype.struct import Struct
-from packtype.grammar import ParseError, UnknownTypeError, parse_string
+from packtype.grammar import ParseError, UnknownEntityError, parse_string
 from packtype.utils import width
 
 from ..fixtures import reset_registry
@@ -198,7 +198,7 @@ def test_parse_struct_bad_decl():
 
 def test_parse_struct_bad_field_ref():
     """Check that an error is raised if an unkown type is referenced in a struct"""
-    with pytest.raises(UnknownTypeError, match="Failed to resolve 'non_existent' to a known type"):
+    with pytest.raises(UnknownEntityError, match="Failed to resolve 'non_existent' to a known constant or type"):
         parse_string(
             """
             package the_package {

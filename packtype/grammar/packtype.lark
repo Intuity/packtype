@@ -172,9 +172,8 @@ expr_funcs: name "(" (expr ","?)* ")"
 
 HEX: (/\b0x[0-9a-f]+\b/i)
 BINARY: (/\b0b[0-1]+\b/)
-DECIMAL: (/\b[+-]?[0-9]+\b/)
-OPERATOR: "+"
-        | "-"
+DECIMAL: SIGN? /\b[0-9]+\b/
+OPERATOR: SIGN
         | "/"
         | "&"
         | "|"
@@ -185,3 +184,5 @@ OPERATOR: "+"
         | "<<"
         | ">"
         | ">>"
+SIGN: "+"
+    | "-"

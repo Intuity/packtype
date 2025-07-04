@@ -5,7 +5,7 @@
 import pytest
 
 from packtype import Constant
-from packtype.grammar import ParseError, UnknownConstantError, parse_string
+from packtype.grammar import ParseError, UnknownEntityError, parse_string
 from packtype.utils import width
 
 from ..fixtures import reset_registry
@@ -56,7 +56,7 @@ def test_parse_constant_no_value():
 
 def test_parse_constant_bad_reference():
     """Test an expression that refers to a constant that is not defined."""
-    with pytest.raises(UnknownConstantError, match="Failed to resolve 'NON_EXISTENT' to a known constant"):
+    with pytest.raises(UnknownEntityError, match="Failed to resolve 'NON_EXISTENT' to a known constant"):
         parse_string(
             """
             package the_package {

@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from typing import Any, Self, Callable
+from typing import Any, Self, Callable, Type
+
+from ..base import Base
 
 
 class DeclExpr:
@@ -60,7 +62,7 @@ class DeclExpr:
         self.rhs = rhs
         self.operator = operator
 
-    def evaluate(self, cb_lookup: Callable[[str, ], int]) -> int:
+    def evaluate(self, cb_lookup: Callable[[str, ], int]) -> int | Type[Base]:
         # Flatten LHS
         lhs = self.lhs
         if isinstance(self.lhs, DeclExpr | DeclExprFunction):
@@ -79,7 +81,7 @@ class DeclExpr:
             return int(self.operator(lhs, rhs))
         # Otherwise just return LHS
         else:
-            return int(lhs)
+            return lhs if hasattr(lhs, "_PT_BASE") else int(lhs)
 
     def _wrap(self, operator: Callable, lhs: str | int | float | Self = None, rhs: str | int | float | Self = None) -> Self:
         return DeclExpr(lhs=lhs or self, rhs=rhs, operator=operator)
