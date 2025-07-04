@@ -129,13 +129,13 @@ class PackedAssembly(Assembly):
 
     def __str__(self) -> str:
         lines = [f"{type(self).__name__}: 0x{int(self):X}"]
-        max_bits = int(math.ceil(math.log(self._PT_WIDTH, 10)))
+        max_bits = math.ceil(math.log(self._PT_WIDTH, 10))
         max_name = max(map(len, self._PT_DEF.keys()))
         for fname in self._PT_DEF.keys():
             finst = getattr(self, fname)
             lsb, msb = self._PT_RANGES[fname]
             lines.append(
-                f" - [{msb:{max_bits}}:{lsb:{max_bits}}] {fname:{max_name}} " f"= 0x{int(finst):X}"
+                f" - [{msb:{max_bits}}:{lsb:{max_bits}}] {fname:{max_name}} = 0x{int(finst):X}"
             )
         return "\n".join(lines)
 

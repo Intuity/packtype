@@ -102,7 +102,7 @@ def build_from_fields(
             isinstance(accepted, tuple) and value not in accepted
         ):
             raise BadAttributeError(
-                f"Unsupported value '{value}' for attribute '{key}' " f"for {base.__name__}"
+                f"Unsupported value '{value}' for attribute '{key}' for {base.__name__}"
             )
         # Store attribute
         attrs[key] = value

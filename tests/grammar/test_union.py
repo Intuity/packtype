@@ -78,7 +78,7 @@ def test_parse_union_mismatched_sizes():
     """Check that an error is raised if union members have mismatched sizes."""
     with pytest.raises(
         UnionError,
-        match="Union member b has a width of 4 that differs from the expected " "width of 2",
+        match="Union member b has a width of 4 that differs from the expected width of 2",
     ):
         parse_string(
             """

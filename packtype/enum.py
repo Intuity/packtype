@@ -86,7 +86,7 @@ class Enum(Base, Numeric):
                 if fval is None:
                     fval = next_val
                 if (math.log2(fval) % 1) != 0:
-                    raise EnumError(f"Enum entry {fname} has value {fval} that is not " f"one-hot")
+                    raise EnumError(f"Enum entry {fname} has value {fval} that is not one-hot")
                 next_val = fval << 1
                 assignments[fname] = fval
         # Gray code

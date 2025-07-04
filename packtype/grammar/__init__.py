@@ -5,9 +5,9 @@
 from .grammar import ParseError, RedefinitionError, UnknownEntityError, parse, parse_string
 
 __all__ = [
-    "parse",
-    "parse_string",
     "ParseError",
     "RedefinitionError",
     "UnknownEntityError",
+    "parse",
+    "parse_string",
 ]

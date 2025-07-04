@@ -44,9 +44,9 @@ class BitVector:
         :param lsb: LSB of the window
         :returns:   A BitVectorWindow matching the request
         """
-        assert (
-            self.__width is None or msb < self.__width
-        ), f"MSB of {msb} exceeds width {self.__width}"
+        assert self.__width is None or msb < self.__width, (
+            f"MSB of {msb} exceeds width {self.__width}"
+        )
         assert lsb >= 0, f"LSB of {lsb} is not supported"
         return BitVectorWindow(self, msb, lsb)
 
@@ -87,7 +87,7 @@ class BitVector:
             # If width is not set, attempt to infer it
             width = self.__width
             if width is None:
-                width = int(ceil(log2(max(value, self.__value))))
+                width = ceil(log2(max(value, self.__value)))
             # Default LSB/MSB
             lsb = lsb if lsb is not None else 0
             msb = msb if msb is not None else (width - 1)
