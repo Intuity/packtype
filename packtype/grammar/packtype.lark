@@ -86,7 +86,6 @@ decl_constant: name ":" "constant"i width? "=" expr
 // Example: simple_type_t : scalar[8]
 decl_scalar: name ":" (signed|unsigned)? "scalar"i  width?
 
-
 // =============================================================================
 // Enumerations
 //
@@ -163,12 +162,17 @@ decl_union: "union"i name "{" descr? field* "}"
 expr: expr_term (OPERATOR expr_term)*
 
 ?expr_term: name
-          | INT
-          | SIGNED_INT
           | HEX
+          | BINARY
+          | DECIMAL
           | "(" expr ")"
+          | expr_funcs
 
-HEX: "0x" ("a".."f"|"A".."F"|"0".."9")*
+expr_funcs: name "(" (expr ","?)* ")"
+
+HEX: (/\b0x[0-9a-f]+\b/i)
+BINARY: (/\b0b[0-1]+\b/)
+DECIMAL: (/\b[+-]?[0-9]+\b/)
 OPERATOR: "+"
         | "-"
         | "/"

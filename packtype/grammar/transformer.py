@@ -2,11 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import math
+
 from lark import Transformer, v_args
 
 from ..enum import EnumMode
 from ..assembly import Packing
-from .expression import DeclExpr
+from .expression import DeclExpr, DeclExprFunction
 from .declarations import (
     Signed,
     Unsigned,
@@ -26,14 +28,26 @@ from .declarations import (
 
 class PacktypeTransformer(Transformer):
 
-    def SIGNED_INT(self, body):
-        return int(body)
+    def DECIMAL(self, body):
+        return int(body, 10)
 
     def HEX(self, body):
         return int(body, 16)
 
+    def BINARY(self, body):
+        return int(body, 2)
+
     def OPERATOR(self, body):
         return str(body)
+
+    def expr_funcs(self, body):
+        method, *args = body
+        match method.lower():
+            case "clog2":
+                method_func = lambda x: math.ceil(math.log2(x))
+            case _:
+                method_func = getattr(math, method, None)
+        return DeclExprFunction(method_func, *args)
 
     def expr(self, body):
         return DeclExpr.digest(body)

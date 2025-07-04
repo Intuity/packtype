@@ -83,6 +83,7 @@ def load_specification(spec_files: list[str]):
     # For each specification, parse and track
     namespaces = {}
     for item in spec_files:
+        logging.debug(f"Loading specification: {item}")
         # Packtype grammar files
         if item.lower().endswith((".pt", ".packtype", ".ptype")):
             package = parse(Path(item), namespaces)

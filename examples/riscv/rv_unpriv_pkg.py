@@ -32,7 +32,7 @@ class RvUnprivPkg:
     """ Width of funct7 specifier """
     OPCODE_W : Constant = 7
     """ Width of opcode specifier """
-    Quad_W : Constant = 2
+    QUAD_W : Constant = 2
     """ Width of Quad specifier """
     REGSEL_W : Constant = 5
     """ Width of register selector fields """
@@ -77,9 +77,10 @@ class Opcode:
     FENCE  : Constant = 0b0001111
     """ Fence/control type operations """
     ECALL  : Constant = 0b1110011
+    """ System calls """
 
 
-@RvUnprivPkg.enum(width=RvUnprivPkg.Quad_W)
+@RvUnprivPkg.enum(width=RvUnprivPkg.QUAD_W)
 class Quad:
     Q0 : Constant = 0b00
     Q1 : Constant = 0b01

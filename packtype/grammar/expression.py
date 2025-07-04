@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from typing import Self, Callable
+from typing import Any, Self, Callable
 
 
 class DeclExpr:
@@ -63,7 +63,7 @@ class DeclExpr:
     def evaluate(self, cb_lookup: Callable[[str, ], int]) -> int:
         # Flatten LHS
         lhs = self.lhs
-        if isinstance(self.lhs, DeclExpr):
+        if isinstance(self.lhs, DeclExpr | DeclExprFunction):
             lhs = self.lhs.evaluate(cb_lookup)
         elif isinstance(self.lhs, str):
             lhs = cb_lookup(self.lhs)
@@ -71,7 +71,7 @@ class DeclExpr:
         if self.operator:
             # Flatten RHS
             rhs = self.rhs
-            if isinstance(self.rhs, DeclExpr):
+            if isinstance(self.rhs, DeclExpr | DeclExprFunction):
                 rhs = self.rhs.evaluate(cb_lookup)
             elif isinstance(self.rhs, str):
                 rhs = cb_lookup(self.rhs)
@@ -318,3 +318,25 @@ class DeclExpr:
 
     def __ge__(self, other: int | Self) -> bool:
         return self._wrap(lambda x, y: x >= y, rhs=other)
+
+
+class DeclExprFunction:
+
+    def __init__(
+        self,
+        operator: Callable[[Any], Any],
+        *args: str | int | float | Self | DeclExpr,
+    ) -> None:
+        self.operator = operator
+        self.args = args
+
+    def evaluate(self, cb_lookup: Callable[[str, ], int]) -> int:
+        # Resolve all arguments
+        resolved = []
+        for arg in self.args:
+            if isinstance(arg, DeclExpr | DeclExprFunction):
+                resolved.append(arg.evaluate(cb_lookup))
+            else:
+                resolved.append(arg)
+        # Perform the operation
+        return self.operator(*resolved)
