@@ -15,4 +15,3 @@ python3 -m packtype --debug code package sv ${this_dir}/out spec.py
 
 # Render SVG
 python3 -m packtype --debug svg Encodings.Sub --output ./out/out.svg spec.py
-

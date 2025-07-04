@@ -2,17 +2,18 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from typing import Any, Self, Callable, Type
+from collections.abc import Callable
+from typing import Any, Self
 
 from ..base import Base
+from ..constant import Constant
 
 
 class DeclExpr:
-
     OP_ADD = "+"
     OP_SUB = "-"
     OP_MUL = "*"
-    OP_TRUEDIV ="/"
+    OP_TRUEDIV = "/"
     OP_FLOORDIV = "//"
     OP_MOD = "%"
     OP_POW = "**"
@@ -54,15 +55,23 @@ class DeclExpr:
 
     def __init__(
         self,
-        lhs: str | int | float | Self = None,
-        rhs: str | int | float | Self = None,
+        lhs: str | int | float | Self | None = None,
+        rhs: str | int | float | Self | None = None,
         operator: Callable | None = None,
     ):
         self.lhs = lhs
         self.rhs = rhs
         self.operator = operator
 
-    def evaluate(self, cb_lookup: Callable[[str, ], int]) -> int | Type[Base]:
+    def evaluate(
+        self,
+        cb_lookup: Callable[
+            [
+                str,
+            ],
+            int,
+        ],
+    ) -> int | type[Base]:
         # Flatten LHS
         lhs = self.lhs
         if isinstance(self.lhs, DeclExpr | DeclExprFunction):
@@ -81,9 +90,14 @@ class DeclExpr:
             return int(self.operator(lhs, rhs))
         # Otherwise just return LHS
         else:
-            return lhs if hasattr(lhs, "_PT_BASE") else int(lhs)
+            return lhs if not isinstance(lhs, Constant) and hasattr(lhs, "_PT_BASE") else int(lhs)
 
-    def _wrap(self, operator: Callable, lhs: str | int | float | Self = None, rhs: str | int | float | Self = None) -> Self:
+    def _wrap(
+        self,
+        operator: Callable,
+        lhs: str | int | float | Self | None = None,
+        rhs: str | int | float | Self | None = None,
+    ) -> Self:
         return DeclExpr(lhs=lhs or self, rhs=rhs, operator=operator)
 
     def __repr__(self):
@@ -118,9 +132,9 @@ class DeclExpr:
             offset = 0
             for op_pos in [x for x in range(1, len(expr), 2) if expr[x] == search_op]:
                 # Replace the term with a DeclExpr instance
-                *before, lhs = expr[:op_pos+offset]
-                rhs, *after = expr[op_pos+offset+1:]
-                expr = before + [cls.operate(lhs, search_op, rhs)] + after
+                *before, lhs = expr[: op_pos + offset]
+                rhs, *after = expr[op_pos + offset + 1 :]
+                expr = [*before, cls.operate(lhs, search_op, rhs), *after]
                 offset -= 2
         # Ensure that even a single term is returned as a DeclExpr instance
         expr = expr[0]
@@ -199,7 +213,7 @@ class DeclExpr:
         return self._wrap(lambda x, y: (x // y, x % y), rhs=other)
 
     def __pow__(self, other: int | Self) -> int:
-        return self._wrap(lambda x, y: x ** y, rhs=other)
+        return self._wrap(lambda x, y: x**y, rhs=other)
 
     def __lshift__(self, other: int | Self) -> int:
         return self._wrap(lambda x, y: x << y, rhs=other)
@@ -238,7 +252,7 @@ class DeclExpr:
         return self._wrap(lambda x, y: (x // y, x % y), lhs=other, rhs=self)
 
     def __rpow__(self, other: int | Self) -> int:
-        return self._wrap(lambda x, y: x ** y, lhs=other, rhs=self)
+        return self._wrap(lambda x, y: x**y, lhs=other, rhs=self)
 
     def __rlshift__(self, other: int | Self) -> int:
         return self._wrap(lambda x, y: x << y, lhs=other, rhs=self)
@@ -274,7 +288,7 @@ class DeclExpr:
         return self._wrap(lambda x, y: x % y, rhs=other)
 
     def __ipow__(self, other: int | Self) -> int:
-        return self._wrap(lambda x, y: x ** y, rhs=other)
+        return self._wrap(lambda x, y: x**y, rhs=other)
 
     def __ilshift__(self, other: int | Self) -> int:
         return self._wrap(lambda x, y: x << y, rhs=other)
@@ -323,7 +337,6 @@ class DeclExpr:
 
 
 class DeclExprFunction:
-
     def __init__(
         self,
         operator: Callable[[Any], Any],
@@ -332,7 +345,15 @@ class DeclExprFunction:
         self.operator = operator
         self.args = args
 
-    def evaluate(self, cb_lookup: Callable[[str, ], int]) -> int:
+    def evaluate(
+        self,
+        cb_lookup: Callable[
+            [
+                str,
+            ],
+            int,
+        ],
+    ) -> int:
         # Resolve all arguments
         resolved = []
         for arg in self.args:

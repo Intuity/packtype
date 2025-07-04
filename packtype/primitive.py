@@ -52,9 +52,7 @@ class NumericPrimitive(Base, Numeric, metaclass=MetaPrimitive):
         super().__init__(_pt_bv=_pt_bv, default=default)
 
     @classmethod
-    def _pt_meta_key(
-        cls, key: int | tuple[int, bool]
-    ) -> tuple[tuple[str], dict[str, Any]]:
+    def _pt_meta_key(cls, key: int | tuple[int, bool]) -> tuple[tuple[str], dict[str, Any]]:
         if isinstance(key, int) or hasattr(key, "__int__"):
             key = int(key)
             return ((str(key),), {"_PT_WIDTH": key})

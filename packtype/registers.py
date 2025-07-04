@@ -6,17 +6,18 @@ from functools import partial
 from textwrap import indent
 from typing import Any, Self
 
+from ordered_set import OrderedSet as OSet
+
 from .array import ArraySpec, UnpackedArray
 from .assembly import PackedAssembly
 from .base import Base
-from .enum import Enum
 from .constant import Constant
+from .enum import Enum
 from .packing import Packing
 from .primitive import NumericPrimitive
 from .scalar import Scalar
 from .struct import Struct
 from .wrap import build_from_fields, get_wrapper
-from ordered_set import OrderedSet as OSet
 
 # NOTE 1: Consider sign extension vs zero extension behaviours, i.e. do we want
 #         to offer automatic field expansion?
@@ -123,9 +124,7 @@ class Register(PackedAssembly):
         self.__name = name or type(self).__name__.lower()
         self._pt_index = index
         self._pt_offset = offset
-        self._pt_paired = {
-            x: y(name=x.name.lower()) for x, y in self._PT_PAIRED.items()
-        }
+        self._pt_paired = {x: y(name=x.name.lower()) for x, y in self._PT_PAIRED.items()}
         for paired in self._pt_paired.values():
             paired._PT_PARENT = self
 
@@ -283,9 +282,7 @@ class Group(Base):
         return ".".join(map(str, self._pt_path))
 
     @classmethod
-    def _pt_construct(
-        cls, parent: Base, width: int | None, align: int | None, spacing: int | None
-    ):
+    def _pt_construct(cls, parent: Base, width: int | None, align: int | None, spacing: int | None):
         # Process assignments
         cls._PT_WIDTH = None if width is None else int(width)
         cls._PT_ALIGN = None if align is None else int(align)
@@ -324,7 +321,7 @@ class Group(Base):
                 fbase._PT_PAIRED[Behaviour.LEVEL] = build_from_fields(
                     base=Register,
                     cname=fbase.__name__ + "Level",
-                    fields={"value": (Scalar[math.ceil(math.log2(fbase._PT_DEPTH+1))], None)},
+                    fields={"value": (Scalar[math.ceil(math.log2(fbase._PT_DEPTH + 1))], None)},
                     kwds={"behaviour": Behaviour.LEVEL},
                     parent=fbase,
                 )
@@ -355,9 +352,7 @@ class Group(Base):
             # Encode the placement
             cls._PT_OFFSETS[name, idx] = (byte_size, align, int(byte_offset))
             # Bump the offset by the cadence
-            byte_offset += cadence_byte * (
-                (byte_size + cadence_byte - 1) // cadence_byte
-            )
+            byte_offset += cadence_byte * ((byte_size + cadence_byte - 1) // cadence_byte)
         # Remember the final offset
         cls._PT_BYTE_SIZE = byte_offset
         cls._PT_BIT_CADENCE = cadence_bits
@@ -392,9 +387,7 @@ class File(Group):
             if inspect.isclass(obj) and not issubclass(obj, NumericPrimitive):
                 return True
             # If not attached to a different package, accept
-            return (
-                obj._PT_ATTACHED_TO is not None and type(obj._PT_ATTACHED_TO) is not cls
-            )
+            return obj._PT_ATTACHED_TO is not None and type(obj._PT_ATTACHED_TO) is not cls
 
         return OSet(filter(_is_a_type, foreign))
 

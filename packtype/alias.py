@@ -6,17 +6,17 @@ from collections import defaultdict
 from typing import Any
 
 
-
 class MetaAlias(type):
     UNIQUE_ID: dict[str, int] = defaultdict(lambda: 0)
 
-    def __call__(self, *args, **kwds):
-        return self._PT_ALIAS(*args, **kwds)
+    def __call__(cls, *args, **kwds):
+        return cls._PT_ALIAS(*args, **kwds)
 
-    def __getitem__(self, to_alias: Any):
+    def __getitem__(cls, to_alias: Any):
         from .base import Base
+
         assert issubclass(to_alias, Base), "Can only alias a Packtype type"
-        return MetaAlias.get_variant(self, to_alias)
+        return MetaAlias.get_variant(cls, to_alias)
 
     @staticmethod
     def get_variant(alias: "Alias", to_alias: Any):

@@ -4,8 +4,8 @@
 
 import pytest
 
-from packtype.union import Union, UnionError
 from packtype.grammar import UnknownEntityError, parse_string
+from packtype.union import Union, UnionError
 from packtype.utils import width
 
 from ..fixtures import reset_registry
@@ -78,8 +78,7 @@ def test_parse_union_mismatched_sizes():
     """Check that an error is raised if union members have mismatched sizes."""
     with pytest.raises(
         UnionError,
-        match="Union member b has a width of 4 that differs from the expected "
-              "width of 2",
+        match="Union member b has a width of 4 that differs from the expected " "width of 2",
     ):
         parse_string(
             """
@@ -92,9 +91,12 @@ def test_parse_union_mismatched_sizes():
             """
         )
 
+
 def test_parse_union_bad_field_ref():
     """Check that an error is raised if an unknown type is referenced in a union"""
-    with pytest.raises(UnknownEntityError, match="Failed to resolve 'non_existent' to a known constant or type"):
+    with pytest.raises(
+        UnknownEntityError, match="Failed to resolve 'non_existent' to a known constant or type"
+    ):
         parse_string(
             """
             package the_package {

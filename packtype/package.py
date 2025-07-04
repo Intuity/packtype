@@ -4,7 +4,9 @@
 
 import inspect
 from collections.abc import Iterable
-from typing import Any, Type
+from typing import Any
+
+from ordered_set import OrderedSet as OSet
 
 from .alias import Alias
 from .array import ArraySpec
@@ -16,7 +18,6 @@ from .scalar import Scalar
 from .struct import Struct
 from .union import Union
 from .wrap import get_wrapper
-from ordered_set import OrderedSet as OSet
 
 
 class Package(Base):
@@ -41,7 +42,7 @@ class Package(Base):
         return finst
 
     @classmethod
-    def _pt_attach(cls, field: Type[Base], name: str | None = None) -> Base:
+    def _pt_attach(cls, field: type[Base], name: str | None = None) -> Base:
         cls._PT_ATTACH.append(field)
         field._PT_ATTACHED_TO = cls
         setattr(cls, name or field.__name__, field)
@@ -85,9 +86,7 @@ class Package(Base):
             if inspect.isclass(obj) and not issubclass(obj, NumericPrimitive):
                 return True
             # If not attached to a different package, accept
-            return (
-                obj._PT_ATTACHED_TO is not None and type(obj._PT_ATTACHED_TO) is not cls
-            )
+            return obj._PT_ATTACHED_TO is not None and type(obj._PT_ATTACHED_TO) is not cls
 
         return OSet(filter(_is_a_type, foreign))
 
@@ -129,9 +128,7 @@ class Package(Base):
 
     @property
     def _pt_structs_and_unions(self) -> Iterable[Union]:
-        return (
-            (x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Struct | Union)
-        )
+        return ((x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Struct | Union))
 
     @classmethod
     def _pt_lookup(cls, field: type[Base] | Base) -> str:

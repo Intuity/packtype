@@ -6,46 +6,45 @@ import math
 
 from lark import Transformer, v_args
 
-from ..enum import EnumMode
+from .. import utils
 from ..assembly import Packing
-from .expression import DeclExpr, DeclExprFunction
+from ..enum import EnumMode
 from .declarations import (
-    Signed,
-    Unsigned,
-    Description,
-    Position,
-    DeclImport,
     DeclAlias,
     DeclConstant,
-    DeclScalar,
     DeclEnum,
     DeclField,
+    DeclImport,
+    DeclPackage,
+    DeclScalar,
     DeclStruct,
     DeclUnion,
-    DeclPackage,
+    Description,
+    Position,
+    Signed,
+    Unsigned,
 )
-from .. import utils
+from .expression import DeclExpr, DeclExprFunction
 
 
 class PacktypeTransformer(Transformer):
-
-    def DECIMAL(self, body):
+    def DECIMAL(self, body):  # noqa: N802
         return int(body, 10)
 
-    def HEX(self, body):
+    def HEX(self, body):  # noqa: N802
         return int(body, 16)
 
-    def BINARY(self, body):
+    def BINARY(self, body):  # noqa: N802
         return int(body, 2)
 
-    def OPERATOR(self, body):
+    def OPERATOR(self, body):  # noqa: N802
         return str(body)
 
     def expr_funcs(self, body):
         method, *args = body
         match method.lower():
             case "clog2":
-                method_func = lambda x: math.ceil(math.log2(x))
+                method_func = utils.clog2
             case "width":
                 method_func = utils.width
             case _:
@@ -76,7 +75,7 @@ class PacktypeTransformer(Transformer):
     def packing_mode_msb(self, *_):
         return Packing.FROM_MSB
 
-    def CNAME(self, body):
+    def CNAME(self, body):  # noqa: N802
         return str(body)
 
     def descr(self, body):
@@ -101,7 +100,11 @@ class PacktypeTransformer(Transformer):
 
     @v_args(meta=True)
     def field(self, meta, body):
-        return body[0] if isinstance(body[0], DeclScalar) else DeclField(Position(meta.line, meta.column),*body)
+        return (
+            body[0]
+            if isinstance(body[0], DeclScalar)
+            else DeclField(Position(meta.line, meta.column), *body)
+        )
 
     @v_args(meta=True)
     def enum_body_assign(self, meta, body):
@@ -127,7 +130,9 @@ class PacktypeTransformer(Transformer):
             description, *remainder = remainder
         else:
             description = None
-        return DeclEnum(Position(meta.line, meta.column), e_type, mode, width, description, remainder)
+        return DeclEnum(
+            Position(meta.line, meta.column), e_type, mode, width, description, remainder
+        )
 
     @v_args(meta=True)
     def decl_scalar(self, meta, body):
@@ -164,7 +169,9 @@ class PacktypeTransformer(Transformer):
         else:
             description = None
             fields = remainder
-        return DeclStruct(Position(meta.line, meta.column), name, packing, width, description, fields)
+        return DeclStruct(
+            Position(meta.line, meta.column), name, packing, width, description, fields
+        )
 
     @v_args(meta=True)
     def decl_union(self, meta, body):

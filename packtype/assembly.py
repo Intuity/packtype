@@ -26,7 +26,9 @@ class AssignmentError(Exception):
 class Assembly(Base, Numeric):
     _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant]
 
-    def __init__(self, _pt_bv: BitVector | BitVectorWindow | None = None, default: int | None = None):
+    def __init__(
+        self, _pt_bv: BitVector | BitVectorWindow | None = None, default: int | None = None
+    ):
         super().__init__(_pt_bv=_pt_bv, default=default)
 
     def _pt_force_set(self, name: str, value: Any):
@@ -42,9 +44,9 @@ class Assembly(Base, Numeric):
         return self._pt_fields[field]
 
     @property
-    @functools.lru_cache()
+    @functools.lru_cache  # noqa: B019
     def _pt_fields(self) -> dict:
-        return { getattr(self, x): x for x in self._PT_DEF.keys() }
+        return {getattr(self, x): x for x in self._PT_DEF.keys()}
 
 
 class PackedAssembly(Assembly):
@@ -63,7 +65,9 @@ class PackedAssembly(Assembly):
         default: int | None = None,
         **kwds,
     ):
-        super().__init__(_pt_bv=BitVector(self._PT_WIDTH) if _pt_bv is None else _pt_bv, default=default)
+        super().__init__(
+            _pt_bv=BitVector(self._PT_WIDTH) if _pt_bv is None else _pt_bv, default=default
+        )
         # Attempt to assign keyword values to fields
         for fname, fval in kwds.items():
             try:
@@ -85,11 +89,11 @@ class PackedAssembly(Assembly):
                 ) from e
 
     @property
-    @functools.lru_cache()
+    @functools.lru_cache  # noqa: B019
     def _pt_fields(self) -> dict:
         base = super()._pt_fields
         if self._PT_PADDING > 0:
-            base.update({ self._padding: "_padding" })
+            base.update({self._padding: "_padding"})
         return base
 
     def __getattribute__(self, fname: str):
@@ -124,17 +128,14 @@ class PackedAssembly(Assembly):
                 raise e
 
     def __str__(self) -> str:
-        lines = [
-            f"{type(self).__name__}: 0x{int(self):X}"
-        ]
+        lines = [f"{type(self).__name__}: 0x{int(self):X}"]
         max_bits = int(math.ceil(math.log(self._PT_WIDTH, 10)))
         max_name = max(map(len, self._PT_DEF.keys()))
         for fname in self._PT_DEF.keys():
             finst = getattr(self, fname)
             lsb, msb = self._PT_RANGES[fname]
             lines.append(
-                f" - [{msb:{max_bits}}:{lsb:{max_bits}}] {fname:{max_name}} "
-                f"= 0x{int(finst):X}"
+                f" - [{msb:{max_bits}}:{lsb:{max_bits}}] {fname:{max_name}} " f"= 0x{int(finst):X}"
             )
         return "\n".join(lines)
 
@@ -207,12 +208,12 @@ class PackedAssembly(Assembly):
         return self._PT_WIDTH
 
     @property
-    @functools.cache
+    @functools.cache  # noqa: B019
     def _pt_mask(self) -> int:
         return (1 << self._PT_WIDTH) - 1
 
     @property
-    @functools.cache
+    @functools.cache  # noqa: B019
     def _pt_fields_lsb_asc(self) -> list[tuple[int, int, tuple[str, Base]]]:
         pairs = []
         for finst, fname in self._pt_fields.items():
@@ -225,7 +226,7 @@ class PackedAssembly(Assembly):
         return sorted(pairs, key=lambda x: x[0])
 
     @property
-    @functools.cache
+    @functools.cache  # noqa: B019
     def _pt_fields_msb_desc(self) -> list[tuple[int, int, tuple[str, Base]]]:
         pairs = []
         for finst, fname in self._pt_fields.items():
@@ -237,11 +238,11 @@ class PackedAssembly(Assembly):
             pairs.append((lsb, msb, (fname, finst)))
         return sorted(pairs, key=lambda x: x[1], reverse=True)
 
-    @functools.cache
+    @functools.cache  # noqa: B019
     def _pt_lsb(self, field: str) -> int:
         return self._PT_RANGES[field][0]
 
-    @functools.cache
+    @functools.cache  # noqa: B019
     def _pt_msb(self, field: str) -> int:
         return self._PT_RANGES[field][1]
 

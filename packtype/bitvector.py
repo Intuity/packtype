@@ -33,7 +33,7 @@ class BitVector:
     def __int__(self) -> int:
         return self.__value
 
-    @functools.lru_cache
+    @functools.lru_cache  # noqa: B019
     def create_window(self, msb: int, lsb: int) -> "BitVectorWindow":
         """
         Create a window into a section of the bit vector that can be used to
@@ -71,7 +71,11 @@ class BitVector:
         # Coerce the value to an integer
         value = int(value)
         # Check the value is within the bounds of the bit vector
-        if self.__width is not None and self.__width >= 0 and (value < 0 or value > (1 << self.__width)):
+        if (
+            self.__width is not None
+            and self.__width >= 0
+            and (value < 0 or value > (1 << self.__width))
+        ):
             raise ValueError(
                 f"{value} is out of {self.__width} bit range (0 to {(1 << self.__width) - 1})"
             )

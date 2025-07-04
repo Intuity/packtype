@@ -6,7 +6,6 @@ from forastero import BaseIO
 
 
 class RegIntfIO(BaseIO):
-
     def __init__(self, dut, name, role, io_style=None):
         super().__init__(
             dut,

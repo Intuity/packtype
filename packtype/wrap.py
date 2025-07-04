@@ -9,11 +9,13 @@ from collections import defaultdict
 from collections.abc import Callable
 from typing import Any
 
+from ordered_set import OrderedSet as OSet
+
 from .alias import Alias
 from .array import ArraySpec
 from .assembly import Base
 from .primitive import NumericPrimitive
-from ordered_set import OrderedSet as OSet
+
 
 class MissingAnnotationError(Exception):
     pass
@@ -76,7 +78,11 @@ def build_from_fields(
             fields[fname] = (ftype, None)
         # Check if assignment allowed
         # NOTE: The subclass check is necessary for scalar/constant specialisations
-        elif default is not None and real_type not in base._PT_ALLOW_DEFAULTS and not any(issubclass(real_type, x) for x in base._PT_ALLOW_DEFAULTS):
+        elif (
+            default is not None
+            and real_type not in base._PT_ALLOW_DEFAULTS
+            and not any(issubclass(real_type, x) for x in base._PT_ALLOW_DEFAULTS)
+        ):
             raise BadAssignmentError(
                 f"{cname}.{fname} cannot be assigned an initial value of {default} "
                 f"within a base type of {base.__name__}"
@@ -89,17 +95,14 @@ def build_from_fields(
             continue
         # Check if supported by the type
         if key not in base._PT_ATTRIBUTES:
-            raise BadAttributeError(
-                f"Unsupported attribute '{key}' for {base.__name__}"
-            )
+            raise BadAttributeError(f"Unsupported attribute '{key}' for {base.__name__}")
         # Check value is acceptable
         _, accepted = base._PT_ATTRIBUTES[key]
         if (callable(accepted) and not accepted(value)) or (
             isinstance(accepted, tuple) and value not in accepted
         ):
             raise BadAttributeError(
-                f"Unsupported value '{value}' for attribute '{key}' "
-                f"for {base.__name__}"
+                f"Unsupported value '{value}' for attribute '{key}' " f"for {base.__name__}"
             )
         # Store attribute
         attrs[key] = value

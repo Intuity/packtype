@@ -5,7 +5,7 @@
 import pytest
 
 from packtype import Alias, Scalar
-from packtype.grammar import ParseError, UnknownEntityError, parse_string
+from packtype.grammar import UnknownEntityError, parse_string
 from packtype.utils import width
 
 from ..fixtures import reset_registry

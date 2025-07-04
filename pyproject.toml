@@ -34,6 +34,7 @@ black = "^23.11.0"
 cocotb = "^1.9.1"
 forastero = "^1.0"
 forastero-io = { git = "https://github.com/VyperCore/forastero-io.git" }
+pre-commit = "^4.2.0"
 
 [tool.poetry.group.docs]
 optional = true
@@ -74,13 +75,15 @@ target-version = ["py311"]
 include = '\.pyi?$'
 
 [tool.ruff]
+target-version = "py311"
+# Character length of 88 is compatible with Black
+line-length = 100
+
+[tool.ruff.lint]
+fixable = ["ALL"]
+unfixable = []
 # See https://beta.ruff.rs/docs/rules
 select = ["E", "F", "B", "UP", "N", "W", "I", "A", "C4", "PTH", "RUF"]
 ignore = [
     "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
 ]
-fixable = ["ALL"]
-unfixable = []
-target-version = "py311"
-# Character length of 88 is compatible with Black
-line-length = 88

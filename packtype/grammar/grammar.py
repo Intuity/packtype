@@ -5,26 +5,25 @@
 import functools
 import inspect
 from pathlib import Path
-from typing import Type
 
 from lark import Lark
 from lark.exceptions import UnexpectedToken
 
+from ..base import Base
 from ..constant import Constant
+from ..package import Package
+from ..wrap import build_from_fields
 from .declarations import (
-    DeclImport,
     DeclAlias,
     DeclConstant,
-    DeclScalar,
     DeclEnum,
+    DeclImport,
+    DeclScalar,
     DeclStruct,
     DeclUnion,
     Position,
 )
 from .transformer import PacktypeTransformer
-from ..package import Package
-from ..base import Base
-from ..wrap import build_from_fields
 
 
 @functools.cache
@@ -40,16 +39,19 @@ def create_parser():
 
 class ParseError(Exception):
     """Exception raised when parsing a Packtype definition fails."""
+
     pass
 
 
 class UnknownEntityError(Exception):
     """Exception raised when a constant or type is referenced but not defined."""
+
     pass
 
 
 class RedefinitionError(Exception):
     """Exception raised when a type or constant name is repeated."""
+
     pass
 
 
@@ -78,7 +80,7 @@ def parse_string(
             f"\n\n{exc.get_context(definition)}\n{exc}"
         ) from exc
     # Gather declarations
-    known_entities: dict[str, tuple[Type[Base] | Constant, Position]] = {}
+    known_entities: dict[str, tuple[type[Base] | Constant, Position]] = {}
 
     def _check_collision(name: str) -> None:
         nonlocal known_entities
@@ -97,7 +99,7 @@ def parse_string(
         raise UnknownEntityError(f"Failed to resolve '{name}' to a known constant or type")
 
     # Create the package
-    package : Package = build_from_fields(
+    package: Package = build_from_fields(
         base=Package,
         cname=defn.name,
         fields={},
@@ -114,52 +116,49 @@ def parse_string(
                 if (foreign_pkg := namespaces.get(decl.package, None)) is None:
                     raise ImportError(f"Unknown package '{decl.package}'")
                 # Resolve the type
-                if (foreign_type := getattr(foreign_pkg, decl.type, None)) is None:
-                    raise ImportError(f"'{decl.type}' not declared in package '{decl.package}'")
+                if (foreign_type := getattr(foreign_pkg, decl.name, None)) is None:
+                    raise ImportError(f"'{decl.name}' not declared in package '{decl.package}'")
                 # Check for name collisions
-                _check_collision(decl.type)
+                _check_collision(decl.name)
                 # Remember this type
                 if isinstance(foreign_type, Constant):
-                    known_entities[decl.type] = (foreign_type, decl.position)
+                    known_entities[decl.name] = (foreign_type, decl.position)
                 else:
-                    known_entities[decl.type] = (foreign_type, decl.position)
+                    known_entities[decl.name] = (foreign_type, decl.position)
             # Aliases
             case DeclAlias():
                 package._pt_attach(
                     scalar := decl.to_class(_resolve),
-                    name=decl.type,
+                    name=decl.name,
                 )
                 # Check for name collisions
-                _check_collision(decl.type)
+                _check_collision(decl.name)
                 # Remember this type
-                known_entities[decl.type] = (scalar, decl.position)
+                known_entities[decl.name] = (scalar, decl.position)
             # Build constants
             case DeclConstant():
-                package._pt_attach_constant(
-                    decl.type,
-                    constant := decl.to_instance(_resolve)
-                )
+                package._pt_attach_constant(decl.name, constant := decl.to_instance(_resolve))
                 # Check for name collisions
-                _check_collision(decl.type)
+                _check_collision(decl.name)
                 # Remember this constant
-                known_entities[decl.type] = (constant, decl.position)
+                known_entities[decl.name] = (constant, decl.position)
             # Build aliases and scalars
             case DeclScalar() | DeclAlias():
                 package._pt_attach(
                     obj := decl.to_class(_resolve),
-                    name=decl.type,
+                    name=decl.name,
                 )
                 # Check for name collisions
-                _check_collision(decl.type)
+                _check_collision(decl.name)
                 # Remember this type
-                known_entities[decl.type] = (obj, decl.position)
+                known_entities[decl.name] = (obj, decl.position)
             # Build enums, structs, and unions
             case DeclEnum() | DeclStruct() | DeclUnion():
                 package._pt_attach(obj := decl.to_class(source, _resolve))
                 # Check for name collisions
-                _check_collision(decl.type)
+                _check_collision(decl.name)
                 # Remember this type
-                known_entities[decl.type] = (obj, decl.position)
+                known_entities[decl.name] = (obj, decl.position)
             case _:
                 raise Exception(f"Unhandled declaration: {decl}")
 

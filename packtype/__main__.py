@@ -7,34 +7,32 @@ import functools
 import importlib.util
 import logging
 import traceback
-from types import SimpleNamespace
 from pathlib import Path
+from types import SimpleNamespace
 
 import click
 from rich.logging import RichHandler
 from rich.traceback import install
 
+from . import utils
 from .alias import Alias
 from .array import PackedArray
 from .assembly import Packing
 from .base import Base
 from .constant import Constant
-from .grammar import parse
 from .enum import Enum
+from .grammar import parse
 from .package import Package
 from .primitive import NumericPrimitive
 from .registers import Behaviour, File, Register
-from .templates.common import snake_case, camel_case
 from .scalar import Scalar
 from .struct import Struct
+from .templates.common import camel_case, snake_case
 from .union import Union
 from .wrap import Registry
-from . import utils
 
 # Setup logging
-logging.basicConfig(
-    level="NOTSET", format="%(message)s", datefmt="[%X]", handlers=[RichHandler()]
-)
+logging.basicConfig(level="NOTSET", format="%(message)s", datefmt="[%X]", handlers=[RichHandler()])
 log = logging.getLogger("packtype")
 log.setLevel(logging.INFO)
 
@@ -57,9 +55,7 @@ def resolve_to_object(
             resolved = matched[0]
         else:
             if (nxt_rslv := getattr(resolved, segment, None)) is None:
-                raise Exception(
-                    f"Cannot resolve '{segment}' within '{resolved.__name__}'"
-                )
+                raise Exception(f"Cannot resolve '{segment}' within '{resolved.__name__}'")
             resolved = nxt_rslv
     # Check the type is acceptable
     if not hasattr(resolved, "_PT_BASE"):
@@ -76,9 +72,7 @@ def load_specification(spec_files: list[str]):
     # If multiple specifications are provided, check they all use .pt format
     if len(spec_files) > 1:
         if any(not x.lower().endswith((".pt", ".packtype", ".ptype")) for x in spec_files):
-            raise Exception(
-                "Multiple specifications provided, but not all are Packtype grammar"
-            )
+            raise Exception("Multiple specifications provided, but not all are Packtype grammar")
 
     # For each specification, parse and track
     namespaces = {}
@@ -116,7 +110,6 @@ def main(debug: bool):
         log.setLevel(logging.DEBUG)
 
 
-
 @main.command()
 @click.argument("spec_files", type=str, nargs=-1)
 def inspect(spec_files: list[str]):
@@ -129,8 +122,12 @@ def inspect(spec_files: list[str]):
 @main.command()
 @click.argument("selection", type=str)
 @click.option(
-    "-o", "--output", type=click.Path(dir_okay=False, path_type=Path), default=None, required=False,
-    help="Output file to write the SVG to. If not provided, prints to stdout."
+    "-o",
+    "--output",
+    type=click.Path(dir_okay=False, path_type=Path),
+    default=None,
+    required=False,
+    help="Output file to write the SVG to. If not provided, prints to stdout.",
 )
 @click.argument("spec_files", type=str, nargs=-1)
 def svg(selection: str, output: Path | None, spec_files: list[str]):
@@ -146,9 +143,7 @@ def svg(selection: str, output: Path | None, spec_files: list[str]):
 
     # Create a rendering instance
     cfg = SvgConfig()
-    cfg.left_annotation.width = cfg.left_annotation.style.estimate(
-        resolved.__name__
-    ).width
+    cfg.left_annotation.width = cfg.left_annotation.style.estimate(resolved.__name__).width
     cfg.left_annotation.padding = 10
     svg = SvgRender(cfg, left_annotation=resolved.__name__)
 
@@ -171,9 +166,7 @@ def svg(selection: str, output: Path | None, spec_files: list[str]):
                         bit_width=field._pt_width,
                         name="" if name == "_padding" else name,
                         msb=msb,
-                        style=ElementStyle.HATCHED
-                        if name == "_padding"
-                        else ElementStyle.NORMAL,
+                        style=ElementStyle.HATCHED if name == "_padding" else ElementStyle.NORMAL,
                     )
                 )
             msb -= field._pt_width
@@ -189,10 +182,18 @@ def svg(selection: str, output: Path | None, spec_files: list[str]):
 
 @main.command()
 @click.option(
-    "-o", "--option", type=str, multiple=True, help="Options in the form <KEY>=<VALUE>",
+    "-o",
+    "--option",
+    type=str,
+    multiple=True,
+    help="Options in the form <KEY>=<VALUE>",
 )
 @click.option(
-    "-s", "--select", type=str, multiple=True, help="Select objects to render",
+    "-s",
+    "--select",
+    type=str,
+    multiple=True,
+    help="Select objects to render",
 )
 @click.option(
     "--package-suffix",
@@ -233,11 +234,11 @@ def svg(selection: str, output: Path | None, spec_files: list[str]):
     default=["snake", "lower", "suffix"],
     help="Select filters to apply to type names",
 )
+@click.argument("mode", type=click.Choice(("package", "register"), case_sensitive=False))
 @click.argument(
-    "mode", type=click.Choice(("package", "register"), case_sensitive=False)
-)
-@click.argument(
-    "language", type=click.Choice(("sv","py","cpp"), case_sensitive=False), required=True,
+    "language",
+    type=click.Choice(("sv", "py", "cpp"), case_sensitive=False),
+    required=True,
 )
 @click.argument("outdir", type=click.Path(file_okay=False, path_type=Path))
 @click.argument("spec_files", type=str, nargs=-1)
@@ -263,7 +264,6 @@ def code(
     # Deferred imports for optional libraries
     from mako import exceptions
     from mako.lookup import TemplateLookup
-    from .templates.common import snake_case
 
     # Digest options
     options = {}
@@ -297,8 +297,9 @@ def code(
     compound_package = functools.reduce(
         lambda f, g: lambda x: f(g(x)),
         [
-            { **all_filters, "suffix": lambda x: x + package_suffix}[x]
-            for x in package_filter if x != "none"
+            {**all_filters, "suffix": lambda x: x + package_suffix}[x]
+            for x in package_filter
+            if x != "none"
         ][::-1],
         lambda x: x,
     )
@@ -306,8 +307,9 @@ def code(
     compound_constant = functools.reduce(
         lambda f, g: lambda x: f(g(x)),
         [
-            { **all_filters, "suffix": lambda x: x + constant_suffix}[x]
-            for x in constant_filter if x != "none"
+            {**all_filters, "suffix": lambda x: x + constant_suffix}[x]
+            for x in constant_filter
+            if x != "none"
         ][::-1],
         lambda x: x,
     )
@@ -315,8 +317,9 @@ def code(
     compound_type = functools.reduce(
         lambda f, g: lambda x: f(g(x)),
         [
-            { **all_filters, "suffix": lambda x: x + type_suffix}[x]
-            for x in type_filter if x != "none"
+            {**all_filters, "suffix": lambda x: x + type_suffix}[x]
+            for x in type_filter
+            if x != "none"
         ][::-1],
         lambda x: x,
     )
@@ -338,12 +341,8 @@ def code(
                     ("register_file.sv.mako", "_rf.sv"),
                     ("register_pkg.sv.mako", "_pkg.sv"),
                 ),
-                "py": (
-                    ("register_access.py.mako", "_access.py"),
-                ),
-                "cpp": (
-                    ("register_access.hpp.mako", "_access.hpp"),
-                )
+                "py": (("register_access.py.mako", "_access.py"),),
+                "cpp": (("register_access.hpp.mako", "_access.hpp"),),
             }
         case _:
             raise Exception(f"{mode} mode is not supported")
@@ -397,11 +396,7 @@ def code(
             log.debug(f"Rendering {base_name} as {language} to {out_path}")
             with out_path.open("w", encoding="utf-8") as fh:
                 try:
-                    fh.write(
-                        lookup.get_template(tmpl_name).render(
-                            baseline=baseline, **context
-                        )
-                    )
+                    fh.write(lookup.get_template(tmpl_name).render(baseline=baseline, **context))
                 except:
                     log.error(exceptions.text_error_template().render())
                     raise

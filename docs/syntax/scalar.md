@@ -1,5 +1,5 @@
-Scalars are the most simple definition of a type as they describe a single 
-dimensioned bitvector. They are declared using the `Scalar` type and can be 
+Scalars are the most simple definition of a type as they describe a single
+dimensioned bitvector. They are declared using the `Scalar` type and can be
 declared within [packages](package.md) or [structs](struct.md).
 
 ## Example
@@ -48,7 +48,7 @@ endpackage : my_package
 Scalars must be defined with an explicit bit width expressed within the square
 brackets (`[...]`) following the `Scalar` keyword. The width must be a positive
 integer value, and may be either hardcoded or refer to a [constant](constant.md)
-or an expression. A second optional boolean parameter may be provided that 
+or an expression. A second optional boolean parameter may be provided that
 encodes whether the scalar is signed (`True`) or unsigned (`False`), defaulting
 to unsigned.
 

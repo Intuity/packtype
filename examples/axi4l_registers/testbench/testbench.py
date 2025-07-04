@@ -5,25 +5,25 @@
 from types import SimpleNamespace
 
 from forastero import BaseBench, IORole
+from forastero_io.axi4lite.initiator import (
+    AXI4LiteReadAddressInitiator,
+    AXI4LiteWriteAddressInitiator,
+    AXI4LiteWriteDataInitiator,
+)
 from forastero_io.axi4lite.io import (
+    AXI4LiteReadAddressIO,
+    AXI4LiteReadResponseIO,
     AXI4LiteWriteAddressIO,
     AXI4LiteWriteDataIO,
     AXI4LiteWriteResponseIO,
-    AXI4LiteReadAddressIO,
-    AXI4LiteReadResponseIO,
-)
-from forastero_io.axi4lite.initiator import (
-    AXI4LiteWriteAddressInitiator,
-    AXI4LiteWriteDataInitiator,
-    AXI4LiteReadAddressInitiator,
 )
 from forastero_io.axi4lite.monitor import (
-    AXI4LiteWriteResponseMonitor,
     AXI4LiteReadResponseMonitor,
+    AXI4LiteWriteResponseMonitor,
 )
 from forastero_io.axi4lite.target import (
-    AXI4LiteWriteResponseTarget,
     AXI4LiteReadResponseTarget,
+    AXI4LiteWriteResponseTarget,
 )
 
 
@@ -59,30 +59,26 @@ class Testbench(BaseBench):
             version_strobe=self.dut.i_device_version_strobe,
             status=self.dut.i_device_status_data,
             status_strobe=self.dut.i_device_status_strobe,
-            core_reset=(self.dut.o_control_core_reset_0_data,
-                        self.dut.o_control_core_reset_1_data,
-                        self.dut.o_control_core_reset_2_data,
-                        self.dut.o_control_core_reset_3_data),
-            core_reset_strobe=(self.dut.o_control_core_reset_0_strobe,
-                               self.dut.o_control_core_reset_1_strobe,
-                               self.dut.o_control_core_reset_2_strobe,
-                               self.dut.o_control_core_reset_3_strobe),
-            comms_h2d=(self.dut.o_comms_0_h2d_data,
-                       self.dut.o_comms_1_h2d_data),
-            comms_h2d_valid=(self.dut.o_comms_0_h2d_valid,
-                             self.dut.o_comms_1_h2d_valid),
-            comms_h2d_ready=(self.dut.i_comms_0_h2d_ready,
-                             self.dut.i_comms_1_h2d_ready),
-            comms_h2d_level=(self.dut.o_comms_0_h2d_level,
-                             self.dut.o_comms_1_h2d_level),
-            comms_d2h=(self.dut.i_comms_0_d2h_data,
-                       self.dut.i_comms_1_d2h_data),
-            comms_d2h_valid=(self.dut.i_comms_0_d2h_valid,
-                             self.dut.i_comms_1_d2h_valid),
-            comms_d2h_ready=(self.dut.o_comms_0_d2h_ready,
-                             self.dut.o_comms_1_d2h_ready),
-            comms_d2h_level=(self.dut.o_comms_0_d2h_level,
-                             self.dut.o_comms_1_d2h_level),
+            core_reset=(
+                self.dut.o_control_core_reset_0_data,
+                self.dut.o_control_core_reset_1_data,
+                self.dut.o_control_core_reset_2_data,
+                self.dut.o_control_core_reset_3_data,
+            ),
+            core_reset_strobe=(
+                self.dut.o_control_core_reset_0_strobe,
+                self.dut.o_control_core_reset_1_strobe,
+                self.dut.o_control_core_reset_2_strobe,
+                self.dut.o_control_core_reset_3_strobe,
+            ),
+            comms_h2d=(self.dut.o_comms_0_h2d_data, self.dut.o_comms_1_h2d_data),
+            comms_h2d_valid=(self.dut.o_comms_0_h2d_valid, self.dut.o_comms_1_h2d_valid),
+            comms_h2d_ready=(self.dut.i_comms_0_h2d_ready, self.dut.i_comms_1_h2d_ready),
+            comms_h2d_level=(self.dut.o_comms_0_h2d_level, self.dut.o_comms_1_h2d_level),
+            comms_d2h=(self.dut.i_comms_0_d2h_data, self.dut.i_comms_1_d2h_data),
+            comms_d2h_valid=(self.dut.i_comms_0_d2h_valid, self.dut.i_comms_1_d2h_valid),
+            comms_d2h_ready=(self.dut.o_comms_0_d2h_ready, self.dut.o_comms_1_d2h_ready),
+            comms_d2h_level=(self.dut.o_comms_0_d2h_level, self.dut.o_comms_1_d2h_level),
         )
 
     async def initialise(self) -> None:

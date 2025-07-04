@@ -2,18 +2,18 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Type
 
 from ..alias import Alias
-from ..base import Base
-from ..grammar.expression import DeclExpr
-from ..constant import Constant
-from ..scalar import Scalar
-from ..enum import Enum, EnumMode
-from ..struct import Struct
 from ..assembly import Packing
+from ..base import Base
+from ..constant import Constant
+from ..enum import Enum, EnumMode
+from ..grammar.expression import DeclExpr
+from ..scalar import Scalar
+from ..struct import Struct
 from ..union import Union
 from ..wrap import build_from_fields
 
@@ -47,27 +47,43 @@ class Position:
 class DeclImport:
     position: Position
     package: str
-    type: str
+    name: str
 
 
 @dataclass()
 class DeclAlias:
     position: Position
-    type: str
+    name: str
     foreign: str
 
-    def to_class(self, cb_resolve: Callable[[str, ], int | Type[Base]]) -> Type[Alias]:
+    def to_class(
+        self,
+        cb_resolve: Callable[
+            [
+                str,
+            ],
+            int | type[Base],
+        ],
+    ) -> type[Alias]:
         return Alias[cb_resolve(self.foreign)]
 
 
 @dataclass()
 class DeclConstant:
     position: Position
-    type: str
+    name: str
     width: DeclExpr
     expr: DeclExpr
 
-    def to_instance(self, cb_resolve: Callable[[str, ], int | Type[Base]]) -> Constant:
+    def to_instance(
+        self,
+        cb_resolve: Callable[
+            [
+                str,
+            ],
+            int | type[Base],
+        ],
+    ) -> Constant:
         # Resolve width
         width = self.width
         if isinstance(width, DeclExpr):
@@ -84,11 +100,19 @@ class DeclConstant:
 @dataclass()
 class DeclScalar:
     position: Position
-    type: str
-    signedness: Type[Signed | Unsigned]
+    name: str
+    signedness: type[Signed | Unsigned]
     width: DeclExpr
 
-    def resolve_width(self, cb_resolve: Callable[[str, ], int | Type[Base]]) -> int:
+    def resolve_width(
+        self,
+        cb_resolve: Callable[
+            [
+                str,
+            ],
+            int | type[Base],
+        ],
+    ) -> int:
         if isinstance(self.width, DeclExpr):
             return self.width.evaluate(cb_resolve)
         elif self.width is None:
@@ -98,14 +122,27 @@ class DeclScalar:
 
     def to_field_def(
         self,
-        cb_resolve: Callable[[str, ], int | Type[Base]],
-    ) -> tuple[Type[Scalar], int | None]:
+        cb_resolve: Callable[
+            [
+                str,
+            ],
+            int | type[Base],
+        ],
+    ) -> tuple[type[Scalar], int | None]:
         return (
             self.to_class(cb_resolve),
             None,
         )
 
-    def to_class(self, cb_resolve: Callable[[str, ], int | Type[Base]]) -> Type[Scalar]:
+    def to_class(
+        self,
+        cb_resolve: Callable[
+            [
+                str,
+            ],
+            int | type[Base],
+        ],
+    ) -> type[Scalar]:
         return Scalar[
             self.resolve_width(cb_resolve),
             (self.signedness is Signed),
@@ -115,15 +152,22 @@ class DeclScalar:
 @dataclass()
 class DeclEnum:
     position: Position
-    type: str
+    name: str
     mode: EnumMode
     width: DeclExpr | None
     description: Description | None
     values: list
 
     def to_class(
-        self, source_file: Path, cb_resolve: Callable[[str, ], int | Type[Base]],
-    ) -> Type[Enum]:
+        self,
+        source_file: Path,
+        cb_resolve: Callable[
+            [
+                str,
+            ],
+            int | type[Base],
+        ],
+    ) -> type[Enum]:
         # Resolve width
         width = self.width
         if isinstance(width, DeclExpr):
@@ -132,17 +176,17 @@ class DeclEnum:
         entries = {}
         for value in self.values:
             if isinstance(value, DeclConstant):
-                entries[value.type] = (
+                entries[value.name] = (
                     Constant,
-                    None if value.expr is None else value.expr.evaluate(cb_resolve)
+                    None if value.expr is None else value.expr.evaluate(cb_resolve),
                 )
             elif isinstance(value, str):
                 entries[value] = (Constant, None)
             else:
-                raise ValueError(f"Unexpected enum value type: {value}")
+                raise ValueError(f"Unexpected enum value name: {value}")
         return build_from_fields(
             Enum,
-            self.type,
+            self.name,
             fields=entries,
             kwds={
                 "mode": self.mode,
@@ -157,13 +201,13 @@ class DeclEnum:
 class DeclField:
     position: Position
     name: str
-    type: str
+    ref: str
 
 
 @dataclass()
 class DeclStruct:
     position: Position
-    type: str
+    name: str
     packing: Packing
     width: DeclExpr | None
     description: Description | None
@@ -172,8 +216,13 @@ class DeclStruct:
     def to_class(
         self,
         source_file: Path,
-        cb_resolve: Callable[[str, ], int | Type[Base]],
-    ) -> Type[Struct]:
+        cb_resolve: Callable[
+            [
+                str,
+            ],
+            int | type[Base],
+        ],
+    ) -> type[Struct]:
         # Resolve width
         width = self.width
         if isinstance(width, DeclExpr):
@@ -182,14 +231,14 @@ class DeclStruct:
         fields = {}
         for fdecl in self.fields:
             if isinstance(fdecl, DeclScalar):
-                fields[fdecl.type] = fdecl.to_field_def(cb_resolve)
+                fields[fdecl.name] = fdecl.to_field_def(cb_resolve)
             elif isinstance(fdecl, DeclField):
-                fields[fdecl.name] = (cb_resolve(fdecl.type), None)
+                fields[fdecl.name] = (cb_resolve(fdecl.ref), None)
             else:
-                raise ValueError(f"Unexpected struct field type: {fdecl}")
+                raise ValueError(f"Unexpected struct field name: {fdecl}")
         return build_from_fields(
             Struct,
-            self.type,
+            self.name,
             fields=fields,
             kwds={
                 "width": width,
@@ -203,27 +252,32 @@ class DeclStruct:
 @dataclass()
 class DeclUnion:
     position: Position
-    type: str
+    name: str
     description: Description | None
     fields: list
 
     def to_class(
         self,
         source_file: Path,
-        cb_resolve: Callable[[str, ], int | Type[Base]],
-    ) -> Type[Union]:
+        cb_resolve: Callable[
+            [
+                str,
+            ],
+            int | type[Base],
+        ],
+    ) -> type[Union]:
         # Process entries
         fields = {}
         for fdecl in self.fields:
             if isinstance(fdecl, DeclScalar):
-                fields[fdecl.type] = fdecl.to_field_def(cb_resolve)
+                fields[fdecl.name] = fdecl.to_field_def(cb_resolve)
             elif isinstance(fdecl, DeclField):
-                fields[fdecl.name] = (cb_resolve(fdecl.type), None)
+                fields[fdecl.name] = (cb_resolve(fdecl.ref), None)
             else:
-                raise ValueError(f"Unexpected struct field type: {fdecl}")
+                raise ValueError(f"Unexpected struct field name: {fdecl}")
         return build_from_fields(
             Union,
-            self.type,
+            self.name,
             fields=fields,
             kwds={},
             doc_str=str(self.description) if self.description else None,

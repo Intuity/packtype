@@ -4,7 +4,7 @@
 
 import pytest
 
-from packtype.enum import Enum, EnumMode, EnumError
+from packtype.enum import Enum, EnumError, EnumMode
 from packtype.grammar import ParseError, parse_string
 from packtype.utils import width
 
@@ -175,7 +175,9 @@ def test_parse_enum_bad_field():
 
 def test_parse_enum_bad_width():
     """Test parsing an enum where values exceed the width."""
-    with pytest.raises(EnumError, match="Enum entry E has value 4 that cannot be encoded in a bit width of 2"):
+    with pytest.raises(
+        EnumError, match="Enum entry E has value 4 that cannot be encoded in a bit width of 2"
+    ):
         parse_string(
             """
             package the_package {

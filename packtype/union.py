@@ -77,7 +77,7 @@ class Union(Assembly):
         return self._PT_WIDTH
 
     @property
-    @functools.cache
+    @functools.cache  # noqa: B019
     def _pt_mask(self) -> int:
         return (1 << self._pt_width) - 1
 

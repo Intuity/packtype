@@ -5,8 +5,8 @@
 import pytest
 
 from packtype.assembly import Packing, WidthError
-from packtype.struct import Struct
 from packtype.grammar import ParseError, UnknownEntityError, parse_string
+from packtype.struct import Struct
 from packtype.utils import width
 
 from ..fixtures import reset_registry
@@ -166,7 +166,7 @@ def test_parse_struct_oversized():
     with pytest.raises(
         WidthError,
         match="Fields of oversized_struct total 56 bits which does not fit "
-              "within the specified width of 8 bits"
+        "within the specified width of 8 bits",
     ):
         parse_string(
             """
@@ -179,6 +179,7 @@ def test_parse_struct_oversized():
             }
             """
         )
+
 
 def test_parse_struct_bad_decl():
     """Check that an error is raised if packing order and width are mixed up"""
@@ -198,7 +199,9 @@ def test_parse_struct_bad_decl():
 
 def test_parse_struct_bad_field_ref():
     """Check that an error is raised if an unkown type is referenced in a struct"""
-    with pytest.raises(UnknownEntityError, match="Failed to resolve 'non_existent' to a known constant or type"):
+    with pytest.raises(
+        UnknownEntityError, match="Failed to resolve 'non_existent' to a known constant or type"
+    ):
         parse_string(
             """
             package the_package {

@@ -56,7 +56,9 @@ def test_parse_constant_no_value():
 
 def test_parse_constant_bad_reference():
     """Test an expression that refers to a constant that is not defined."""
-    with pytest.raises(UnknownEntityError, match="Failed to resolve 'NON_EXISTENT' to a known constant"):
+    with pytest.raises(
+        UnknownEntityError, match="Failed to resolve 'NON_EXISTENT' to a known constant"
+    ):
         parse_string(
             """
             package the_package {
@@ -64,7 +66,6 @@ def test_parse_constant_bad_reference():
             }
             """
         )
-
 
 
 def test_parse_constant_expression():
