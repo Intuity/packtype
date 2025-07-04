@@ -11,13 +11,13 @@ this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 export PYTHONPATH=${this_dir}/../..:$PYTHONPATH
 
 # Invoke packtype on Python syntax
-python3 -m packtype --debug code package sv ${this_dir}/out_py spec.py
+python3 -m packtype --debug code package sv ${this_dir}/out_py ${this_dir}/spec.py
 
 # Render SVG on Python syntax
-python3 -m packtype --debug svg MyPackage.PingPongMessage --output ./out_py/out.svg spec.py
+python3 -m packtype --debug svg MyPackage.PingPongMessage --output ${this_dir}/out_py/out.svg ${this_dir}/spec.py
 
 # Invoke packtype on Packtype syntax
-python3 -m packtype --debug code package sv ${this_dir}/out_pt spec.pt
+python3 -m packtype --debug code package sv --type-filter none ${this_dir}/out_pt ${this_dir}/spec.pt
 
 # Render SVG on Packtype syntax
-python3 -m packtype --debug svg my_package.ping_pong_message_t --output ./out_pt/out.svg spec.pt
+python3 -m packtype --debug svg my_package.ping_pong_message_t --output ${this_dir}/out_pt/out.svg ${this_dir}/spec.pt

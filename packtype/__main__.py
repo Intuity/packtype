@@ -208,7 +208,7 @@ def svg(selection: str, output: Path | None, spec_files: list[str]):
 @click.option(
     "--type-suffix",
     type=str,
-    default="",
+    default="_t",
     help="Suffix to append to type names",
 )
 @click.option(
