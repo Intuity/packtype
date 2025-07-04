@@ -137,8 +137,5 @@ dmypy.json
 # Ruff
 .ruff_cache
 
-# Exclude example output directories
-examples/*/out/
-
 # Exclude poetry lock
 poetry.lock

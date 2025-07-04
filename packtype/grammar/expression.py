@@ -76,10 +76,10 @@ class DeclExpr:
             elif isinstance(self.rhs, str):
                 rhs = cb_lookup(self.rhs)
             # Apply operator
-            return self.operator(lhs, rhs)
+            return int(self.operator(lhs, rhs))
         # Otherwise just return LHS
         else:
-            return lhs
+            return int(lhs)
 
     def _wrap(self, operator: Callable, lhs: str | int | float | Self = None, rhs: str | int | float | Self = None) -> Self:
         return DeclExpr(lhs=lhs or self, rhs=rhs, operator=operator)

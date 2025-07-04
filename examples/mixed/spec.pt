@@ -25,4 +25,25 @@ package my_package {
         msg_type : message_type_t
     }
 
+    struct ping_pong_payload_t {
+        "Payload of a ping-pong keepalive message"
+        source_id: Scalar[8]
+        is_pong: Scalar[1]
+        ping_value: Scalar[15]
+        timestamp: Scalar[8]
+    }
+
+    struct ping_pong_message_t {
+        "Full message including header and payload"
+        header: message_header_t
+        payload: ping_pong_payload_t
+    }
+
+    union message_bus_t {
+        "Union of the different message phases of the bus"
+        raw: scalar[MESSAGE_WIDTH]
+        header: message_header_t
+        ping_pong: ping_pong_payload_t
+    }
+
 }
