@@ -7,6 +7,7 @@ import functools
 import importlib.util
 import logging
 import traceback
+from types import SimpleNamespace
 from pathlib import Path
 
 import click
@@ -193,16 +194,41 @@ def svg(selection: str, output: Path | None, spec_files: list[str]):
     "-s", "--select", type=str, multiple=True, help="Select objects to render",
 )
 @click.option(
+    "--package-suffix",
+    type=str,
+    default="",
+    help="Suffix to append to package names",
+)
+@click.option(
+    "--constant-suffix",
+    type=str,
+    default="",
+    help="Suffix to append to constant names",
+)
+@click.option(
+    "--type-suffix",
+    type=str,
+    default="",
+    help="Suffix to append to type names",
+)
+@click.option(
+    "--package-filter",
+    multiple=True,
+    type=click.Choice(("none", "snake", "camel", "upper", "lower", "suffix"), case_sensitive=False),
+    default=["snake", "lower", "suffix"],
+    help="Select filters to apply to type names",
+)
+@click.option(
     "--constant-filter",
     multiple=True,
-    type=click.Choice(("snake", "camel", "upper", "lower", "suffix"), case_sensitive=False),
+    type=click.Choice(("none", "snake", "camel", "upper", "lower", "suffix"), case_sensitive=False),
     default=["snake", "upper"],
     help="Select filters to apply to type names",
 )
 @click.option(
     "--type-filter",
     multiple=True,
-    type=click.Choice(("snake", "camel", "upper", "lower", "suffix"), case_sensitive=False),
+    type=click.Choice(("none", "snake", "camel", "upper", "lower", "suffix"), case_sensitive=False),
     default=["snake", "lower", "suffix"],
     help="Select filters to apply to type names",
 )
@@ -217,6 +243,10 @@ def svg(selection: str, output: Path | None, spec_files: list[str]):
 def code(
     option: list[str],
     select: list[str],
+    package_suffix: str,
+    constant_suffix: str,
+    type_suffix: str,
+    package_filter: list[str],
     constant_filter: list[str],
     type_filter: list[str],
     mode: str,
@@ -263,21 +293,32 @@ def code(
         "lower": lambda x: x.lower(),
     }
 
-    type_filters = {**all_filters, "suffix": lambda x: f"{x}_t"}
-
-    cmpd_constant = functools.reduce(
+    compound_package = functools.reduce(
         lambda f, g: lambda x: f(g(x)),
-        [all_filters[x] for x in constant_filter][::-1],
+        [
+            { **all_filters, "suffix": lambda x: x + package_suffix}[x]
+            for x in package_filter if x != "none"
+        ][::-1],
         lambda x: x,
     )
 
-    cmpd_type = functools.reduce(
+    compound_constant = functools.reduce(
         lambda f, g: lambda x: f(g(x)),
-        [type_filters[x] for x in type_filter][::-1],
+        [
+            { **all_filters, "suffix": lambda x: x + constant_suffix}[x]
+            for x in constant_filter if x != "none"
+        ][::-1],
         lambda x: x,
     )
 
-    breakpoint()
+    compound_type = functools.reduce(
+        lambda f, g: lambda x: f(g(x)),
+        [
+            { **all_filters, "suffix": lambda x: x + type_suffix}[x]
+            for x in type_filter if x != "none"
+        ][::-1],
+        lambda x: x,
+    )
 
     # Detect missing select
     if not resolved:
@@ -321,7 +362,15 @@ def code(
             "import packtype.templates.common as tc",
         ],
     )
-    context = {"options": options, "utils": utils}
+    context = {
+        "options": options,
+        "utils": utils,
+        "filters": SimpleNamespace(
+            package=compound_package,
+            constant=compound_constant,
+            type=compound_type,
+        ),
+    }
     for cls in (
         Alias,
         Constant,
