@@ -42,6 +42,16 @@ class ParseError(Exception):
     pass
 
 
+class UnknownConstantError(Exception):
+    """Exception raised when a constant is referenced but not defined."""
+    pass
+
+
+class UnknownTypeError(Exception):
+    """Exception raised when a type is referenced but not defined."""
+    pass
+
+
 class RedefinitionError(Exception):
     """Exception raised when a type or constant name is repeated."""
     pass
@@ -94,13 +104,13 @@ def parse_string(
         nonlocal known_constants
         if name in known_constants:
             return known_constants[name][0]
-        raise ParseError(f"Failed to resolve '{name}' to a known constant")
+        raise UnknownConstantError(f"Failed to resolve '{name}' to a known constant")
 
     def _rslv_type(name: str) -> Type[Base]:
         nonlocal known_types
         if name in known_types:
             return known_types[name][0]
-        raise ParseError(f"Failed to resolve '{name}' to a known type")
+        raise UnknownTypeError(f"Failed to resolve '{name}' to a known type")
 
     # Create the package
     package : Package = build_from_fields(

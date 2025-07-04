@@ -198,6 +198,7 @@ class DeclStruct:
             elif isinstance(fdecl, DeclField):
                 fields[fdecl.name] = (cb_rslv_type(fdecl.type), None)
             else:
+                breakpoint()
                 raise ValueError(f"Unexpected struct field type: {fdecl}")
         return build_from_fields(
             Struct,

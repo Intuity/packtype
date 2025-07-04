@@ -139,7 +139,9 @@ decl_struct: "struct"i packing_mode? width? name "{" descr? field* "}"
              | packing_mode_lsb
 
 packing_mode_msb: "msb"i
+                | "from_msb"i
 packing_mode_lsb: "lsb"i
+                | "from_lsb"i
 
 // =============================================================================
 // Unions

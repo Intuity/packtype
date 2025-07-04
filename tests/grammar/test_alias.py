@@ -5,7 +5,7 @@
 import pytest
 
 from packtype import Alias, Scalar
-from packtype.grammar import ParseError, parse_string
+from packtype.grammar import ParseError, UnknownTypeError, parse_string
 from packtype.utils import width
 
 from ..fixtures import reset_registry
@@ -36,7 +36,7 @@ def test_parse_alias():
 
 def test_parse_alias_bad_reference():
     """Test parsing an alias definition with an invalid reference."""
-    with pytest.raises(ParseError, match="Failed to resolve 'non_existent' to a known type"):
+    with pytest.raises(UnknownTypeError, match="Failed to resolve 'non_existent' to a known type"):
         parse_string(
             """
             package the_package {

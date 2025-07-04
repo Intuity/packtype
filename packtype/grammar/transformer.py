@@ -140,7 +140,7 @@ class PacktypeTransformer(Transformer):
             width, name, *remainder = remainder
         else:
             width = None
-            name, *remainder = body
+            name, *remainder = remainder
         # Extract description if given
         if isinstance(remainder[0], Description):
             description, *fields = remainder
