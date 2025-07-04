@@ -98,7 +98,7 @@ class DeclScalar:
         elif self.width is None:
             return 1
         else:
-            breakpoint()
+            raise Exception("Unexpected width type in DeclScalar")
 
     def to_field_def(
         self,

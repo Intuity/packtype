@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from .grammar import ParseError, parse, parse_string
+from .grammar import ParseError, RedefinitionError, parse, parse_string
 
 __all__ = [
     "parse",
     "parse_string",
     "ParseError",
+    "RedefinitionError",
 ]

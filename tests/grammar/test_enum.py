@@ -4,7 +4,6 @@
 
 import pytest
 
-from packtype import Constant
 from packtype.enum import Enum, EnumMode, EnumError
 from packtype.grammar import ParseError, parse_string
 from packtype.utils import width
