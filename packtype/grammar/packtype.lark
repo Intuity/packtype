@@ -56,7 +56,7 @@ descr: ESCAPED_STRING
 // =============================================================================
 
 // Define package outer
-decl_package: "package" name "{" descr? package_body* "}"
+decl_package: "package"i name "{" descr? package_body* "}"
 
 ?package_body: decl_import
              | decl_alias
@@ -81,10 +81,10 @@ decl_import: "import" name "::" name
 decl_alias: name ":" name
 
 // Example: MY_CONSTANT : constant[8] = 123
-decl_constant: name ":" "constant" width? "=" expr
+decl_constant: name ":" "constant"i width? "=" expr
 
 // Example: simple_type_t : scalar[8]
-decl_scalar: name ":" (signed|unsigned)? "scalar"  width?
+decl_scalar: name ":" (signed|unsigned)? "scalar"i  width?
 
 
 // =============================================================================
@@ -100,21 +100,22 @@ decl_scalar: name ":" (signed|unsigned)? "scalar"  width?
 //
 // =============================================================================
 
-decl_enum: "enum" enum_mode? width? name "{" descr? enum_body* "}"
+decl_enum: "enum"i enum_mode? width? name "{" descr? enum_body* "}"
 
 ?enum_mode: enum_mode_indexed
           | enum_mode_onehot
           | enum_mode_gray
 
-enum_mode_indexed: "indexed"
-enum_mode_onehot: "onehot"
-enum_mode_gray: "gray"
+enum_mode_indexed: "indexed"i
+enum_mode_onehot: "onehot"i
+                | "one_hot"i
+enum_mode_gray: "gray"i
 
 ?enum_body: enum_body_simple
           | enum_body_typed
           | decl_constant
 ?enum_body_simple: name
-?enum_body_typed: name ":" "constant"
+?enum_body_typed: name ":" "constant"i
 ?enum_assign: "=" expr
 
 // =============================================================================
@@ -131,13 +132,13 @@ enum_mode_gray: "gray"
 field: name ":" name
      | decl_scalar
 
-decl_struct: "struct" packing_mode? width? name "{" descr? field* "}"
+decl_struct: "struct"i packing_mode? width? name "{" descr? field* "}"
 
 ?packing_mode: packing_mode_msb
              | packing_mode_lsb
 
-packing_mode_msb: "msb"
-packing_mode_lsb: "lsb"
+packing_mode_msb: "msb"i
+packing_mode_lsb: "lsb"i
 
 // =============================================================================
 // Unions
@@ -150,7 +151,7 @@ packing_mode_lsb: "lsb"
 //
 // =============================================================================
 
-decl_union: "union" name "{" descr? field* "}"
+decl_union: "union"i name "{" descr? field* "}"
 
 // =============================================================================
 // Expressions

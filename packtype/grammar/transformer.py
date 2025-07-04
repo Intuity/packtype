@@ -10,6 +10,7 @@ from .expression import DeclExpr
 from .declarations import (
     Signed,
     Unsigned,
+    Description,
     Position,
     DeclImport,
     DeclAlias,
@@ -62,7 +63,7 @@ class PacktypeTransformer(Transformer):
         return str(body)
 
     def descr(self, body):
-        return str(body[0]).strip('"')
+        return Description(str(body[0]).strip('"'))
 
     @v_args(meta=True)
     def decl_import(self, meta, body):
@@ -74,12 +75,11 @@ class PacktypeTransformer(Transformer):
 
     @v_args(meta=True)
     def decl_constant(self, meta, body):
-        c_type, *remainder = body
-        if c_type == "SIZED_CONSTANT":
-            width, expr = remainder
+        if len(body) == 3:
+            c_type, width, expr = body
         else:
+            c_type, expr = body
             width = None
-            expr = remainder[0]
         return DeclConstant(Position(meta.line, meta.column), c_type, width, expr)
 
     @v_args(meta=True)
@@ -102,7 +102,7 @@ class PacktypeTransformer(Transformer):
         # Pickup type
         e_type, *remainder = remainder
         # Pickup description if given
-        if remainder and isinstance(remainder[0], str):
+        if remainder and isinstance(remainder[0], Description):
             description, *remainder = remainder
         else:
             description = None
@@ -138,7 +138,7 @@ class PacktypeTransformer(Transformer):
             width = None
             name, *remainder = body
         # Extract description if given
-        if isinstance(remainder[0], str):
+        if isinstance(remainder[0], Description):
             description, *fields = remainder
         else:
             description = None
@@ -147,21 +147,21 @@ class PacktypeTransformer(Transformer):
 
     @v_args(meta=True)
     def decl_union(self, meta, body):
-        # Extract name and description
-        if isinstance(body[0], str):
-            name, *remainder = body
-            description = None
+        # Extract name
+        name, *remainder = body
+        # Extract description if given
+        if remainder and isinstance(remainder[0], Description):
+            description, *fields = remainder
         else:
-            name, description, *remainder = body
-        # Fields are the rest of the body
-        fields = remainder
+            fields = remainder
+            description = None
         return DeclUnion(Position(meta.line, meta.column), name, description, fields)
 
     @v_args(meta=True)
     def decl_package(self, meta, body):
         p_name, *remainder = body
         # Extract description if given
-        if isinstance(remainder[0], str):
+        if remainder and isinstance(remainder[0], Description):
             description, *remainder = remainder
         else:
             description = None

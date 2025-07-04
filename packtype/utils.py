@@ -3,6 +3,7 @@
 #
 
 import math
+from .alias import Alias
 from .base import Base
 
 
@@ -18,5 +19,7 @@ def width(ptype: type[Base]) -> int:
         return ptype._pt_width
     elif issubclass(ptype, Base):
         return ptype._PT_WIDTH
+    elif issubclass(ptype, Alias):
+        return width(ptype._PT_ALIAS)
     else:
         raise TypeError(f"{ptype} is not a Packtype definition")

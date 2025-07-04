@@ -27,6 +27,17 @@ class Unsigned:
 
 
 @dataclass()
+class Description:
+    text: str
+
+    def __str__(self) -> str:
+        return self.text
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+@dataclass()
 class Position:
     line: int
     column: int
@@ -115,7 +126,7 @@ class DeclEnum:
     type: str
     mode: EnumMode
     width: DeclExpr | None
-    description: str
+    description: Description | None
     values: list
 
     def to_class(
@@ -149,7 +160,7 @@ class DeclEnum:
                 "width": width,
             },
             doc_str=self.description,
-            source=(source_file.as_posix(), self.position.line),
+            source=(source_file.as_posix() if source_file else "N/A", self.position.line),
         )
 
 
@@ -166,7 +177,7 @@ class DeclStruct:
     type: str
     packing: Packing
     width: DeclExpr | None
-    description: str
+    description: Description | None
     fields: list[str]
 
     def to_class(
@@ -197,7 +208,7 @@ class DeclStruct:
                 "packing": self.packing,
             },
             doc_str=self.description,
-            source=(source_file.as_posix(), self.position.line),
+            source=(source_file.as_posix() if source_file else "N/A", self.position.line),
         )
 
 
@@ -205,7 +216,7 @@ class DeclStruct:
 class DeclUnion:
     position: Position
     type: str
-    description: str
+    description: Description | None
     fields: list
 
     def to_class(
@@ -229,7 +240,7 @@ class DeclUnion:
             fields=fields,
             kwds={},
             doc_str=self.description,
-            source=(source_file.as_posix(), self.position.line),
+            source=(source_file.as_posix() if source_file else "N/A", self.position.line),
         )
 
 
@@ -237,5 +248,5 @@ class DeclUnion:
 class DeclPackage:
     position: Position
     name: str
-    description: str
+    description: Description | None
     declarations: list
