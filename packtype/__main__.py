@@ -115,7 +115,7 @@ def main(debug: bool):
 def inspect(spec_files: list[str]):
     baseline = load_specification(spec_files)
     log.warning("Use the 'baseline' namespace to inspect Packtype definitions")
-    breakpoint()
+    breakpoint()  # noqa: T100
     del baseline
 
 
@@ -177,7 +177,7 @@ def svg(selection: str, output: Path | None, spec_files: list[str]):
     if output:
         output.write_text(svg.render(), encoding="utf-8")
     else:
-        print(svg.render())
+        print(svg.render())  # noqa: T201
 
 
 @main.command()

@@ -67,7 +67,7 @@ line-length = 100
 # See https://beta.ruff.rs/docs/rules
 fixable = ["ALL"]
 unfixable = []
-select = ["E", "F", "B", "UP", "N", "W", "I", "A", "C4", "PTH", "RUF"]
+select = ["E", "F", "B", "UP", "N", "W", "I", "A", "C4", "PTH", "RUF", "T"]
 ignore = [
     "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
     "RUF100", # Unused `noqa` directive

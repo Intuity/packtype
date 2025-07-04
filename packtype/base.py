@@ -112,9 +112,9 @@ class Base(metaclass=MetaBase):
         import atexit
 
         def _list_objs():
-            print("Packtype object creation counts:")
+            print("Packtype object creation counts:")  # noqa: T201
             for obj, cnt in sorted(Base._PT_PROFILING.items(), key=lambda x: x[1], reverse=True):
                 if cnt > limit:
-                    print(f"{cnt:10d}: {obj}")
+                    print(f"{cnt:10d}: {obj}")  # noqa: T201
 
         atexit.register(_list_objs)

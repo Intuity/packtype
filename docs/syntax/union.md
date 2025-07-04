@@ -91,14 +91,14 @@ endpackage : my_package
 Union definitions expose a collection of helper functions for properties related
 to the type:
 
- * `<UNION>._pt_width` - property that returns the bit width of the struct;
+ * `<UNION>._pt_width` - property that returns the bit width of the union;
  * `<UNION>._pt_mask` - property that returns a bit mask matched to the width of
-   the struct (i.e. `(1 << <UNION>._pt_width) - 1`);
+   the union (i.e. `(1 << <UNION>._pt_width) - 1`);
  * `<UNION>._pt_fields` - property that returns a dictionary of fields within
-   the struct with the key being the field instance and the value being the
+   the union with the key being the field instance and the value being the
    field's name;
- * `<UNION>._pt_pack()` - packs all values contained within the struct into a
+ * `<UNION>._pt_pack()` - packs all values contained within the union into a
    singular integer value (can also be achieved by casting to an int, e.g.
    `int(<UNION>)`);
  * `<UNION>._pt_unpack(packed: int)` - unpacks an integer value into the fields
-   of the struct.
+   of the union.
