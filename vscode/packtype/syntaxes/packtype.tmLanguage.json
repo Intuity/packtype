@@ -90,7 +90,7 @@
 			}
 		},
 		{
-			"match": "\\b(struct)\\s+(msb|lsb)?\\s*(?:\\[\\s*(\\w+)\\s*\\])?\\s*(\\w+)\\b",
+			"match": "\\b(struct)\\s+(msb|lsb|from_msb|from_lsb)?\\s*(?:\\[\\s*(\\w+)\\s*\\])?\\s*(\\w+)\\b",
 			"captures": {
 				"1": { "name": "storage.type.packtype" },
 				"2": { "name": "storage.modifier.packtype" },
