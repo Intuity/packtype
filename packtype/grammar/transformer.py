@@ -87,6 +87,10 @@ class PacktypeTransformer(Transformer):
         return body[0] if isinstance(body[0], DeclScalar) else DeclField(Position(meta.line, meta.column),*body)
 
     @v_args(meta=True)
+    def enum_body_assign(self, meta, body):
+        return DeclConstant(Position(meta.line, meta.column), body[0], None, body[1])
+
+    @v_args(meta=True)
     def decl_enum(self, meta, body):
         remainder = body
         # Pickup mode if given

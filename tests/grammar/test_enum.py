@@ -5,7 +5,7 @@
 import pytest
 
 from packtype import Constant
-from packtype.enum import Enum, EnumMode
+from packtype.enum import Enum, EnumMode, EnumError
 from packtype.grammar import ParseError, parse_string
 from packtype.utils import width
 
@@ -68,10 +68,24 @@ def test_parse_enum():
                 C
                 D
             }
+            // Explicit assignments
+            enum [8] h {
+                A = 0x12
+                B = 0x34
+                C = 0x56
+                D = 0x78
+            }
+            // Mixed implicit and explicit assignments
+            enum [8] i {
+                A = 0x12
+                B
+                C = 0x56
+                D
+            }
         }
         """
     )
-    assert len(pkg._PT_FIELDS) == 7
+    assert len(pkg._PT_FIELDS) == 9
     # a
     assert issubclass(pkg.a, Enum)
     assert width(pkg.a) == 2
@@ -107,3 +121,72 @@ def test_parse_enum():
     assert width(pkg.g) == 2
     assert pkg.g._PT_MODE is EnumMode.GRAY
     assert [pkg.g().A, pkg.g().B, pkg.g().C, pkg.g().D] == [0, 1, 3, 2]
+    # h
+    assert issubclass(pkg.h, Enum)
+    assert width(pkg.h) == 8
+    assert pkg.h._PT_MODE is EnumMode.INDEXED
+    assert [pkg.h().A, pkg.h().B, pkg.h().C, pkg.h().D] == [0x12, 0x34, 0x56, 0x78]
+    # i
+    assert issubclass(pkg.i, Enum)
+    assert width(pkg.i) == 8
+    assert pkg.i._PT_MODE is EnumMode.INDEXED
+    assert [pkg.i().A, pkg.i().B, pkg.i().C, pkg.i().D] == [0x12, 0x13, 0x56, 0x57]
+
+
+def test_parse_enum_description():
+    """Test parsing an enum definition with a description."""
+    pkg = parse_string(
+        """
+        package the_package {
+            // Default behaviours (implicit width, indexed)
+            enum a {
+                "This is an enum"
+                A
+                B
+                C
+                D
+            }
+        }
+        """
+    )
+    assert len(pkg._PT_FIELDS) == 1
+    assert issubclass(pkg.a, Enum)
+    assert width(pkg.a) == 2
+    assert pkg.a._PT_MODE is EnumMode.INDEXED
+    assert pkg.a.__doc__ == "This is an enum"
+    assert int(pkg.a.A) == 0
+    assert int(pkg.a.B) == 1
+    assert int(pkg.a.C) == 2
+    assert int(pkg.a.D) == 3
+
+
+def test_parse_enum_bad_field():
+    """Test parsing an enum definition with a bad field."""
+    with pytest.raises(ParseError, match="Failed to parse input"):
+        parse_string(
+            """
+            package the_package {
+                enum a {
+                    A : scalar[4]
+                }
+            }
+            """
+        )
+
+
+def test_parse_enum_bad_width():
+    """Test parsing an enum where values exceed the width."""
+    with pytest.raises(EnumError, match="Enum entry E has value 4 that cannot be encoded in a bit width of 2"):
+        parse_string(
+            """
+            package the_package {
+                enum [2] a {
+                    A
+                    B
+                    C
+                    D
+                    E
+                }
+            }
+            """
+        )
