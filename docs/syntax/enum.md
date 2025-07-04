@@ -5,9 +5,10 @@ or inferred from the largest value encoded within it.
 
 ## Example
 
-=== "Python (.py)"
+The Packtype definition can either use a Python dataclass style or the Packtype
+custom grammar:
 
-    The packtype definition:
+=== "Python (.py)"
 
     ```python linenums="1"
     import packtype
@@ -26,24 +27,7 @@ or inferred from the largest value encoded within it.
         BANANA : Constant
     ```
 
-    As rendered to SystemVerilog:
-
-    ```sv linenums="1"
-    package my_package;
-
-    typedef enum logic [1:0] {
-        FRUIT_APPLE,
-        FRUIT_ORANGE,
-        FRUIT_PEAR,
-        FRUIT_BANANA
-    } fruit_t;
-
-    endpackage : my_package
-    ```
-
 === "Packtype (.pt)"
-
-    The packtype definition:
 
     ```sv linenums="1"
     package my_package {
@@ -57,20 +41,20 @@ or inferred from the largest value encoded within it.
     }
     ```
 
-    As rendered to SystemVerilog:
+As rendered to SystemVerilog:
 
-    ```sv linenums="1"
-    package my_package;
+```sv linenums="1"
+package my_package;
 
-    typedef enum logic [1:0] {
-        FRUIT_APPLE,
-        FRUIT_ORANGE,
-        FRUIT_PEAR,
-        FRUIT_BANANA
-    } fruit_t;
+typedef enum logic [1:0] {
+    FRUIT_APPLE,
+    FRUIT_ORANGE,
+    FRUIT_PEAR,
+    FRUIT_BANANA
+} fruit_t;
 
-    endpackage : my_package
-    ```
+endpackage : my_package
+```
 
 
 ## Declaration Options

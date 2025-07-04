@@ -3,7 +3,7 @@ repo_name: intuity/packtype
 repo_url: https://github.com/intuity/packtype
 theme:
   name: material
-  # logo: assets/logo.svg
+  logo: assets/logo.png
   palette:
     scheme: slate
     primary: blue grey

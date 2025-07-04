@@ -4,9 +4,10 @@ distinct namespaces - definitions cannot otherwise exist outside of a package.
 
 ## Example
 
-=== "Python (.py)"
+The Packtype definition can either use a Python dataclass style or the Packtype
+custom grammar:
 
-    The packtype definition:
+=== "Python (.py)"
 
     ```python linenums="1"
     import packtype
@@ -17,19 +18,7 @@ distinct namespaces - definitions cannot otherwise exist outside of a package.
         ...
     ```
 
-    As rendered to SystemVerilog:
-
-    ```sv linenums="1"
-    package my_package;
-
-    // ...attached definitions...
-
-    endpackage : my_package
-    ```
-
 === "Packtype (.pt)"
-
-    The packtype definition:
 
     ```sv linenums="1"
     package my_package {
@@ -38,15 +27,69 @@ distinct namespaces - definitions cannot otherwise exist outside of a package.
     }
     ```
 
-    As rendered to SystemVerilog:
+As rendered to SystemVerilog:
 
-    ```sv linenums="1"
-    package my_package;
+```sv linenums="1"
+package my_package;
 
-    // ...attached definitions...
+// ...attached definitions...
 
-    endpackage : my_package
+endpackage : my_package
+```
+
+## Imports
+
+Types and constants defined in one package may reference types and constants
+defined in another package and Packtype will track which entities are local and
+foreign.
+
+=== "Python (.py)"
+
+    When using the Python dataclass style syntax, packages may be referenced in
+    the same fashion that normal imports operate:
+
+    ```python title="package_a.py" linenums="1"
+    import packtype
+    from packtype import Constant
+
+    @packtype.package()
+    class PackageA:
+        VALUE_A : Constant[8] = 0x12
     ```
+
+    ```python title="package_b.py" linenums="1"
+    import packtype
+    from packtype import Constant
+
+    from package_a import PackageA
+
+    @packtype.package()
+    class PackageB:
+        VALUE_B : Constant[8] = PackageA.VALUE_A + 3
+    ```
+
+=== "Packtype (.pt)"
+
+    When using the Packtype custom grammar, packages may be referenced using the
+    `import` keyword:
+
+    ```sv title="package_a.pt" linenums="1"
+    package package_a {
+        VALUE_A : constant[8] = 0x12
+    }
+    ```
+
+    ```sv title="package_b.pt" linenums="1"
+    package package_b {
+        import package_a::VALUE_A
+        VALUE_B : constant[8] = VALUE_A + 3
+    }
+    ```
+
+    !!! note
+
+        When using the Packtype custom grammar, all packages that are referenced
+        will need to be provided to Packtype in order for imports to be resolved
 
 ## Python Decorators
 
