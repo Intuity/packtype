@@ -87,7 +87,7 @@ def parse_string(
         cname=defn.name,
         fields={},
         kwds={},
-        doc_str=defn.description,
+        doc_str=str(defn.description) if defn.description else None,
     )
 
     # Run through the declarations

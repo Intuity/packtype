@@ -159,7 +159,7 @@ class DeclEnum:
                 "mode": self.mode,
                 "width": width,
             },
-            doc_str=self.description,
+            doc_str=str(self.description) if self.description else None,
             source=(source_file.as_posix() if source_file else "N/A", self.position.line),
         )
 
@@ -207,7 +207,7 @@ class DeclStruct:
                 "width": width,
                 "packing": self.packing,
             },
-            doc_str=self.description,
+            doc_str=str(self.description) if self.description else None,
             source=(source_file.as_posix() if source_file else "N/A", self.position.line),
         )
 
@@ -239,7 +239,7 @@ class DeclUnion:
             self.type,
             fields=fields,
             kwds={},
-            doc_str=self.description,
+            doc_str=str(self.description) if self.description else None,
             source=(source_file.as_posix() if source_file else "N/A", self.position.line),
         )
 
