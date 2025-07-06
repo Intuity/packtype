@@ -60,21 +60,21 @@ def resolve_to_object(
         if resolved is None:
             matched = [x for x in baseline if x.__name__ == segment]
             if len(matched) != 1:
-                raise Exception(f"Cannot resolve baseline '{segment}'")
+                raise click.ClickException(f"Cannot resolve baseline '{segment}'")
             resolved = matched[0]
         else:
             if (nxt_rslv := getattr(resolved, segment, None)) is None:
-                raise Exception(
+                raise click.ClickException(
                     f"Cannot resolve '{segment}' within '{resolved.__name__}'"
                 )
             resolved = nxt_rslv
     # Check the type is acceptable
     if not hasattr(resolved, "_PT_BASE"):
-        raise Exception(f"Selection {path} resolved to a non-Packtype object")
+        raise click.ClickException(f"Selection {path} resolved to a non-Packtype object")
     elif acceptable is not None and not issubclass(resolved, acceptable):
-        raise Exception(
-            f"Selection {path} resolved to an object of type "
-            f"{resolved._PT_BASE.__name__} which cannot be rendered as an SVG"
+        raise click.ClickException(
+            f"Selection {'.'.join(path)} resolved to an object of type "
+            f"{resolved._PT_BASE.__name__} which is incompatible with this command"
         )
     return resolved
 
@@ -126,57 +126,18 @@ def inspect(ctx):
 )
 @click.pass_context
 def svg(ctx, selection: str, output: Path | None):
-    # Deferred imports for optional libraries
-    from .svg.render import ElementStyle, SvgConfig, SvgField, SvgRender
-
     # Resolve selection to a struct or union
     resolved = resolve_to_object(
         ctx.obj.get("baseline", []),
         *selection.split("."),
-        acceptable=(Struct, Union),
+        acceptable=(Struct,),
     )
-
-    # Create a rendering instance
-    cfg = SvgConfig()
-    cfg.left_annotation.width = cfg.left_annotation.style.estimate(
-        resolved.__name__
-    ).width
-    cfg.left_annotation.padding = 10
-    svg = SvgRender(cfg, left_annotation=resolved.__name__)
-
-    # Recurse through the object to construct the SVG hierarchy
-    def _recurse(instance: Struct | Union, msb: int | None = None):
-        nonlocal svg
-        if msb is None:
-            msb = instance._PT_WIDTH - 1
-        for name, _lsb in sorted(
-            ((name, lsb) for name, (lsb, _msb) in instance._PT_RANGES.items()),
-            key=lambda x: x[1],
-            reverse=True,
-        ):
-            field = getattr(instance, name)
-            if field._PT_BASE in (Struct, Union):
-                _recurse(field, msb=msb)
-            else:
-                svg.attach(
-                    SvgField(
-                        bit_width=field._pt_width,
-                        name="" if name == "_padding" else name,
-                        msb=msb,
-                        style=ElementStyle.HATCHED
-                        if name == "_padding"
-                        else ElementStyle.NORMAL,
-                    )
-                )
-            msb -= field._pt_width
-
-    _recurse(resolved())
 
     # Run the rendering operation
     if output:
-        output.write_text(svg.render(), encoding="utf-8")
+        output.write_text(resolved()._pt_as_svg(), encoding="utf-8")
     else:
-        print(svg.render())
+        print(resolved()._pt_as_svg())
 
 
 @main.command()
