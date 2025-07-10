@@ -33,6 +33,7 @@ custom grammar:
     package my_package {
         enum fruit_t {
             "Description of the enumeration can go here"
+            @prefix=FRUIT
             APPLE  : constant
             ORANGE : constant
             PEAR   : constant
@@ -96,6 +97,8 @@ endpackage : my_package
 
     ```sv linenums="1"
     enum <MODE> [<WIDTH>] <NAME> {
+        "<DESCRIPTION>"
+        @<MODIFIER_KEY>=@<MODIFIER_VALUE>
         ...
     }
     ```
@@ -104,6 +107,8 @@ endpackage : my_package
 
     ```sv linenums="1"
     enum onehot [8] my_onehot_enum_t {
+        "My wonderful enum"
+        @prefix=MYONE
         A
         B
         ...
@@ -124,6 +129,10 @@ endpackage : my_package
     as the ceiling log2 of the maximum enumerated value. Where it is specified, an
     `EnumError` will be raised if the maximum enumerated value exceeds what can be
     expressed within the enum's bit width.
+
+    The `<MODIFIER>` syntax allows other standard behaviours of Packtype to be
+    altered, for example `@prefix=ABC` customises the prefix used for each
+    constant value in languages that don't offer scoped access.
 
 ## Explicit Values
 
