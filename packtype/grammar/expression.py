@@ -5,8 +5,8 @@
 from collections.abc import Callable
 from typing import Any, Self
 
-from ..base import Base
-from ..constant import Constant
+from ..types.base import Base
+from ..types.constant import Constant
 
 
 class DeclExpr:

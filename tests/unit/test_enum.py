@@ -6,7 +6,7 @@ import pytest
 
 import packtype
 from packtype import Constant, EnumMode
-from packtype.enum import EnumError
+from packtype.types.enum import EnumError
 
 from ..fixtures import reset_registry
 

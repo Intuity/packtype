@@ -4,9 +4,9 @@
 
 import pytest
 
-from packtype.enum import Enum, EnumError, EnumMode
+from packtype.common.utils import width
 from packtype.grammar import ParseError, parse_string
-from packtype.utils import width
+from packtype.types.enum import Enum, EnumError, EnumMode
 
 from ..fixtures import reset_registry
 

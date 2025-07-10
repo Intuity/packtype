@@ -8,16 +8,16 @@ from typing import Any, Self
 
 from ordered_set import OrderedSet as OSet
 
-from .array import ArraySpec, UnpackedArray
-from .assembly import PackedAssembly
-from .base import Base
-from .constant import Constant
-from .enum import Enum
-from .packing import Packing
-from .primitive import NumericPrimitive
-from .scalar import Scalar
-from .struct import Struct
-from .wrap import build_from_fields, get_wrapper
+from ..types.array import ArraySpec, UnpackedArray
+from ..types.assembly import PackedAssembly
+from ..types.base import Base
+from ..types.constant import Constant
+from ..types.enum import Enum
+from ..types.packing import Packing
+from ..types.primitive import NumericPrimitive
+from ..types.scalar import Scalar
+from ..types.struct import Struct
+from ..types.wrap import build_from_fields, get_wrapper
 
 # NOTE 1: Consider sign extension vs zero extension behaviours, i.e. do we want
 #         to offer automatic field expansion?

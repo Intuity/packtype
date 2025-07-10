@@ -4,10 +4,10 @@
 
 import pytest
 
-from packtype.assembly import Packing, WidthError
+from packtype.common.utils import width
 from packtype.grammar import ParseError, UnknownEntityError, parse_string
-from packtype.struct import Struct
-from packtype.utils import width
+from packtype.types.assembly import Packing, WidthError
+from packtype.types.struct import Struct
 
 from ..fixtures import reset_registry
 

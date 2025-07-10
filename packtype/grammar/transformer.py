@@ -6,9 +6,9 @@ import math
 
 from lark import Transformer, v_args
 
-from .. import utils
-from ..assembly import Packing
-from ..enum import EnumMode
+from ..common import utils
+from ..types.assembly import Packing
+from ..types.enum import EnumMode
 from .declarations import (
     DeclAlias,
     DeclConstant,

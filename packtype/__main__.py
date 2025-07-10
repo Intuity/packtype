@@ -14,22 +14,22 @@ import click
 from rich.logging import RichHandler
 from rich.traceback import install
 
-from . import utils
-from .alias import Alias
-from .array import PackedArray
-from .assembly import Packing
-from .base import Base
-from .constant import Constant
-from .enum import Enum
+from .common import utils
 from .grammar import parse
-from .package import Package
-from .primitive import NumericPrimitive
 from .registers import Behaviour, File, Register
-from .scalar import Scalar
-from .struct import Struct
 from .templates.common import camel_case, snake_case
-from .union import Union
-from .wrap import Registry
+from .types.alias import Alias
+from .types.array import PackedArray
+from .types.assembly import Packing
+from .types.base import Base
+from .types.constant import Constant
+from .types.enum import Enum
+from .types.package import Package
+from .types.primitive import NumericPrimitive
+from .types.scalar import Scalar
+from .types.struct import Struct
+from .types.union import Union
+from .types.wrap import Registry
 
 # Setup logging
 logging.basicConfig(level="NOTSET", format="%(message)s", datefmt="[%X]", handlers=[RichHandler()])

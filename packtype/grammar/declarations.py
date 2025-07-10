@@ -6,16 +6,16 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..alias import Alias
-from ..assembly import Packing
-from ..base import Base
-from ..constant import Constant
-from ..enum import Enum, EnumMode
 from ..grammar.expression import DeclExpr
-from ..scalar import Scalar
-from ..struct import Struct
-from ..union import Union
-from ..wrap import build_from_fields
+from ..types.alias import Alias
+from ..types.assembly import Packing
+from ..types.base import Base
+from ..types.constant import Constant
+from ..types.enum import Enum, EnumMode
+from ..types.scalar import Scalar
+from ..types.struct import Struct
+from ..types.union import Union
+from ..types.wrap import build_from_fields
 
 
 class Signed:

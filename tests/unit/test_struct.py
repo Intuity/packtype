@@ -6,9 +6,9 @@ import pytest
 
 import packtype
 from packtype import Constant, Packing, Scalar
-from packtype.assembly import AssignmentError, WidthError
-from packtype.primitive import PrimitiveValueError
-from packtype.wrap import BadAssignmentError, BadAttributeError
+from packtype.types.assembly import AssignmentError, WidthError
+from packtype.types.primitive import PrimitiveValueError
+from packtype.types.wrap import BadAssignmentError, BadAttributeError
 
 from ..fixtures import reset_registry
 

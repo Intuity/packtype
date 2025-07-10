@@ -6,7 +6,7 @@ import pytest
 
 import packtype
 from packtype import Constant, Scalar
-from packtype.union import UnionError
+from packtype.types.union import UnionError
 
 from ..fixtures import reset_registry
 

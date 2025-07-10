@@ -9,10 +9,10 @@ from pathlib import Path
 from lark import Lark
 from lark.exceptions import UnexpectedToken
 
-from ..base import Base
-from ..constant import Constant
-from ..package import Package
-from ..wrap import build_from_fields
+from ..types.base import Base
+from ..types.constant import Constant
+from ..types.package import Package
+from ..types.wrap import build_from_fields
 from .declarations import (
     DeclAlias,
     DeclConstant,

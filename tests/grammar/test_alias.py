@@ -5,8 +5,8 @@
 import pytest
 
 from packtype import Alias, Scalar
+from packtype.common.utils import width
 from packtype.grammar import UnknownEntityError, parse_string
-from packtype.utils import width
 
 from ..fixtures import reset_registry
 

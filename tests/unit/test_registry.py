@@ -4,7 +4,7 @@
 
 import packtype
 from packtype import Package
-from packtype.wrap import Registry
+from packtype.types.wrap import Registry
 
 from ..fixtures import reset_registry
 

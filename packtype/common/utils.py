@@ -4,8 +4,8 @@
 
 import math
 
-from .alias import Alias
-from .base import Base
+from ..types.alias import Alias
+from ..types.base import Base
 
 
 def clog2(x: int) -> int:

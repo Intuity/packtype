@@ -5,9 +5,9 @@
 import pytest
 
 from packtype import Constant, Scalar
+from packtype.common.utils import width
 from packtype.grammar import ParseError, parse_string
-from packtype.struct import Struct
-from packtype.utils import width
+from packtype.types.struct import Struct
 
 from ..fixtures import reset_registry
 

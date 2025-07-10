@@ -4,9 +4,9 @@
 
 import pytest
 
+from packtype.common.utils import width
 from packtype.grammar import UnknownEntityError, parse_string
-from packtype.union import Union, UnionError
-from packtype.utils import width
+from packtype.types.union import Union, UnionError
 
 from ..fixtures import reset_registry
 
