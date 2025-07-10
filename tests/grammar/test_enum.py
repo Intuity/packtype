@@ -7,6 +7,7 @@ import pytest
 from packtype.common.utils import width
 from packtype.grammar import ParseError, parse_string
 from packtype.types.enum import Enum, EnumError, EnumMode
+from packtype.types.wrap import BadAttributeError
 
 from ..fixtures import reset_registry
 
@@ -159,6 +160,35 @@ def test_parse_enum_description():
     assert int(pkg.a.D) == 3
 
 
+def test_parse_enum_modifiers():
+    """Test parsing an enum definition with modifiers."""
+    pkg = parse_string(
+        """
+        package the_package {
+            // Default behaviours (implicit width, indexed)
+            enum a {
+                "This is an enum"
+                @prefix=ABC
+                A
+                B
+                C
+                D
+            }
+        }
+        """
+    )
+    assert len(pkg._PT_FIELDS) == 1
+    assert issubclass(pkg.a, Enum)
+    assert width(pkg.a) == 2
+    assert pkg.a._PT_MODE is EnumMode.INDEXED
+    assert pkg.a.__doc__ == "This is an enum"
+    assert pkg.a._PT_ATTRIBUTES["prefix"] == "ABC"
+    assert int(pkg.a.A) == 0
+    assert int(pkg.a.B) == 1
+    assert int(pkg.a.C) == 2
+    assert int(pkg.a.D) == 3
+
+
 def test_parse_enum_bad_field():
     """Test parsing an enum definition with a bad field."""
     with pytest.raises(ParseError, match="Failed to parse input"):
@@ -187,6 +217,24 @@ def test_parse_enum_bad_width():
                     C
                     D
                     E
+                }
+            }
+            """
+        )
+
+
+def test_parse_enum_bad_modifier():
+    """Test parsing an enum where an unrecognised modifier is used."""
+    with pytest.raises(BadAttributeError, match="Unsupported attribute 'blargh' for Enum"):
+        parse_string(
+            """
+            package the_package {
+                enum [2] a {
+                    @blargh=123
+                    A
+                    B
+                    C
+                    D
                 }
             }
             """

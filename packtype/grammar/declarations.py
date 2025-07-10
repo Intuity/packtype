@@ -38,6 +38,12 @@ class Description:
 
 
 @dataclass()
+class Modifier:
+    option: str
+    value: str
+
+
+@dataclass()
 class Position:
     line: int
     column: int
@@ -74,6 +80,7 @@ class DeclConstant:
     name: str
     width: DeclExpr
     expr: DeclExpr
+    description: Description | None = None
 
     def to_instance(
         self,
@@ -92,9 +99,12 @@ class DeclConstant:
         value = self.expr.evaluate(cb_resolve)
         # Create instance
         if width is None:
-            return Constant(default=value)
+            const = Constant(default=value)
         else:
-            return Constant[width](default=value)
+            const = Constant[width](default=value)
+        # Attach optional description
+        const.__doc__ = str(self.description) if self.description else None
+        return const
 
 
 @dataclass()
@@ -103,6 +113,7 @@ class DeclScalar:
     name: str
     signedness: type[Signed | Unsigned]
     width: DeclExpr
+    description: Description | None = None
 
     def resolve_width(
         self,
@@ -143,10 +154,12 @@ class DeclScalar:
             int | type[Base],
         ],
     ) -> type[Scalar]:
-        return Scalar[
+        scalar_cls = Scalar[
             self.resolve_width(cb_resolve),
             (self.signedness is Signed),
         ]
+        scalar_cls.__doc__ = str(self.description) if self.description else None
+        return scalar_cls
 
 
 @dataclass()
@@ -156,7 +169,11 @@ class DeclEnum:
     mode: EnumMode
     width: DeclExpr | None
     description: Description | None
+    modifiers: list[Modifier] | None
     values: list
+
+    def get_modifiers(self) -> dict[str, str]:
+        return {mod.option: mod.value for mod in (self.modifiers or {})}
 
     def to_class(
         self,
@@ -191,6 +208,7 @@ class DeclEnum:
             kwds={
                 "mode": self.mode,
                 "width": width,
+                **self.get_modifiers(),
             },
             doc_str=str(self.description) if self.description else None,
             source=(source_file.as_posix() if source_file else "N/A", self.position.line),
@@ -211,7 +229,11 @@ class DeclStruct:
     packing: Packing
     width: DeclExpr | None
     description: Description | None
+    modifiers: list[Modifier] | None
     fields: list[str]
+
+    def get_modifiers(self) -> dict[str, str]:
+        return {mod.option: mod.value for mod in (self.modifiers or {})}
 
     def to_class(
         self,
@@ -243,6 +265,7 @@ class DeclStruct:
             kwds={
                 "width": width,
                 "packing": self.packing,
+                **self.get_modifiers(),
             },
             doc_str=str(self.description) if self.description else None,
             source=(source_file.as_posix() if source_file else "N/A", self.position.line),
@@ -254,7 +277,11 @@ class DeclUnion:
     position: Position
     name: str
     description: Description | None
+    modifiers: list[Modifier] | None
     fields: list
+
+    def get_modifiers(self) -> dict[str, str]:
+        return {mod.option: mod.value for mod in (self.modifiers or {})}
 
     def to_class(
         self,
@@ -279,7 +306,7 @@ class DeclUnion:
             Union,
             self.name,
             fields=fields,
-            kwds={},
+            kwds=self.get_modifiers(),
             doc_str=str(self.description) if self.description else None,
             source=(source_file.as_posix() if source_file else "N/A", self.position.line),
         )
@@ -290,4 +317,8 @@ class DeclPackage:
     position: Position
     name: str
     description: Description | None
+    modifiers: list[Modifier] | None
     declarations: list
+
+    def get_modifiers(self) -> dict[str, str]:
+        return {mod.option: mod.value for mod in (self.modifiers or {})}

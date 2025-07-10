@@ -103,7 +103,7 @@ def parse_string(
         base=Package,
         cname=defn.name,
         fields={},
-        kwds={},
+        kwds=defn.get_modifiers(),
         doc_str=str(defn.description) if defn.description else None,
     )
 

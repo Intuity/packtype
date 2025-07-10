@@ -20,6 +20,7 @@ from .declarations import (
     DeclStruct,
     DeclUnion,
     Description,
+    Modifier,
     Position,
     Signed,
     Unsigned,
@@ -81,6 +82,9 @@ class PacktypeTransformer(Transformer):
     def descr(self, body):
         return Description(str(body[0]).strip('"'))
 
+    def modifier(self, body):
+        return Modifier(*body)
+
     @v_args(meta=True)
     def decl_import(self, meta, body):
         return DeclImport(Position(meta.line, meta.column), *body)
@@ -91,12 +95,23 @@ class PacktypeTransformer(Transformer):
 
     @v_args(meta=True)
     def decl_constant(self, meta, body):
-        if len(body) == 3:
-            c_type, width, expr = body
+        # Extract constant name
+        c_type, *remainder = body
+        # Extract optional width and constant value
+        if (
+            len(remainder) >= 2
+            and isinstance(remainder[0], DeclExpr)
+            and isinstance(remainder[1], DeclExpr)
+        ):
+            width, expr, *remainder = remainder
         else:
-            c_type, expr = body
             width = None
-        return DeclConstant(Position(meta.line, meta.column), c_type, width, expr)
+            expr, *remainder = remainder
+        # Extract optional description
+        descr = None
+        if remainder and isinstance(remainder[0], Description):
+            descr = remainder[0]
+        return DeclConstant(Position(meta.line, meta.column), c_type, width, expr, descr)
 
     @v_args(meta=True)
     def field(self, meta, body):
@@ -130,8 +145,18 @@ class PacktypeTransformer(Transformer):
             description, *remainder = remainder
         else:
             description = None
+        # Pickup modifiers
+        mods = []
+        while remainder and isinstance(remainder[0], Modifier):
+            mods.append(remainder.pop(0))
         return DeclEnum(
-            Position(meta.line, meta.column), e_type, mode, width, description, remainder
+            Position(meta.line, meta.column),
+            e_type,
+            mode,
+            width,
+            description,
+            mods,
+            remainder,
         )
 
     @v_args(meta=True)
@@ -143,11 +168,16 @@ class PacktypeTransformer(Transformer):
         else:
             signed = Unsigned
         # Pickup width
-        if remainder:
+        if remainder and isinstance(remainder[0], DeclExpr):
             width = remainder[0]
         else:
             width = DeclExpr(1)
-        return DeclScalar(Position(meta.line, meta.column), s_type, signed, width)
+        # Pickup description
+        if remainder and isinstance(remainder[0], Description):
+            descr = remainder[0]
+        else:
+            descr = None
+        return DeclScalar(Position(meta.line, meta.column), s_type, signed, width, descr)
 
     @v_args(meta=True)
     def decl_struct(self, meta, body):
@@ -165,12 +195,15 @@ class PacktypeTransformer(Transformer):
             name, *remainder = remainder
         # Extract description if given
         if isinstance(remainder[0], Description):
-            description, *fields = remainder
+            description, *remainder = remainder
         else:
             description = None
-            fields = remainder
+        # Extract modifiers
+        mods = []
+        while remainder and isinstance(remainder[0], Modifier):
+            mods.append(remainder.pop(0))
         return DeclStruct(
-            Position(meta.line, meta.column), name, packing, width, description, fields
+            Position(meta.line, meta.column), name, packing, width, description, mods, remainder
         )
 
     @v_args(meta=True)
@@ -179,11 +212,14 @@ class PacktypeTransformer(Transformer):
         name, *remainder = body
         # Extract description if given
         if remainder and isinstance(remainder[0], Description):
-            description, *fields = remainder
+            description, *remainder = remainder
         else:
-            fields = remainder
             description = None
-        return DeclUnion(Position(meta.line, meta.column), name, description, fields)
+        # Extract modifiers
+        mods = []
+        while remainder and isinstance(remainder[0], Modifier):
+            mods.append(remainder.pop(0))
+        return DeclUnion(Position(meta.line, meta.column), name, description, mods, remainder)
 
     @v_args(meta=True)
     def decl_package(self, meta, body):
@@ -193,4 +229,8 @@ class PacktypeTransformer(Transformer):
             description, *remainder = remainder
         else:
             description = None
-        return DeclPackage(Position(meta.line, meta.column), p_name, description, remainder)
+        # Extract modifiers
+        mods = []
+        while remainder and isinstance(remainder[0], Modifier):
+            mods.append(remainder.pop(0))
+        return DeclPackage(Position(meta.line, meta.column), p_name, description, mods, remainder)
