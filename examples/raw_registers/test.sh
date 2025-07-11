@@ -12,8 +12,7 @@ cd $this_dir
 export PYTHONPATH=${this_dir}/../..:$PYTHONPATH
 
 # Invoke packtype to generate package
-python3 -m packtype datastructures.py code package sv ${this_dir}/out
+python3 -m packtype --debug code package sv ${this_dir}/out datastructures.py
 
 # Invoke packtype to generate registers
-python3 -m packtype --debug registers.py code register sv ${this_dir}/out
-
+python3 -m packtype --debug code register sv ${this_dir}/out registers.py

@@ -17,8 +17,7 @@ limitations under the License.
 <%namespace name="blocks" file="blocks.mako" />\
 
 /* verilator lint_off UNUSEDPARAM */
-
-package ${baseline._pt_name() | tc.snake_case};
+package ${baseline._pt_name() | filters.package};
 
 // =============================================================================
 // Imports
@@ -27,9 +26,9 @@ package ${baseline._pt_name() | tc.snake_case};
 %for foreign in baseline._pt_foreign():
     %if foreign._PT_ATTACHED_TO:
 <%      refers_to = foreign._PT_ATTACHED_TO._pt_lookup(foreign) %>\
-import ${foreign._PT_ATTACHED_TO._pt_name() | tc.snake_case}::${refers_to | tc.snake_case}_t;
+import ${foreign._PT_ATTACHED_TO._pt_name() | filters.package}::${refers_to | filters.type};
     %else:
-import ${foreign._PT_ATTACHED_TO._pt_name() | tc.snake_case}::${foreign._pt_name() | tc.snake_case}_t;
+import ${foreign._PT_ATTACHED_TO._pt_name() | filters.package}::${foreign._pt_name() | filters.type};
     %endif
 %endfor ## foreign in baseline._pt_foreign()
 
@@ -39,12 +38,12 @@ import ${foreign._PT_ATTACHED_TO._pt_name() | tc.snake_case}::${foreign._pt_name
 
 %for name, obj in baseline._pt_constants:
 // ${name.upper()}
-    %if utils.width(obj) > 0:
-localparam bit [${utils.width(obj)-1}:0] ${name | tc.shouty_snake_case} = ${utils.width(obj)}'h${f"{obj.value:0{(utils.width(obj)+3)//4}X}"};
+    %if utils.get_width(obj) > 0:
+localparam bit [${utils.get_width(obj)-1}:0] ${name | filters.constant} = ${utils.get_width(obj)}'h${f"{obj.value:0{(utils.get_width(obj)+3)//4}X}"};
     %elif obj.value >= (1 << 32):
-localparam ${name | tc.shouty_snake_case} = 64'h${f"{obj.value:08X}"};
+localparam ${name | filters.constant} = 64'h${f"{obj.value:08X}"};
     %else:
-localparam ${name | tc.shouty_snake_case} = 'h${f"{obj.value:08X}"};
+localparam ${name | filters.constant} = 'h${f"{obj.value:08X}"};
     %endif
 %endfor
 
@@ -55,11 +54,11 @@ localparam ${name | tc.shouty_snake_case} = 'h${f"{obj.value:08X}"};
 %for name, objcls in baseline._pt_scalars:
 <%  obj = objcls() %>\
 // ${name}
-typedef logic [${utils.width(obj)-1}:0] ${name | tc.snake_case}_t;
+typedef logic [${utils.get_width(obj)-1}:0] ${name | filters.type};
 %endfor
 %for name, obj in baseline._pt_aliases:
 // ${name}
-typedef ${obj._PT_ALIAS._pt_name() | tc.snake_case}_t ${name | tc.snake_case}_t;
+typedef ${obj._PT_ALIAS._pt_name() | filters.type} ${name | filters.type};
 %endfor
 
 // =============================================================================
@@ -69,17 +68,17 @@ typedef ${obj._PT_ALIAS._pt_name() | tc.snake_case}_t ${name | tc.snake_case}_t;
 %for name, objcls in baseline._pt_enums:
 <%  obj = objcls() %>\
 // ${name}
-typedef enum logic [${utils.width(obj)-1}:0] {
+typedef enum logic [${utils.get_width(obj)-1}:0] {
 <%  sep = " " %>\
     %for field, fname in obj._PT_LKP_INST.items():
 <%
         prefix = tc.snake_case(obj._PT_PREFIX).upper()
         prefix += ["", "_"][len(prefix) > 0]
 %>\
-    ${sep} ${prefix}${tc.snake_case(fname).upper()} = ${utils.width(obj)}'d${field.value}
+    ${sep} ${prefix}${tc.snake_case(fname).upper()} = ${utils.get_width(obj)}'d${field.value}
 <%      sep = "," %>\
     %endfor
-} ${name | tc.snake_case}_t;
+} ${name | filters.type};
 
 %endfor
 // =============================================================================
@@ -93,7 +92,7 @@ typedef enum logic [${utils.width(obj)-1}:0] {
 typedef struct packed {
 <%
         msb_pack = (obj._PT_PACKING == Packing.FROM_MSB)
-        next_pos = utils.width(obj) - 1
+        next_pos = utils.get_width(obj) - 1
         pad_idx  = 0
 %>\
         %for flsb, fmsb, (fname, field) in obj._pt_fields_msb_desc:
@@ -108,14 +107,14 @@ typedef struct packed {
 %>\
             %if isinstance(field, Scalar):
                 %if field._PT_ATTACHED_TO:
-<%                  refers_to = field._PT_ATTACHED_TO._pt_lookup(type(field)) %>\
-    ${refers_to | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
+<%                  refers_to = field._pt_name() %>\
+    ${refers_to | filters.type}${array_sfx} ${fname | tc.snake_case};
                 %else:
 <%                  sign_sfx = " signed" if field._pt_signed else "" %>\
-    logic${sign_sfx}${array_sfx}${f" [{utils.width(field)}:0]" if utils.width(field) > 1 else ""} ${fname | tc.snake_case};
+    logic${sign_sfx}${array_sfx}${f" [{utils.get_width(field)}:0]" if utils.get_width(field) > 1 else ""} ${fname | tc.snake_case};
                 %endif
             %elif isinstance(field, Alias | Enum | Struct | Union):
-    ${field._pt_name() | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
+    ${field._pt_name() | filters.type}${array_sfx} ${fname | tc.snake_case};
             %endif
 <%          next_pos = (flsb - 1) %>\
         %endfor
@@ -123,7 +122,7 @@ typedef struct packed {
 <%          pad_width = next_pos + 1 %>\
     logic${f" [{pad_width-1}:0]" if pad_width > 1 else ""} _padding_${pad_idx};
         %endif
-} ${obj._pt_name() | tc.snake_case}_t;
+} ${obj._pt_name() | filters.type};
     %elif isinstance(obj, Union):
 typedef union packed {
         %for field, fname in obj._pt_fields.items():
@@ -133,21 +132,21 @@ typedef union packed {
 %>\
             %if isinstance(field, Scalar):
                 %if field._PT_ATTACHED_TO:
-<%                  refers_to = field._PT_ATTACHED_TO._pt_lookup(type(field)) %>\
-    ${refers_to | tc.snake_case}_t ${fname | tc.snake_case};
+<%                  refers_to = field._pt_name() %>\
+    ${refers_to | filters.type} ${fname | tc.snake_case};
                 %else:
 <%                  sign_sfx = " signed" if field._pt_signed else "" %>\
-    logic${sign_sfx}${f" [{utils.width(field)}:0]" if utils.width(field) > 1 else ""} ${fname | tc.snake_case};
+    logic${sign_sfx}${f" [{utils.get_width(field)}:0]" if utils.get_width(field) > 1 else ""} ${fname | tc.snake_case};
                 %endif
             %elif isinstance(field, Enum | Struct | Alias | Union):
-    ${field._pt_name() | tc.snake_case}_t${array_sfx} ${fname | tc.snake_case};
+    ${field._pt_name() | filters.type}${array_sfx} ${fname | tc.snake_case};
             %endif
         %endfor
-} ${obj._pt_name() | tc.snake_case}_t;
+} ${obj._pt_name() | filters.type};
     %endif
 
 %endfor
 
-endpackage : ${baseline._pt_name() | tc.snake_case}
+endpackage : ${baseline._pt_name() | filters.package}
 
 /* verilator lint_on UNUSEDPARAM */

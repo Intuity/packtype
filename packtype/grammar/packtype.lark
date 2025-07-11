@@ -1,0 +1,191 @@
+// Copyright 2023-2025, Peter Birch, mailto:peter@intuity.io
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// =============================================================================
+// Lark Common
+// =============================================================================
+
+%import common.CNAME
+%import common.ESCAPED_STRING
+%import common.INT
+%import common.SIGNED_INT
+%import common.WS
+%ignore WS
+
+// =============================================================================
+// Comments
+// =============================================================================
+
+COMMENT: /\/\/[^\n]*/
+
+%ignore COMMENT
+
+// =============================================================================
+// Utilities
+// =============================================================================
+
+?signed: "signed"
+?unsigned: "unsigned"
+
+?width: "[" expr "]"
+
+?name: CNAME
+descr: ESCAPED_STRING
+
+modifier: "@" name "=" (name | ESCAPED_STRING | NUMERIC)
+
+// =============================================================================
+// Root Nodes
+// =============================================================================
+
+// Allowable root nodes
+?root: decl_package
+    // | decl_regblock
+
+// =============================================================================
+// Package
+// =============================================================================
+
+// Define package outer
+decl_package: "package"i name "{" descr? modifier* package_body* "}"
+
+?package_body: decl_import
+             | decl_alias
+             | decl_constant
+             | decl_scalar
+             | decl_enum
+             | decl_struct
+             | decl_union
+
+// =============================================================================
+// Imports
+// =============================================================================
+
+// Example: import other_pkg::VALUE_A
+decl_import: "import" name "::" name
+
+// =============================================================================
+// Simple Declarations
+// =============================================================================
+
+// Example: local_type_t : foreign_type_t
+decl_alias: name ":" name
+
+// Example: MY_CONSTANT : constant[8] = 123
+decl_constant: name ":" "constant"i width? "=" expr descr?
+
+// Example: simple_type_t : scalar[8]
+decl_scalar: name ":" (signed|unsigned)? "scalar"i  width? descr?
+
+// =============================================================================
+// Enumerations
+//
+// enum gray [2] my_enum {
+//     "Describes my Gray coded enumeration"
+//     VALUE_A : Constant
+//     VALUE_B : Constant
+//     VALUE_C : Constant
+//     VALUE_D : Constant
+// }
+//
+// =============================================================================
+
+decl_enum: "enum"i enum_mode? width? name "{" descr? modifier* enum_body* "}"
+
+?enum_mode: enum_mode_indexed
+          | enum_mode_onehot
+          | enum_mode_gray
+
+enum_mode_indexed: "indexed"i
+enum_mode_onehot: "onehot"i
+                | "one_hot"i
+enum_mode_gray: "gray"i
+
+?enum_body: enum_body_simple
+          | enum_body_typed
+          | enum_body_assign
+          | decl_constant
+?enum_body_simple: name
+?enum_body_typed: name ":" "constant"i
+?enum_body_assign: name "=" expr
+
+// =============================================================================
+// Structs
+//
+// struct [32] my_struct {
+//    "Describes my Struct"
+//    field_a : Scalar[8]
+//    field_b : some_type_t
+// }
+//
+// =============================================================================
+
+field: name ":" name
+     | decl_scalar
+
+decl_struct: "struct"i packing_mode? width? name "{" descr? modifier* field* "}"
+
+?packing_mode: packing_mode_msb
+             | packing_mode_lsb
+
+packing_mode_msb: "msb"i
+                | "from_msb"i
+packing_mode_lsb: "lsb"i
+                | "from_lsb"i
+
+// =============================================================================
+// Unions
+//
+// union my_union {
+//    "Describes my Union"
+//    raw    : Scalar[32]
+//    struct : my_struct
+// }
+//
+// =============================================================================
+
+decl_union: "union"i name "{" descr? modifier* field* "}"
+
+// =============================================================================
+// Expressions
+// =============================================================================
+
+expr: expr_term (OPERATOR expr_term)*
+
+?expr_term: name
+          | HEX
+          | BINARY
+          | DECIMAL
+          | "(" expr ")"
+          | expr_funcs
+
+expr_funcs: name "(" (expr ","?)* ")"
+
+NUMERIC: HEX | BINARY | DECIMAL
+HEX: (/\b0x[0-9a-f]+\b/i)
+BINARY: (/\b0b[0-1]+\b/)
+DECIMAL: SIGN? /\b[0-9]+\b/
+OPERATOR: SIGN
+        | "/"
+        | "&"
+        | "|"
+        | "^"
+        | "*"
+        | "**"
+        | "<"
+        | "<<"
+        | ">"
+        | ">>"
+SIGN: "+"
+    | "-"

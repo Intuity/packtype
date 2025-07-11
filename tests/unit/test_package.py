@@ -6,8 +6,8 @@ import pytest
 
 import packtype
 from packtype import Constant, Scalar
-from packtype.package import Package
-from packtype.wrap import BadAttributeError, BadFieldTypeError, MissingAnnotationError
+from packtype.types.package import Package
+from packtype.types.wrap import BadAttributeError, BadFieldTypeError, MissingAnnotationError
 
 from ..fixtures import reset_registry
 

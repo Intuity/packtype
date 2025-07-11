@@ -1,8 +1,8 @@
-Packtype is used to define constants and packed data structures using a syntax 
-similar to Python [dataclasses](https://docs.python.org/3/library/dataclasses.html), 
+Packtype is used to define constants and packed data structures using a syntax
+similar to Python [dataclasses](https://docs.python.org/3/library/dataclasses.html),
 these definitions can then be interrogated, rendered into various output formats,
 or used natively in Python. The project originated from a need to sample and
-drive structs and union ports on the boundary of SystemVerilog designs from 
+drive structs and union ports on the boundary of SystemVerilog designs from
 cocotb in non-commercial simulators.
 
 ## Installation
