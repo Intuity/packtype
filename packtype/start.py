@@ -10,10 +10,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import click
-from rich.logging import RichHandler
-from rich.traceback import install
 
 from .common import utils
+from .common.logging import get_log
 from .grammar import parse
 from .registers import Behaviour, File, Register
 from .templates.common import camel_case, snake_case
@@ -29,25 +28,6 @@ from .types.scalar import Scalar
 from .types.struct import Struct
 from .types.union import Union
 from .types.wrap import Registry
-
-
-def get_log() -> logging.Logger:
-    """Get the logger for the packtype module."""
-    return logging.getLogger("packtype")
-
-
-def setup_logging_and_exceptions():
-    # Setup logging
-    logging.basicConfig(
-        level="NOTSET",
-        format="%(message)s",
-        datefmt="[%X]",
-        handlers=[RichHandler()],
-    )
-    get_log().setLevel(logging.INFO)
-
-    # Setup exception handling
-    install()
 
 
 def resolve_to_object(

@@ -4,7 +4,8 @@
 
 import traceback
 
-from packtype.start import get_log, main, setup_logging_and_exceptions
+from packtype.common.logging import get_log, setup_logging_and_exceptions
+from packtype.start import main
 
 # Catch invocation
 if __name__ == "__main__":  # pragma: no cover

@@ -9,6 +9,7 @@ from pathlib import Path
 from lark import Lark
 from lark.exceptions import UnexpectedToken
 
+from ..common.logging import get_log
 from ..types.base import Base
 from ..types.constant import Constant
 from ..types.package import Package
@@ -58,19 +59,25 @@ class RedefinitionError(Exception):
 def parse_string(
     definition: str,
     namespaces: dict[str, Package] | None = None,
+    constant_overrides: dict[str, int] | None = None,
     source: Path | None = None,
 ) -> Package:
     """
     Parse a Packtype definition from a string producing a Package object.
 
-    :param definition: The Packtype definition as a string.
-    :param namespaces: A dictionary of known packages to resolve imports.
-    :param source:     An optional source path for error reporting and associating
-                       each declaration with its source file.
-    :return:           A Package object representing the parsed definition.
+    :param definition:         The Packtype definition as a string.
+    :param namespaces:         A dictionary of known packages to resolve imports.
+    :param source:             An optional source path for error reporting and
+                               associating each declaration with its source file.
+    :param constant_overrides: Optional overrides for constants defined within
+                               the package, where the key must precisely match
+                               the constant's name
+    :return:                   A Package object representing the parsed definition.
     """
     # If no namespaces are provided, use an empty dict
     namespaces = namespaces or {}
+    # If no constant overrides are provided, use an empty dict
+    constant_overrides = constant_overrides or {}
     # Parse the definition
     try:
         defn = PacktypeTransformer().transform(create_parser().parse(definition))
@@ -140,6 +147,13 @@ def parse_string(
                 package._pt_attach_constant(decl.name, constant := decl.to_instance(_resolve))
                 # Check for name collisions
                 _check_collision(decl.name)
+                # Check for a constant override
+                if decl.name in constant_overrides:
+                    get_log().debug(
+                        f"Overriding constant '{decl.name}' with value "
+                        f"{constant_overrides[decl.name]}"
+                    )
+                    constant._pt_set(int(constant_overrides[decl.name]))
                 # Remember this constant
                 known_entities[decl.name] = (constant, decl.position)
             # Build aliases and scalars
@@ -165,13 +179,20 @@ def parse_string(
     return package
 
 
-def parse(path: Path, namespaces: dict[str, Package] | None = None) -> Package:
+def parse(
+    path: Path,
+    namespaces: dict[str, Package] | None = None,
+    constant_overrides: dict[str, int] | None = None,
+) -> Package:
     """
     Parse a Packtype definition from a file path producing a Package object.
 
-    :param path:       The path to the Packtype definition file.
-    :param namespaces: A dictionary of known packages to resolve imports.
-    :return:           A Package object representing the parsed definition.
+    :param path:               The path to the Packtype definition file.
+    :param namespaces:         A dictionary of known packages to resolve imports.
+    :param constant_overrides: Optional overrides for constants defined within
+                               the package, where the key must precisely match
+                               the constant's name.
+    :return:                   A Package object representing the parsed definition.
     """
     with path.open("r", encoding="utf-8") as fh:
-        return parse_string(fh.read(), namespaces, path)
+        return parse_string(fh.read(), namespaces, constant_overrides, path)
