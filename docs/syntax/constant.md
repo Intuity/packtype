@@ -24,7 +24,9 @@ custom grammar:
     ```sv linenums="1"
     package my_package {
         VALUE_A : constant = 123
+            "Comments may be attached to values with a string following the definition"
         VALUE_B : constant[16] = 234
+            "These are attached to the constant definitions"
     }
     ```
 
