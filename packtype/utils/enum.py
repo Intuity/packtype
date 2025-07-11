@@ -18,6 +18,7 @@ def _normalise_enum(enum: Enum | type[Enum]) -> Package:
 def get_entries(enum: Enum | type[Enum]) -> Iterable[tuple[str, int, bool]]:
     """
     Iterate the entries of a Packtype enum.
+    :param enum: The Packtype enum to inspect
     :yield: Tuple of the enum name, value, and whether it is the last entry
     """
     enum = _normalise_enum(enum)

@@ -40,3 +40,9 @@ nav:
     - Scalars: syntax/scalar.md
     - Structs: syntax/struct.md
     - Unions: syntax/union.md
+  - Utilities:
+    - Basic: utilities/basic.md
+    - Enums: utilities/enum.md
+    - Structs: utilities/struct.md
+    - Unions: utilities/union.md
+    - Packages: utilities/package.md

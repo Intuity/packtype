@@ -28,9 +28,9 @@ def is_union(ptype: type[Base] | Base) -> bool:
 
 def get_members(union: Union | type[Union]) -> Iterable[tuple[str, Base]]:
     """
-    Get the fields of a Packtype struct in MSB-first order.
-    :param struct: The Packtype struct to inspect
-    :return: List of tuples of MSB, LSB, and inner tuple of field name and type
+    Get the members of a Packtype union
+    :param union: The Packtype union to inspect
+    :return: List of tuples of member name and type
     """
     union = _normalise_union(union)
     for finst, fname in union._pt_fields.items():

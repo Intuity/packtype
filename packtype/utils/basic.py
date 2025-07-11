@@ -13,7 +13,11 @@ from ..types.union import Union
 
 
 def clog2(x: int) -> int:
-    """Calculate the ceiling of the base-2 logarithm of x."""
+    """
+    Calculate the ceiling of the base-2 logarithm of x.
+    :param x: The integer to calculate the logarithm of
+    :return: The ceiling of the base-2 logarithm of x
+    """
     assert x > 0, "Input must be a positive integer."
     return math.ceil(math.log2(x))
 
@@ -24,7 +28,11 @@ def get_width(
     | NumericPrimitive
     | Union,
 ) -> int:
-    """Get the width of a Packtype definition"""
+    """
+    Get the width of a Packtype definition
+    :param ptype: The Packtype definition to inspect
+    :return: The width in bits of the Packtype definition
+    """
     if isinstance(ptype, PackedAssembly | Enum | NumericPrimitive | Union):
         return ptype._pt_width
     elif issubclass(ptype, PackedAssembly | Enum | NumericPrimitive | Union):
@@ -36,7 +44,11 @@ def get_width(
 
 
 def get_name(ptype: type[Base] | Base) -> str:
-    """Get the name of a Packtype definition"""
+    """
+    Get the name of a Packtype definition
+    :param ptype: The Packtype definition to inspect
+    :return: The name of the Packtype definition
+    """
     if isinstance(ptype, Base) or issubclass(ptype, Base):
         return ptype._pt_name()
     elif issubclass(ptype, Alias):
@@ -46,7 +58,11 @@ def get_name(ptype: type[Base] | Base) -> str:
 
 
 def get_doc(ptype: type[Base] | Base) -> str:
-    """Get the docstring of a Packtype definition"""
+    """
+    Get the docstring of a Packtype definition
+    :param ptype: The Packtype definition to inspect
+    :return: The docstring of the Packtype definition
+    """
     if isinstance(ptype, Base) or issubclass(ptype, Base):
         return ptype.__doc__ or ""
     elif issubclass(ptype, Alias):
@@ -55,8 +71,12 @@ def get_doc(ptype: type[Base] | Base) -> str:
         raise TypeError(f"{ptype} is not a Packtype definition")
 
 
-def get_source(ptype: type[Base] | Base) -> str:
-    """Get the name of a Packtype definition"""
+def get_source(ptype: type[Base] | Base) -> tuple[str, int]:
+    """
+    Get the name of a Packtype definition
+    :param ptype: The Packtype definition to inspect
+    :return: The source file and line number of the Packtype definition
+    """
     if isinstance(ptype, Base) or issubclass(ptype, Base):
         return ptype._PT_SOURCE
     elif issubclass(ptype, Alias):
@@ -66,7 +86,11 @@ def get_source(ptype: type[Base] | Base) -> str:
 
 
 def is_signed(ptype: type[NumericPrimitive] | NumericPrimitive) -> bool:
-    """Check if a Packtype definition is signed"""
+    """
+    Check if a Packtype definition is signed
+    :param ptype: The Packtype definition to check
+    :return: True if the definition is signed, False otherwise
+    """
     if isinstance(ptype, NumericPrimitive):
         return ptype._pt_signed
     elif issubclass(ptype, NumericPrimitive):
