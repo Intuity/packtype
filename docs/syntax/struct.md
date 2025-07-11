@@ -111,11 +111,11 @@ to the type:
 
 ## Rendering to SVG
 
-Struct definitions support both `__repr_svg__` and `_pt_as_svg` methods, the
+Struct definitions support both `_repr_svg_` and `_pt_as_svg` methods, the
 former being defined as part of
 [IPython's rich representation methods](https://ipython.readthedocs.io/en/stable/config/integrating.html#rich-display).
 
-The `__repr_svg__` method will use the default style to generate an SVG
+The `_repr_svg_` method will use the default style to generate an SVG
 representation of the struct showing the field placements, while `_pt_as_svg`
 allows an optional `SvgConfig` object to be passed which allows for customisation
 of the rendering style (changing fonts, line widths, bit spacing, and more).
