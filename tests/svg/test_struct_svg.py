@@ -27,7 +27,7 @@ def test_struct_svg_single():
         abc: Scalar[32]
 
     inst = TestStruct()
-    svg = inst.__repr_svg__()
+    svg = inst._repr_svg_()
     assert svg == (REFERENCE / "test_struct_svg_single.svg").read_text("utf-8")
 
 
@@ -45,7 +45,7 @@ def test_struct_svg_multiple():
         d: Scalar[8]
 
     inst = TestStruct()
-    svg = inst.__repr_svg__()
+    svg = inst._repr_svg_()
     assert svg == (REFERENCE / "test_struct_svg_multiple.svg").read_text("utf-8")
 
 
@@ -66,7 +66,7 @@ def test_struct_svg_nested():
         d: Scalar[8]
 
     inst = OuterStruct()
-    svg = inst.__repr_svg__()
+    svg = inst._repr_svg_()
     assert svg == (REFERENCE / "test_struct_svg_nested.svg").read_text("utf-8")
 
 
