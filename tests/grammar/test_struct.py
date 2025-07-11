@@ -4,10 +4,10 @@
 
 import pytest
 
-from packtype.common.utils import width
 from packtype.grammar import ParseError, UnknownEntityError, parse_string
 from packtype.types.assembly import Packing, WidthError
 from packtype.types.struct import Struct
+from packtype.utils import get_width
 
 from ..fixtures import reset_registry
 
@@ -73,42 +73,42 @@ def test_parse_struct():
     assert len(pkg._PT_FIELDS) == 8
     # a
     assert issubclass(pkg.a, Struct)
-    assert width(pkg.a) == 56
+    assert get_width(pkg.a) == 56
     assert pkg.a._PT_PACKING is Packing.FROM_LSB
     assert pkg.a._PT_RANGES == {"a": (0, 7), "b": (8, 23), "c": (24, 55)}
     # b
     assert issubclass(pkg.b, Struct)
-    assert width(pkg.b) == 56
+    assert get_width(pkg.b) == 56
     assert pkg.b._PT_PACKING is Packing.FROM_LSB
     assert pkg.b._PT_RANGES == {"a": (0, 7), "b": (8, 23), "c": (24, 55)}
     # c
     assert issubclass(pkg.c, Struct)
-    assert width(pkg.c) == 56
+    assert get_width(pkg.c) == 56
     assert pkg.c._PT_PACKING is Packing.FROM_MSB
     assert pkg.c._PT_RANGES == {"a": (48, 55), "b": (32, 47), "c": (0, 31)}
     # e
     assert issubclass(pkg.e, Struct)
-    assert width(pkg.e) == 56
+    assert get_width(pkg.e) == 56
     assert pkg.e._PT_PACKING is Packing.FROM_LSB
     assert pkg.e._PT_RANGES == {"a": (0, 7), "b": (8, 23), "c": (24, 55)}
     # f
     assert issubclass(pkg.f, Struct)
-    assert width(pkg.f) == 56
+    assert get_width(pkg.f) == 56
     assert pkg.f._PT_PACKING is Packing.FROM_MSB
     assert pkg.f._PT_RANGES == {"a": (48, 55), "b": (32, 47), "c": (0, 31)}
     # g
     assert issubclass(pkg.g, Struct)
-    assert width(pkg.g) == 60
+    assert get_width(pkg.g) == 60
     assert pkg.g._PT_PACKING is Packing.FROM_LSB
     assert pkg.g._PT_RANGES == {"a": (0, 7), "b": (8, 23), "c": (24, 55), "_padding": (56, 59)}
     # h
     assert issubclass(pkg.h, Struct)
-    assert width(pkg.h) == 60
+    assert get_width(pkg.h) == 60
     assert pkg.h._PT_PACKING is Packing.FROM_LSB
     assert pkg.h._PT_RANGES == {"a": (0, 7), "b": (8, 23), "c": (24, 55), "_padding": (56, 59)}
     # i
     assert issubclass(pkg.i, Struct)
-    assert width(pkg.i) == 60
+    assert get_width(pkg.i) == 60
     assert pkg.i._PT_PACKING is Packing.FROM_MSB
     assert pkg.i._PT_RANGES == {"a": (52, 59), "b": (36, 51), "c": (4, 35), "_padding": (0, 3)}
 
@@ -128,7 +128,7 @@ def test_parse_struct_description():
     )
     assert len(pkg._PT_FIELDS) == 1
     assert issubclass(pkg.simple_struct, Struct)
-    assert width(pkg.simple_struct) == 5
+    assert get_width(pkg.simple_struct) == 5
     assert pkg.simple_struct.__doc__ == "This is a simple struct"
 
 
@@ -153,12 +153,12 @@ def test_parse_struct_reference():
     )
     assert len(pkg._PT_FIELDS) == 4
     assert issubclass(pkg.compound_struct, Struct)
-    assert width(pkg.compound_struct) == 14
+    assert get_width(pkg.compound_struct) == 14
     inst = pkg.compound_struct()
-    assert width(inst.a.a) == 2
-    assert width(inst.a.b) == 3
-    assert width(inst.b) == 1
-    assert width(inst.c) == 8
+    assert get_width(inst.a.a) == 2
+    assert get_width(inst.a.b) == 3
+    assert get_width(inst.b) == 1
+    assert get_width(inst.c) == 8
 
 
 def test_parse_struct_oversized():

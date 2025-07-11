@@ -150,7 +150,7 @@ class Enum(Base, Numeric):
         return int(self._pt_bv)
 
     @classmethod
-    def _pt_as_dict(cls) -> dict:
+    def _pt_as_dict(cls) -> dict[str, int]:
         return {n: int(v) for v, n in cls._PT_LKP_INST.items()}
 
     @classmethod

@@ -3,14 +3,11 @@
 #
 
 import math
-from collections.abc import Iterable
 
 from ..types.alias import Alias
 from ..types.assembly import PackedAssembly
 from ..types.base import Base
-from ..types.constant import Constant
 from ..types.enum import Enum
-from ..types.package import Package
 from ..types.primitive import NumericPrimitive
 from ..types.union import Union
 
@@ -21,7 +18,7 @@ def clog2(x: int) -> int:
     return math.ceil(math.log2(x))
 
 
-def width(
+def get_width(
     ptype: type[PackedAssembly | Enum | NumericPrimitive | Union]
     | PackedAssembly
     | NumericPrimitive
@@ -33,17 +30,27 @@ def width(
     elif issubclass(ptype, PackedAssembly | Enum | NumericPrimitive | Union):
         return ptype._PT_WIDTH
     elif issubclass(ptype, Alias):
-        return width(ptype._PT_ALIAS)
+        return get_width(ptype._PT_ALIAS)
     else:
         raise TypeError(f"{ptype} is not a Packtype definition")
 
 
-def name(ptype: type[Base] | Base) -> str:
+def get_name(ptype: type[Base] | Base) -> str:
     """Get the name of a Packtype definition"""
     if isinstance(ptype, Base) or issubclass(ptype, Base):
         return ptype._pt_name()
     elif issubclass(ptype, Alias):
-        return name(ptype._PT_ALIAS)
+        return get_name(ptype._PT_ALIAS)
+    else:
+        raise TypeError(f"{ptype} is not a Packtype definition")
+
+
+def get_doc(ptype: type[Base] | Base) -> str:
+    """Get the docstring of a Packtype definition"""
+    if isinstance(ptype, Base) or issubclass(ptype, Base):
+        return ptype.__doc__ or ""
+    elif issubclass(ptype, Alias):
+        return get_doc(ptype._PT_ALIAS)
     else:
         raise TypeError(f"{ptype} is not a Packtype definition")
 
@@ -53,7 +60,7 @@ def get_source(ptype: type[Base] | Base) -> str:
     if isinstance(ptype, Base) or issubclass(ptype, Base):
         return ptype._PT_SOURCE
     elif issubclass(ptype, Alias):
-        return name(ptype._PT_ALIAS)
+        return get_source(ptype._PT_ALIAS)
     else:
         raise TypeError(f"{ptype} is not a Packtype definition")
 
@@ -66,7 +73,3 @@ def is_signed(ptype: type[NumericPrimitive] | NumericPrimitive) -> bool:
         return ptype._PT_SIGNED
     else:
         raise TypeError(f"{ptype} is not a Packtype definition")
-
-
-def get_package_constants(pkg: Package) -> Iterable[tuple[str, Constant]]:
-    return pkg._pt_constants

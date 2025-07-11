@@ -6,7 +6,7 @@ import math
 
 from lark import Transformer, v_args
 
-from ..common import utils
+from .. import utils
 from ..types.assembly import Packing
 from ..types.enum import EnumMode
 from .declarations import (
@@ -47,7 +47,7 @@ class PacktypeTransformer(Transformer):
             case "clog2":
                 method_func = utils.clog2
             case "width":
-                method_func = utils.width
+                method_func = utils.get_width
             case _:
                 method_func = getattr(math, method, None)
         return DeclExprFunction(method_func, *args)
@@ -169,7 +169,7 @@ class PacktypeTransformer(Transformer):
             signed = Unsigned
         # Pickup width
         if remainder and isinstance(remainder[0], DeclExpr):
-            width = remainder[0]
+            width, *remainder = remainder
         else:
             width = DeclExpr(1)
         # Pickup description

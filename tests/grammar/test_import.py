@@ -5,9 +5,9 @@
 import pytest
 
 from packtype import Constant, Scalar
-from packtype.common.utils import width
 from packtype.grammar import ParseError, parse_string
 from packtype.types.struct import Struct
+from packtype.utils import get_width
 
 from ..fixtures import reset_registry
 
@@ -46,20 +46,20 @@ def test_parse_import():
 
     assert isinstance(pkg_a.A, Constant)
     assert pkg_a.A.value == 42
-    assert width(pkg_a.A) == -1
+    assert get_width(pkg_a.A) == -1
 
     assert issubclass(pkg_a.a_sclr, Scalar)
-    assert width(pkg_a.a_sclr) == 42
+    assert get_width(pkg_a.a_sclr) == 42
 
     # Package B
     assert len(pkg_b._PT_FIELDS) == 2
 
     assert isinstance(pkg_b.B, Constant)
     assert pkg_b.B.value == 42 + 1
-    assert width(pkg_b.B) == -1
+    assert get_width(pkg_b.B) == -1
 
     assert pkg_b.test_struct._PT_BASE is Struct
-    assert width(pkg_b.test_struct) == 42 + (42 + 1)
+    assert get_width(pkg_b.test_struct) == 42 + (42 + 1)
 
 
 def test_parse_import_bad():

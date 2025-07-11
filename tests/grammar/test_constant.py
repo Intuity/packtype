@@ -5,8 +5,8 @@
 import pytest
 
 from packtype import Constant
-from packtype.common.utils import width
 from packtype.grammar import ParseError, UnknownEntityError, parse_string
+from packtype.utils import get_width
 
 from ..fixtures import reset_registry
 
@@ -18,12 +18,12 @@ def test_parse_constant():
     pkg = parse_string(
         """
         package the_package {
-            // Unsized declaration
             A: constant = 42
-            // Sized declaration
+                "Unsized declaration"
             B: constant[8] = 0x42
-            // Declarations are case insensitive
+                "Sized declaration"
             C: CONSTANT[12] = 0x123
+                "Declarations are case insensitive"
         }
         """
     )
@@ -31,15 +31,18 @@ def test_parse_constant():
     # A
     assert isinstance(pkg.A, Constant)
     assert pkg.A.value == 42
-    assert width(pkg.A) == -1
+    assert get_width(pkg.A) == -1
+    assert pkg.A.__doc__ == "Unsized declaration"
     # B
     assert isinstance(pkg.B, Constant)
     assert pkg.B.value == 0x42
-    assert width(pkg.B) == 8
+    assert get_width(pkg.B) == 8
+    assert pkg.B.__doc__ == "Sized declaration"
     # C
     assert isinstance(pkg.C, Constant)
     assert pkg.C.value == 0x123
-    assert width(pkg.C) == 12
+    assert get_width(pkg.C) == 12
+    assert pkg.C.__doc__ == "Declarations are case insensitive"
 
 
 def test_parse_constant_override():

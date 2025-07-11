@@ -4,9 +4,9 @@
 
 import pytest
 
-from packtype.common.utils import width
 from packtype.grammar import UnknownEntityError, parse_string
 from packtype.types.union import Union, UnionError
+from packtype.utils import get_width
 
 from ..fixtures import reset_registry
 
@@ -33,11 +33,11 @@ def test_parse_union():
     assert len(pkg._PT_FIELDS) == 2
     # with_descr
     assert issubclass(pkg.with_descr, Union)
-    assert width(pkg.with_descr) == 2
+    assert get_width(pkg.with_descr) == 2
     assert pkg.with_descr.__doc__ == "This is a simple union"
     # without_descr
     assert issubclass(pkg.without_descr, Union)
-    assert width(pkg.without_descr) == 2
+    assert get_width(pkg.without_descr) == 2
     assert pkg.without_descr.__doc__ is None
 
 
@@ -67,7 +67,7 @@ def test_parse_union_complex():
     )
     assert len(pkg._PT_FIELDS) == 4
     assert issubclass(pkg.complex, Union)
-    assert width(pkg.complex) == 8
+    assert get_width(pkg.complex) == 8
     inst = pkg.complex()
     assert isinstance(inst.a_scalar, pkg.a_scalar)
     assert isinstance(inst.a_struct, pkg.a_struct)

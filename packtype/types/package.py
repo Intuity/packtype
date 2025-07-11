@@ -99,7 +99,7 @@ class Package(Base):
         return ((y, x) for x, y in self._pt_fields.items() if isinstance(x, Constant))
 
     @property
-    def _pt_scalars(self) -> Iterable[Scalar]:
+    def _pt_scalars(self) -> Iterable[tuple[str, Scalar]]:
         return (
             (y, x)
             for x, y in self._pt_fields.items()
@@ -115,19 +115,19 @@ class Package(Base):
         )
 
     @property
-    def _pt_enums(self) -> Iterable[Enum]:
+    def _pt_enums(self) -> Iterable[tuple[str, Enum]]:
         return ((x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Enum))
 
     @property
-    def _pt_structs(self) -> Iterable[Struct]:
+    def _pt_structs(self) -> Iterable[tuple[str, Struct]]:
         return ((x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Struct))
 
     @property
-    def _pt_unions(self) -> Iterable[Union]:
+    def _pt_unions(self) -> Iterable[tuple[str, Union]]:
         return ((x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Union))
 
     @property
-    def _pt_structs_and_unions(self) -> Iterable[Union]:
+    def _pt_structs_and_unions(self) -> Iterable[tuple[str, Struct | Union]]:
         return ((x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Struct | Union))
 
     @classmethod

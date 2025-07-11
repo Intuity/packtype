@@ -204,7 +204,7 @@ def test_struct_bad_assign():
     )
 
 
-def test_struct_bad_width():
+def test_struct_bad_get_width():
     @packtype.package()
     class TestPkg:
         pass

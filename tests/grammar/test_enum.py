@@ -4,10 +4,10 @@
 
 import pytest
 
-from packtype.common.utils import width
 from packtype.grammar import ParseError, parse_string
 from packtype.types.enum import Enum, EnumError, EnumMode
 from packtype.types.wrap import BadAttributeError
+from packtype.utils import get_width
 
 from ..fixtures import reset_registry
 
@@ -88,47 +88,47 @@ def test_parse_enum():
     assert len(pkg._PT_FIELDS) == 9
     # a
     assert issubclass(pkg.a, Enum)
-    assert width(pkg.a) == 2
+    assert get_width(pkg.a) == 2
     assert pkg.a._PT_MODE is EnumMode.INDEXED
     assert [pkg.a.A, pkg.a.B, pkg.a.C, pkg.a.D] == [0, 1, 2, 3]
     # b
     assert issubclass(pkg.b, Enum)
-    assert width(pkg.b) == 2
+    assert get_width(pkg.b) == 2
     assert pkg.b._PT_MODE is EnumMode.INDEXED
     assert [pkg.b.A, pkg.b.B, pkg.b.C, pkg.b.D] == [0, 1, 2, 3]
     # c
     assert issubclass(pkg.c, Enum)
-    assert width(pkg.c) == 4
+    assert get_width(pkg.c) == 4
     assert pkg.c._PT_MODE is EnumMode.ONE_HOT
     assert [pkg.c.A, pkg.c.B, pkg.c.C, pkg.c.D] == [1, 2, 4, 8]
     # d
     assert issubclass(pkg.d, Enum)
-    assert width(pkg.d) == 2
+    assert get_width(pkg.d) == 2
     assert pkg.d._PT_MODE is EnumMode.GRAY
     assert [pkg.d().A, pkg.d().B, pkg.d().C, pkg.d().D] == [0, 1, 3, 2]
     # e
     assert issubclass(pkg.e, Enum)
-    assert width(pkg.e) == 4
+    assert get_width(pkg.e) == 4
     assert pkg.e._PT_MODE is EnumMode.INDEXED
     assert [pkg.e.A, pkg.e.B, pkg.e.C, pkg.e.D] == [0, 1, 2, 3]
     # f
     assert issubclass(pkg.f, Enum)
-    assert width(pkg.f) == 8
+    assert get_width(pkg.f) == 8
     assert pkg.f._PT_MODE is EnumMode.ONE_HOT
     assert [pkg.f.A, pkg.f.B, pkg.f.C, pkg.f.D] == [1, 2, 4, 8]
     # g
     assert issubclass(pkg.g, Enum)
-    assert width(pkg.g) == 2
+    assert get_width(pkg.g) == 2
     assert pkg.g._PT_MODE is EnumMode.GRAY
     assert [pkg.g().A, pkg.g().B, pkg.g().C, pkg.g().D] == [0, 1, 3, 2]
     # h
     assert issubclass(pkg.h, Enum)
-    assert width(pkg.h) == 8
+    assert get_width(pkg.h) == 8
     assert pkg.h._PT_MODE is EnumMode.INDEXED
     assert [pkg.h().A, pkg.h().B, pkg.h().C, pkg.h().D] == [0x12, 0x34, 0x56, 0x78]
     # i
     assert issubclass(pkg.i, Enum)
-    assert width(pkg.i) == 8
+    assert get_width(pkg.i) == 8
     assert pkg.i._PT_MODE is EnumMode.INDEXED
     assert [pkg.i().A, pkg.i().B, pkg.i().C, pkg.i().D] == [0x12, 0x13, 0x56, 0x57]
 
@@ -151,7 +151,7 @@ def test_parse_enum_description():
     )
     assert len(pkg._PT_FIELDS) == 1
     assert issubclass(pkg.a, Enum)
-    assert width(pkg.a) == 2
+    assert get_width(pkg.a) == 2
     assert pkg.a._PT_MODE is EnumMode.INDEXED
     assert pkg.a.__doc__ == "This is an enum"
     assert int(pkg.a.A) == 0
@@ -179,7 +179,7 @@ def test_parse_enum_modifiers():
     )
     assert len(pkg._PT_FIELDS) == 1
     assert issubclass(pkg.a, Enum)
-    assert width(pkg.a) == 2
+    assert get_width(pkg.a) == 2
     assert pkg.a._PT_MODE is EnumMode.INDEXED
     assert pkg.a.__doc__ == "This is an enum"
     assert pkg.a._PT_ATTRIBUTES["prefix"] == "ABC"

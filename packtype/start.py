@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 import click
 
-from .common import utils
+from . import utils
 from .common.logging import get_log
 from .grammar import parse
 from .registers import Behaviour, File, Register
