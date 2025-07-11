@@ -130,9 +130,14 @@ endpackage : my_package
     `EnumError` will be raised if the maximum enumerated value exceeds what can be
     expressed within the enum's bit width.
 
-    The `<MODIFIER>` syntax allows other standard behaviours of Packtype to be
-    altered, for example `@prefix=ABC` customises the prefix used for each
-    constant value in languages that don't offer scoped access.
+    The `<MODIFIER>` syntax allows standard behaviours of Packtype to be altered,
+    in the Python syntax these are given as keyword arguments to the decorator:
+
+     * `@prefix=...` may be used when rendering to languages that do not support
+       name spacing of enumerated types - for example in SystemVerilog the names
+       of the enumerated values will be `<PREFIX>_<VALUE_NAME>`. If omitted, the
+       prefix will be inferred as the shouty snake case version of the enumeration's
+       name (.e.g entry `A` of `my_onehot_enum_t` will become `MY_ONEHOT_ENUM_T_A`).
 
 ## Explicit Values
 
