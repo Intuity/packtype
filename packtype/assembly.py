@@ -150,8 +150,8 @@ class PackedAssembly(Assembly):
 
     def __repr__(self) -> str:
         return self.__str__()
-    
-    def __repr_svg__(self) -> str:
+
+    def _repr_svg_(self) -> str:
         return self._pt_as_svg()
 
     def _pt_as_svg(self, cfg: SvgConfig | None = None) -> str:
