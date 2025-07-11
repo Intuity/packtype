@@ -112,6 +112,7 @@ def parse_string(
         fields={},
         kwds=defn.get_modifiers(),
         doc_str=str(defn.description) if defn.description else None,
+        source=(source.as_posix() if source else "N/A", defn.position.line),
     )
 
     # Run through the declarations
