@@ -213,7 +213,7 @@ from packtype import Packing, Scalar
 class DecoderPkg:
     ...
 
-@DecoderPkg.struct(package=MyPackage, packing=Packing.FROM_MSB, width=32)
+@DecoderPkg.struct(packing=Packing.FROM_MSB, width=32)
 class PingPongPayload:
     """ Payload of a ping-pong keepalive message """
     source_id  : Scalar[ 8]
@@ -221,6 +221,8 @@ class PingPongPayload:
     ping_value : Scalar[15]
     timestamp  : Scalar[ 8]
 ```
+
+You can also render using Jupyter notebooks, see [example.ipynb](example.ipynb) as an example
 
 ### Unions
 

@@ -8,8 +8,16 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from textwrap import dedent
 
-import svg
-from svg import SVG, Element, Line, Path, Pattern, Rect, Style, Text, TSpan
+try:
+    import svg
+    from svg import SVG, Element, Line, Path, Pattern, Rect, Style, Text, TSpan
+    SVG_RENDER_AVAILABLE = True
+except ImportError as e:
+    SVG_RENDER_AVAILABLE = False
+
+
+class SvgRenderError(Exception):
+    pass
 
 
 @dataclass
@@ -388,6 +396,11 @@ class SvgRender:
         left_annotation: str | None = None,
         right_annotation: str | None = None,
     ) -> None:
+        global SVG_RENDER_AVAILABLE
+        if not SVG_RENDER_AVAILABLE:
+            raise SvgRenderError(
+                "SVG rendering is not available, please install the svg package."
+            )
         self.config = config or SvgConfig()
         self.root = SvgBitFields(
             self.config,

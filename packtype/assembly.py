@@ -14,7 +14,7 @@
 
 import functools
 import math
-from typing import Any
+from typing import Any, Iterable
 
 from .array import ArraySpec, PackedArray
 from .base import Base
@@ -23,7 +23,7 @@ from .constant import Constant
 from .numeric import Numeric
 from .packing import Packing
 from .scalar import Scalar
-
+from .svg.render import ElementStyle, SvgConfig, SvgField, SvgRender
 
 class WidthError(Exception):
     pass
@@ -151,6 +151,38 @@ class PackedAssembly(Assembly):
     def __repr__(self) -> str:
         return self.__str__()
 
+    def _repr_svg_(self) -> str:
+        return self._pt_as_svg()
+
+    def _pt_as_svg(self, cfg: SvgConfig | None = None) -> str:
+        """
+        Return an SVG representation of the packed assembly.
+
+        :param cfg: Optional SvgConfig to use for rendering
+        :return: SVG string representation of the packed assembly
+        """
+        # If no config is provided, create a default one
+        if not cfg:
+            cfg = SvgConfig()
+            cfg.left_annotation.width = cfg.left_annotation.style.estimate(type(self).__name__).width
+            cfg.left_annotation.padding = 10
+
+        # Create a rendering instance
+        svg = SvgRender(cfg, left_annotation=type(self).__name__)
+
+        for _lsb, msb, (fname, finst) in self._pt_fields_flat():
+            svg.attach(
+                SvgField(
+                    bit_width=finst._pt_width,
+                    name="" if fname == "_padding" else fname,
+                    msb=msb,
+                    style=ElementStyle.HATCHED if fname == "_padding" else ElementStyle.NORMAL,
+                )
+            )
+
+        # Return the SVG
+        return svg.render()
+
     @classmethod
     def _pt_construct(cls, parent: Base, packing: Packing, width: int):
         cls._PT_PACKING = packing
@@ -246,6 +278,20 @@ class PackedAssembly(Assembly):
                 lsb, msb = self._PT_RANGES[fname]
             pairs.append((lsb, msb, (fname, finst)))
         return sorted(pairs, key=lambda x: x[1], reverse=True)
+
+    def _pt_fields_flat(self, offset: int = 0) -> Iterable[tuple[int, int, tuple[str, Base]]]:
+        """
+        Flatten nested complex fields into a single list of tuples containing
+        the LSB, MSB, and a tuple of the field name and its instance.
+
+        :param offset: Offset to apply to the LSB and MSB values
+        :return: List of tuples with (LSB, MSB, (field_name, field_instance))
+        """
+        for lsb, msb, (fname, finst) in self._pt_fields_msb_desc:
+            if isinstance(finst, PackedAssembly):
+                yield from finst._pt_fields_flat(offset=offset+lsb)
+            else:
+                yield (lsb+offset, msb+offset, (fname, finst))
 
     @functools.cache
     def _pt_lsb(self, field: str) -> int:
