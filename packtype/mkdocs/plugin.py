@@ -7,8 +7,8 @@ import importlib
 import re
 from xml.etree import ElementTree
 
-from packtype.package import Package
-from packtype.wrap import Registry
+from packtype.types.package import Package
+from packtype.types.wrap import Registry
 
 try:
     from markdown.extensions import Extension
