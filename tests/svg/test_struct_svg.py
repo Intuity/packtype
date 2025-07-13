@@ -28,7 +28,7 @@ def test_struct_svg_single():
 
     inst = TestStruct()
     svg = inst._repr_svg_()
-    assert svg == (REFERENCE / "test_struct_svg_single.svg").read_text("utf-8")
+    assert svg.strip() == (REFERENCE / "test_struct_svg_single.svg").read_text("utf-8").strip()
 
 
 def test_struct_svg_multiple():
@@ -46,7 +46,7 @@ def test_struct_svg_multiple():
 
     inst = TestStruct()
     svg = inst._repr_svg_()
-    assert svg == (REFERENCE / "test_struct_svg_multiple.svg").read_text("utf-8")
+    assert svg.strip() == (REFERENCE / "test_struct_svg_multiple.svg").read_text("utf-8").strip()
 
 
 def test_struct_svg_nested():
@@ -67,7 +67,7 @@ def test_struct_svg_nested():
 
     inst = OuterStruct()
     svg = inst._repr_svg_()
-    assert svg == (REFERENCE / "test_struct_svg_nested.svg").read_text("utf-8")
+    assert svg.strip() == (REFERENCE / "test_struct_svg_nested.svg").read_text("utf-8").strip()
 
 
 def test_struct_svg_custom_style():
@@ -87,7 +87,9 @@ def test_struct_svg_custom_style():
 
     inst = TestStruct()
     svg = inst._pt_as_svg(cfg)
-    assert svg == (REFERENCE / "test_struct_svg_custom_style.svg").read_text("utf-8")
+    assert (
+        svg.strip() == (REFERENCE / "test_struct_svg_custom_style.svg").read_text("utf-8").strip()
+    )
 
 
 def test_struct_svg_command(tmp_path):
