@@ -13,7 +13,7 @@ from .constant import Constant
 from .numeric import Numeric
 from .packing import Packing
 from .scalar import Scalar
-from .svg.render import ElementStyle, SvgConfig, SvgField, SvgRender
+from ..svg.render import ElementStyle, SvgConfig, SvgField, SvgRender
 
 class WidthError(Exception):
     pass

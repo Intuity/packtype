@@ -7,11 +7,11 @@ from packtype import Scalar
 
 
 @packtype.package()
-class TestPkg:
+class DemoPkg:
     pass
 
 
-@TestPkg.struct()
+@DemoPkg.struct()
 class TestStruct:
     a: Scalar[8]
     b: Scalar[8]
