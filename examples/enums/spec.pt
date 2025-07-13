@@ -1,0 +1,35 @@
+// Copyright 2023-2025, Peter Birch, mailto:peter@intuity.io
+// SPDX-License-Identifier: Apache-2.0
+//
+
+package types {
+
+    enum indexed indexed_explicit_t {
+        VALUE_A : constant = 0
+        VALUE_B : constant = 1
+        VALUE_C : constant = 2
+        VALUE_D : constant = 3
+    }
+
+    enum indexed indexed_automatic_t {
+        VALUE_A : constant
+        VALUE_B : constant
+        VALUE_C : constant
+        VALUE_D : constant
+    }
+
+    enum onehot onehot_t {
+        VALUE_A : constant
+        VALUE_B : constant
+        VALUE_C : constant
+        VALUE_D : constant
+    }
+
+    enum gray graycode_t {
+        VALUE_A : constant
+        VALUE_B : constant
+        VALUE_C : constant
+        VALUE_D : constant
+    }
+
+}

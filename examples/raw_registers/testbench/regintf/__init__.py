@@ -7,10 +7,12 @@ from .io import RegIntfIO
 from .monitor import RegMonitor
 from .transaction import RegRequest, RegResponse
 
-assert all((
-    RegDriver,
-    RegIntfIO,
-    RegMonitor,
-    RegRequest,
-    RegResponse,
-))
+assert all(
+    (
+        RegDriver,
+        RegIntfIO,
+        RegMonitor,
+        RegRequest,
+        RegResponse,
+    )
+)

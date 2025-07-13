@@ -2,7 +2,10 @@
 
 ![Tests](https://github.com/Intuity/packtype/workflows/Pull%20request%20tests/badge.svg)
 
-Packtype is a Python framework for describing packed data structures for use in low-level hardware design, verification, and firmware development. From this single specification, equivalent implementations for different languages can be generated (for example SystemVerilog).
+Packtype is a Python framework for describing packed data structures for use in
+low-level hardware design, verification, and firmware development. From this
+single specification, equivalent implementations for different languages can be
+generated (for example SystemVerilog).
 
 ## Installation
 
@@ -31,16 +34,17 @@ example SystemVerilog:
 
 ```bash
 # Render SystemVerilog version of the specification
-#  python -m packtype <SPEC>          code <LANG> <OUTDIR>
-$> python -m packtype examples/structs/spec.py code sv ./output_dir
+#  python -m packtype code <MODE>  <LANG> <OUTDIR> <SPEC>
+$> python -m packtype code package sv ./output_dir examples/structs/spec.py
 ```
 
 The positional arguments are:
 
- * `SPEC` - path to the Packtype specification file to process;
  * `code` - command to Packtype to render specification to code;
+ * `MODE` - switch between package or register specification;
  * `LANG` - language to render (`sv` selects SystemVerilog);
- * `OUTDIR` - path to the output directory to write rendered files.
+ * `OUTDIR` - path to the output directory to write rendered files;
+ * `SPEC` - path to the Packtype specification file to process.
 
 Then options are available to modify the behaviour:
 
@@ -53,27 +57,30 @@ A Packtype `struct` can also be rendered to an SVG using the `svg` command:
 
 ```bash
 # Render an SVG version of a struct
-#  python3 -m packtype <SPEC>                 svg <STRUCT>      <OUTPUT>
-$> python3 -m packtype examples/union/spec.py svg Encodings.Sub test.svg
+#  python3 -m packtype svg <STRUCT>      <OUTPUT>          <SPEC>
+$> python3 -m packtype svg Encodings.Sub --output test.svg examples/union/spec.py
 ```
 
 The positional arguments are:
 
- * `SPEC` - path to the Packtype specification file to render;
  * `svg` - command to Packtype to render specification to an SVG;
  * `STRUCT` - hierarchy of the structure to render (e.g. `<PACKAGE>.<STRUCT>`);
  * `OUTPUT` - file to write the SVG to, if omitted it will print the output to
-   STDOUT.
+   STDOUT;
+ * `SPEC` - path to the Packtype specification file to render.
 
 ![Example SVG](./example.svg)
 
 ## Examples
 
-A number of examples are provided in the `examples` folder - each of these can be run by executing the `test.sh` file within the directory.
+A number of examples are provided in the `examples` folder - each of these can
+be run by executing the `test.sh` file within the directory.
 
 ## Packtype Specifications
 
-Packtype specifications use a decorators and classes to declare the different data structures. Once a specification has been written, the Packtype utility can be used to generate code for different languages.
+Packtype specifications use a decorators and classes to declare the different
+data structures. Once a specification has been written, the Packtype utility can
+be used to generate code for different languages.
 
 ### Package Declaration
 
@@ -92,7 +99,8 @@ class SomeProtocolPkg:
 
 ### Constants
 
-Numeric constants can be attached to the root of a package to share fixed values between different parts of implementation, verification, and firmware.
+Numeric constants can be attached to the root of a package to share fixed values
+between different parts of implementation, verification, and firmware.
 
 ```python
 import packtype

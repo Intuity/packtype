@@ -5,32 +5,60 @@ structs, or [unions](union.md).
 
 ## Example
 
-The packtype definition:
+The Packtype definition can either use a Python dataclass style or the Packtype
+custom grammar:
 
-```python linenums="1"
-import packtype
-from packtype import Constant, Scalar
+=== "Python (.py)"
 
-@packtype.package()
-class MyPackage:
-    INSTR_W : Constant = 32
-    RegSel  : Scalar[5]
+    ```python linenums="1"
+    import packtype
+    from packtype import Constant, Scalar
 
-@MyPackage.enum(width=8)
-class Opcode:
-    ADD : Constant = 0
-    SUB : Constant = 1
-    ...
+    @packtype.package()
+    class MyPackage:
+        INSTR_W : Constant = 32
+        RegSel  : Scalar[5]
 
-@MyPackage.struct(width=MyPackage.INSTR_W)
-class Instruction:
-    """Description of the struct can go here"""
-    opcode : Opcode
-    rd     : MyPackage.RegSel
-    rs1    : MyPackage.RegSel
-    rs2    : MyPackage.RegSel
-    imm    : Scalar[9]
-```
+    @MyPackage.enum(width=8)
+    class Opcode:
+        ADD : Constant = 0
+        SUB : Constant = 1
+        ...
+
+    @MyPackage.struct(width=MyPackage.INSTR_W)
+    class Instruction:
+        """Encodes an instruction to the CPU"""
+        opcode : Opcode
+        rd     : MyPackage.RegSel
+        rs1    : MyPackage.RegSel
+        rs2    : MyPackage.RegSel
+        imm    : Scalar[9]
+    ```
+
+=== "Packtype (.pt)"
+
+    ```sv linenums="1"
+    package my_package {
+        INSTR_W : constant = 32
+
+        reg_sel_t : scalar[5]
+
+        enum [8] opcode_t {
+            ADD = 0
+            SUB = 1
+            // ...
+        }
+
+        struct [INSTR_W] instruction_t {
+            "Encodes an instruction to the CPU"
+            opcode : opcode_t
+            rd     : reg_sel_t
+            rs1    : reg_sel_t
+            rs2    : reg_sel_t
+            imm    : scalar[9]
+        }
+    }
+    ```
 
 As rendered to SystemVerilog
 
@@ -50,27 +78,70 @@ typedef struct packed {
 endpackage : my_package
 ```
 
-## Decorator Options
+!!! warning
 
-The decorator accepts options that modify the struct declaration:
+    Packtype places the first field within the declaration at the LSB by default,
+    which is opposite to SystemVerilog's behaviour but consistent with many other
+    languages. To match SystemVerilog's behaviour you can use the optional
+    packing mode control to place the first field at the MSB.
 
-| Name      | Default               | Description                                |
-|-----------|-----------------------|--------------------------------------------|
-| `width`   | Inferred by fields    | Fixes the bit-width of the struct type     |
-| `packing` | `Packing.FROM_LSB`    | Controls placement order of fields         |
+## Declaration Options
 
-The `width` parameter may be omitted, in which case it is inferred from the total
-width of all fields contained within the struct. Where it is specified, a
-`WidthError` will be raised if the total field width exceeds the specified `width`.
-Where the total field width is less than the specified `width`, and automatic
-`_padding` field will be added to the struct after all declared fields are placed.
+=== "Python (.py)"
 
-The `packing` parameter may be set to one of two values:
+    The decorator accepts options that modify the struct declaration:
 
- * `Packing.FROM_LSB` - fields are placed starting from the least significant bit
-   of the struct (i.e. bit `0`);
- * `Packing.FROM_MSB` - fields are placed starting from the most significant bit
-   of the struct (i.e. bit `WIDTH-1`).
+    | Name      | Default               | Description                                |
+    |-----------|-----------------------|--------------------------------------------|
+    | `width`   | Inferred by fields    | Fixes the bit-width of the struct type     |
+    | `packing` | `Packing.FROM_LSB`    | Controls placement order of fields         |
+
+    The `width` parameter may be omitted, in which case it is inferred from the total
+    width of all fields contained within the struct. Where it is specified, a
+    `WidthError` will be raised if the total field width exceeds the specified `width`.
+    Where the total field width is less than the specified `width`, and automatic
+    `_padding` field will be added to the struct after all declared fields are placed.
+
+    The `packing` parameter may be set to one of two values:
+
+    * `Packing.FROM_LSB` - fields are placed starting from the least significant bit
+      of the struct (i.e. bit `0`);
+    * `Packing.FROM_MSB` - fields are placed starting from the most significant bit
+      of the struct (i.e. bit `WIDTH-1`).
+
+=== "Packtype (.pt)"
+
+    The `struct` declaration accepts options that modify the declaration, the full
+    syntax is as follows:
+
+    ```sv linenums="1"
+    struct <PACKING> [<WIDTH>] <NAME> {
+        ...
+    }
+    ```
+
+    For example:
+
+    ```sv linenums="1"
+    struct msb [32] packed_from_msb_t {
+        a : other_type_t
+        ...
+    }
+    ```
+
+    The `<PACKING>` option may be omitted or set the one of the following values:
+
+      * `lsb` (or `from_lsb`) - fields are placed starting from the least
+        significant bit of the struct (i.e. bit `0`) - this is the default
+        behaviour;
+      * `msb` (or `from_msb`) - fields are placed starting from the most
+        significant bit of the struct (i.e. bit `WIDTH-1`).
+
+    The `<WIDTH>` parameter may be omitted, in which case it is inferred from the total
+    width of all fields contained within the struct. Where it is specified, a
+    `WidthError` will be raised if the total field width exceeds the specified `width`.
+    Where the total field width is less than the specified `width`, and automatic
+    `_padding` field will be added to the struct after all declared fields are placed.
 
 !!! note
 

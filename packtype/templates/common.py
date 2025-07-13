@@ -32,7 +32,7 @@ def camel_case(raw: str) -> str:
     :param raw: The raw string to convert
     :returns:   A CamelCase string
     """
-    parts = sum([RGX_CAMEL.split(x) for x in raw.split("_")], [])
+    parts = sum([RGX_CAMEL.split(x) for x in raw.split("_")], [])  # noqa: RUF017
     return "".join(x.capitalize() for x in parts)
 
 

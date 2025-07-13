@@ -11,8 +11,9 @@ from textwrap import dedent
 try:
     import svg
     from svg import SVG, Element, Line, Path, Pattern, Rect, Style, Text, TSpan
+
     SVG_RENDER_AVAILABLE = True
-except ImportError as e:
+except ImportError:
     SVG_RENDER_AVAILABLE = False
 
 
@@ -178,9 +179,7 @@ class SvgField:
     def px_height(self) -> int:
         return self.config.cell_height
 
-    def render(
-        self, position: Point | None = None, final: bool = False
-    ) -> Iterable[Element]:
+    def render(self, position: Point | None = None, final: bool = False) -> Iterable[Element]:
         """
         Render the bit field from a starting position.
 
@@ -233,9 +232,7 @@ class SvgField:
         )
         # Render either the name or a static value
         if self.static_value is not None:
-            for idx, bit in enumerate(
-                f"{self.static_value:0{self.bit_width}b}"[: self.bit_width]
-            ):
+            for idx, bit in enumerate(f"{self.static_value:0{self.bit_width}b}"[: self.bit_width]):
                 bit_center = int(position.x + (idx + 0.5) * self.config.per_bit_width)
                 yield Text(
                     x=bit_center,
@@ -358,9 +355,7 @@ class SvgBitFields:
             position.x += self.config.left_annotation.width
             position.x += self.config.left_annotation.padding
         # Bit fields (rendering left-to-right, MSB-to-LSB)
-        for idx, child in enumerate(
-            sorted(self.children, key=lambda x: x.msb, reverse=True)
-        ):
+        for idx, child in enumerate(sorted(self.children, key=lambda x: x.msb, reverse=True)):
             yield from child.render(
                 position,
                 final=(idx == (len(self.children) - 1)),
@@ -374,9 +369,7 @@ class SvgBitFields:
                 y=position.y,
                 class_=["right_annotation"],
                 overflow="visible",
-                elements=[
-                    TSpan(text=x, x=right_x, dy="1em") for x in right.split("\n")
-                ],
+                elements=[TSpan(text=x, x=right_x, dy="1em") for x in right.split("\n")],
             )
 
 
@@ -398,9 +391,7 @@ class SvgRender:
     ) -> None:
         global SVG_RENDER_AVAILABLE
         if not SVG_RENDER_AVAILABLE:
-            raise SvgRenderError(
-                "SVG rendering is not available, please install the svg package."
-            )
+            raise SvgRenderError("SVG rendering is not available, please install the svg package.")
         self.config = config or SvgConfig()
         self.root = SvgBitFields(
             self.config,
@@ -503,9 +494,7 @@ class SvgRender:
                 ]
             ),
         ]
-        elements += list(
-            self.root.render(Point(self.config.padding.x, self.config.padding.y))
-        )
+        elements += list(self.root.render(Point(self.config.padding.x, self.config.padding.y)))
         return str(
             SVG(
                 width=c_width,

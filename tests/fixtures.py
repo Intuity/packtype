@@ -4,7 +4,7 @@
 
 import pytest
 
-from packtype.wrap import Registry
+from packtype.types.wrap import Registry
 
 
 @pytest.fixture(autouse=True)

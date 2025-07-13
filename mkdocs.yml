@@ -3,7 +3,7 @@ repo_name: intuity/packtype
 repo_url: https://github.com/intuity/packtype
 theme:
   name: material
-  # logo: assets/logo.svg
+  logo: assets/logo.png
   palette:
     scheme: slate
     primary: blue grey
@@ -41,3 +41,9 @@ nav:
     - Scalars: syntax/scalar.md
     - Structs: syntax/struct.md
     - Unions: syntax/union.md
+  - Utilities:
+    - Basic: utilities/basic.md
+    - Enums: utilities/enum.md
+    - Structs: utilities/struct.md
+    - Unions: utilities/union.md
+    - Packages: utilities/package.md

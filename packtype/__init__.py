@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from .alias import Alias
-from .assembly import Packing
-from .constant import Constant
-from .enum import EnumMode
-from .package import Package
-from .scalar import Scalar
-from .wrap import get_wrapper
+from .types.alias import Alias
+from .types.assembly import Packing
+from .types.constant import Constant
+from .types.enum import EnumMode
+from .types.package import Package
+from .types.scalar import Scalar
+from .types.wrap import get_wrapper
 
 package = get_wrapper(Package)
 
