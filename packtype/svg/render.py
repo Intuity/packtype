@@ -11,8 +11,9 @@ from textwrap import dedent
 try:
     import svg
     from svg import SVG, Element, Line, Path, Pattern, Rect, Style, Text, TSpan
+
     SVG_RENDER_AVAILABLE = True
-except ImportError as e:
+except ImportError:
     SVG_RENDER_AVAILABLE = False
 
 
@@ -390,9 +391,7 @@ class SvgRender:
     ) -> None:
         global SVG_RENDER_AVAILABLE
         if not SVG_RENDER_AVAILABLE:
-            raise SvgRenderError(
-                "SVG rendering is not available, please install the svg package."
-            )
+            raise SvgRenderError("SVG rendering is not available, please install the svg package.")
         self.config = config or SvgConfig()
         self.root = SvgBitFields(
             self.config,

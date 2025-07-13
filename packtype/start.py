@@ -45,7 +45,9 @@ def resolve_to_object(
             resolved = matched[0]
         else:
             if (nxt_rslv := getattr(resolved, segment, None)) is None:
-                raise click.ClickException(f"Cannot resolve '{segment}' within '{resolved.__name__}'")
+                raise click.ClickException(
+                    f"Cannot resolve '{segment}' within '{resolved.__name__}'"
+                )
             resolved = nxt_rslv
     # Check the type is acceptable
     if not hasattr(resolved, "_PT_BASE"):
@@ -134,11 +136,11 @@ def svg(selection: str, output: Path | None, spec_files: list[str]):
         acceptable=(Struct,),
     )
 
-     # Run the rendering operation
+    # Run the rendering operation
     if output:
         output.write_text(resolved()._pt_as_svg(), encoding="utf-8")
     else:
-        print(resolved()._pt_as_svg())
+        print(resolved()._pt_as_svg())  # noqa: T201
 
 
 @main.command()

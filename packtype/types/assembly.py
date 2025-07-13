@@ -4,8 +4,10 @@
 
 import functools
 import math
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
+from ..svg.render import ElementStyle, SvgConfig, SvgField, SvgRender
 from .array import ArraySpec, PackedArray
 from .base import Base
 from .bitvector import BitVector, BitVectorWindow
@@ -13,7 +15,7 @@ from .constant import Constant
 from .numeric import Numeric
 from .packing import Packing
 from .scalar import Scalar
-from ..svg.render import ElementStyle, SvgConfig, SvgField, SvgRender
+
 
 class WidthError(Exception):
     pass
@@ -155,7 +157,9 @@ class PackedAssembly(Assembly):
         # If no config is provided, create a default one
         if not cfg:
             cfg = SvgConfig()
-            cfg.left_annotation.width = cfg.left_annotation.style.estimate(type(self).__name__).width
+            cfg.left_annotation.width = cfg.left_annotation.style.estimate(
+                type(self).__name__
+            ).width
             cfg.left_annotation.padding = 10
 
         # Create a rendering instance
@@ -280,9 +284,9 @@ class PackedAssembly(Assembly):
         """
         for lsb, msb, (fname, finst) in self._pt_fields_msb_desc:
             if isinstance(finst, PackedAssembly):
-                yield from finst._pt_fields_flat(offset=offset+lsb)
+                yield from finst._pt_fields_flat(offset=offset + lsb)
             else:
-                yield (lsb+offset, msb+offset, (fname, finst))
+                yield (lsb + offset, msb + offset, (fname, finst))
 
     @functools.cache  # noqa: B019
     def _pt_lsb(self, field: str) -> int:

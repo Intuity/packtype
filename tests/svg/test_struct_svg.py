@@ -89,6 +89,7 @@ def test_struct_svg_custom_style():
     svg = inst._pt_as_svg(cfg)
     assert svg == (REFERENCE / "test_struct_svg_custom_style.svg").read_text("utf-8")
 
+
 def test_struct_svg_command(tmp_path):
     # Wrap around the CLI
     result = subprocess.run(
@@ -105,5 +106,7 @@ def test_struct_svg_command(tmp_path):
         check=True,
     )
     assert result.returncode == 0
-    assert result.stdout.decode("utf-8").strip() == (REFERENCE / "test_struct_svg_command.svg").read_text("utf-8").strip()
-
+    assert (
+        result.stdout.decode("utf-8").strip()
+        == (REFERENCE / "test_struct_svg_command.svg").read_text("utf-8").strip()
+    )
