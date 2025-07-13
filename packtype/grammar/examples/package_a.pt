@@ -1,0 +1,7 @@
+package package_a {
+    other_type_t : scalar[4]
+
+    struct test_t {
+        field_a : other_type_t
+    }
+}

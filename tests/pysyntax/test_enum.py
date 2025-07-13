@@ -6,7 +6,7 @@ import pytest
 
 import packtype
 from packtype import Constant, EnumMode
-from packtype.enum import EnumError
+from packtype.types.enum import EnumError
 
 from ..fixtures import reset_registry
 
@@ -145,8 +145,7 @@ def test_enum_bad_gray():
             D: Constant = 3
 
     assert str(e.value) == (
-        "Enum entry C has value 2 that does not conform to the expected Gray "
-        "code value of 3"
+        "Enum entry C has value 2 that does not conform to the expected Gray code value of 3"
     )
 
 
@@ -184,9 +183,7 @@ def test_enum_bad_oversized():
             D: Constant
             E: Constant
 
-    assert str(e.value) == (
-        "Enum entry E has value 4 that cannot be encoded in a bit width of 2"
-    )
+    assert str(e.value) == ("Enum entry E has value 4 that cannot be encoded in a bit width of 2")
 
 
 def test_enum_prefix():

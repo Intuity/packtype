@@ -4,7 +4,7 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry]
 name = "packtype"
-version = "2.1.0"
+version = "3.0.0"
 description = "Packed data structure specifications for multi-language hardware projects"
 authors = ["Peter Birch <peter@intuity.io>"]
 license = "Apache-2.0"
@@ -18,6 +18,7 @@ rich = "^13.7.0"
 typing-extensions = "^4.8.0"
 svg-py = "^1.4.3"
 ordered-set = "^4.1.0"
+lark = "^1.2.2"
 
 [tool.poetry.group.dev]
 optional = true
@@ -27,11 +28,12 @@ pytest = "^7.4.3"
 pytest-runner = "^6.0.1"
 pytest-cov = "^4.1.0"
 pytest-mock = "^3.12.0"
-ruff = "^0.1.7"
+ruff = "^0.12.2"
 black = "^23.11.0"
 cocotb = "^1.9.1"
 forastero = "^1.0"
 forastero-io = { git = "https://github.com/VyperCore/forastero-io.git" }
+pre-commit = "^4.2.0"
 
 [tool.poetry.group.docs]
 optional = true
@@ -54,31 +56,19 @@ addopts = [
     "--import-mode=importlib",
 ]
 
-[tool.poe.tasks]
-lint = ["black", "ruff"]
-
 [tool.poe.tasks.test]
 shell = "poetry run pytest"
 
-[tool.poe.tasks.ruff]
-shell = "poetry run ruff check packtype --fix"
-
-[tool.poe.tasks.black]
-shell = "poetry run black ."
-
-[tool.black]
-line-length = 88
-target-version = ["py311"]
-include = '\.pyi?$'
-
 [tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
 # See https://beta.ruff.rs/docs/rules
-select = ["E", "F", "B", "UP", "N", "W", "I", "A", "C4", "PTH", "RUF"]
-ignore = [
-    "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
-]
 fixable = ["ALL"]
 unfixable = []
-target-version = "py311"
-# Character length of 88 is compatible with Black
-line-length = 88
+select = ["E", "F", "B", "UP", "N", "W", "I", "A", "C4", "PTH", "RUF", "T"]
+ignore = [
+    "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
+    "RUF100", # Unused `noqa` directive
+]

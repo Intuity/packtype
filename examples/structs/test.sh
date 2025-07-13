@@ -10,8 +10,14 @@ this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 # Setup PYTHONPATH to get access to packtype
 export PYTHONPATH=${this_dir}/../..:$PYTHONPATH
 
-# Invoke packtype
-python3 -m packtype --debug spec.py code package sv ${this_dir}/out
+# Invoke packtype on Python syntax
+python3 -m packtype --debug code package sv ${this_dir}/out_py ${this_dir}/spec.py
 
-# Render SVG
-python3 -m packtype --debug spec.py svg Calendar.DateTime ./out/out.svg
+# Render SVG on Python syntax
+python3 -m packtype --debug svg Calendar.DateTime --output ${this_dir}/out_py/out.svg ${this_dir}/spec.py
+
+# Invoke packtype on Packtype syntax
+python3 -m packtype --debug code package sv --type-filter none --constant-filter none ${this_dir}/out_pt ${this_dir}/spec.pt
+
+# Render SVG on Packtype syntax
+python3 -m packtype --debug svg calendar.date_time_t --output ${this_dir}/out_pt/out.svg ${this_dir}/spec.pt

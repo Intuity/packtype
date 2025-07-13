@@ -4,23 +4,43 @@ declared within [packages](package.md) or [structs](struct.md).
 
 ## Example
 
-The packtype definition:
+The Packtype definition can either use a Python dataclass style or the Packtype
+custom grammar:
 
-```python linenums="1"
-import packtype
-from packtype import Constant, Scalar
+=== "Python (.py)"
 
-@packtype.package()
-class MyPackage:
-    # Constants
-    TYPE_A_W : Constant = 29
-    TYPE_B_W : Constant = 13
+  ```python linenums="1"
+  import packtype
+  from packtype import Constant, Scalar
 
-    # Typedefs
-    TypeA : Scalar[TYPE_A_W]
-    TypeB : Scalar[TYPE_B_W]
-    TypeC : Scalar[7]
-```
+  @packtype.package()
+  class MyPackage:
+      # Constants
+      TYPE_A_W : Constant = 29
+      TYPE_B_W : Constant = 13
+
+      # Typedefs
+      TypeA : Scalar[TYPE_A_W]
+      TypeB : Scalar[TYPE_B_W]
+      TypeC : Scalar[7]
+  ```
+
+=== "Packtype (.pt)"
+
+    ```sv linenums="1"
+    package my_package {
+        // Constants
+        TYPE_A_W : constant = 29
+        TYPE_B_W : constant = 13
+
+        // Typedefs
+        TypeA : Scalar[TYPE_A_W]
+            "Comments can be attached to scalar types"
+        TypeB : Scalar[TYPE_B_W]
+            "They can be queried from the digested result"
+        TypeC : Scalar[7]
+    }
+    ```
 
 As rendered to SystemVerilog:
 

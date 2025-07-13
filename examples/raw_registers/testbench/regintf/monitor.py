@@ -16,5 +16,8 @@ class RegMonitor(BaseMonitor):
                 await RisingEdge(self.clk)
                 continue
             await RisingEdge(self.clk)
-            capture(RegResponse(rd_data=0 if write else self.io.get("rd_data"),
-                                error=self.io.get("error") != 0))
+            capture(
+                RegResponse(
+                    rd_data=0 if write else self.io.get("rd_data"), error=self.io.get("error") != 0
+                )
+            )

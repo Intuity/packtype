@@ -1,0 +1,61 @@
+// My package
+package package_b {
+    "Describes the purpose of this package"
+
+    import package_a::other_type_t
+
+    local_type_t : other_type_t
+
+    SIZED_CONSTANT   : constant[8] = 4
+    "With a description"
+    UNSIZED_CONSTANT : constant = 0x12345678
+    CALCULATED       : constant = (SIZED_CONSTANT + UNSIZED_CONSTANT) / 4
+
+    simple_type_t : scalar[SIZED_CONSTANT]
+    signed_type_t : signed scalar[SIZED_CONSTANT]
+    single_bit_t  : scalar
+    "Description of the scalar"
+
+    SOME_ENUM_W : constant = 2
+
+    enum gray [SOME_ENUM_W] gray_enum_e {
+        "This enum is implicitly assigned with Gray code values"
+        @prefix=GRAY
+        VALUE_A
+        VALUE_B
+        VALUE_C : constant
+        VALUE_D : constant
+    }
+
+    enum indexed_enum_e {
+        "This enum is explicitly assigned with values"
+        @prefix=INDEXED
+        VALUE_A : constant = 0
+        VALUE_B : constant = 1
+        VALUE_C : constant = 2
+        VALUE_D : constant = 3
+    }
+
+    SOME_STRUCT_W : constant = 8 + 1 + SOME_ENUM_W + 1
+
+    struct unsized_t {
+        "Implicitly sized structure"
+        field_a : simple_type_t
+        field_b : signed scalar[2]
+        field_c : single_bit_t
+    }
+
+    struct msb [SOME_STRUCT_W] sized_t {
+        field_a : simple_type_t
+        field_b : scalar[1]
+        field_c : single_bit_t
+        field_d : gray_enum_e
+        field_e : other_type_t
+    }
+
+    union my_union_t {
+        raw : scalar[SOME_STRUCT_W]
+        my_struct : sized_t
+    }
+
+}

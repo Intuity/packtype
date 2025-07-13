@@ -1,0 +1,26 @@
+// Copyright 2023-2025, Peter Birch, mailto:peter@intuity.io
+// SPDX-License-Identifier: Apache-2.0
+//
+
+package calendar {
+
+    struct date_t {
+        day   : scalar[5]
+        month : scalar[4]
+        year  : scalar[12]
+    }
+
+    struct msb [17] time_t {
+        hour   : scalar[5]
+        minute : scalar[6]
+        second : scalar[6]
+    }
+
+    struct date_time_t {
+        date : date_t
+        time : time_t
+    }
+
+    DATE_TIME_W : constant = width(date_time_t)
+
+}

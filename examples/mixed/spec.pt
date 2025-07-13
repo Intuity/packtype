@@ -1,0 +1,53 @@
+// Copyright 2023-2025, Peter Birch, mailto:peter@intuity.io
+// SPDX-License-Identifier: Apache-2.0
+//
+
+package my_package {
+
+    MESSAGE_WIDTH  : constant = 32
+    MSG_TYPE_WIDTH : constant = 12
+    ID_WIDTH       : constant = 8
+
+    id_t : scalar[ID_WIDTH]
+
+    enum gray decoder_state_t {
+        "Gray-coded states of the decoder FSM"
+        DISABLED
+        IDLE
+        HEADER
+        PAYLOAD
+    }
+
+    enum [MSG_TYPE_WIDTH] message_type_t {
+        pingpong : constant = 0x123
+        shutdown : constant = 0x439
+        powerup : constant = 0x752
+    }
+
+    struct [MESSAGE_WIDTH] message_header_t {
+        target_id : id_t
+        msg_type : message_type_t
+    }
+
+    struct ping_pong_payload_t {
+        "Payload of a ping-pong keepalive message"
+        source_id: Scalar[8]
+        is_pong: Scalar[1]
+        ping_value: Scalar[15]
+        timestamp: Scalar[8]
+    }
+
+    struct ping_pong_message_t {
+        "Full message including header and payload"
+        header: message_header_t
+        payload: ping_pong_payload_t
+    }
+
+    union message_bus_t {
+        "Union of the different message phases of the bus"
+        raw: scalar[MESSAGE_WIDTH]
+        header: message_header_t
+        ping_pong: ping_pong_payload_t
+    }
+
+}

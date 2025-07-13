@@ -1,0 +1,25 @@
+{
+  "name": "packtype",
+  "displayName": "Packtype",
+  "description": "Syntax highlighting support for Packtype's grammar",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.101.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "packtype",
+      "aliases": ["packtype", "packtype"],
+      "extensions": [".pt",".packtype",".ptype"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "packtype",
+      "scopeName": "source.packtype",
+      "path": "./syntaxes/packtype.tmLanguage.json"
+    }]
+  }
+}

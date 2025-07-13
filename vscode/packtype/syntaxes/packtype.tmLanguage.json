@@ -1,0 +1,156 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Packtype",
+	"patterns": [
+		{
+			"match": "\\b(package|registers)\\s+([\\w]+)\\b",
+			"captures": {
+				"1": { "name": "keyword.control.root" },
+				"2": { "name": "entity.name.type.packtype" }
+			}
+		},
+		{
+			"match": "\\b(import)\\s+(\\w+)::(\\w+)\\b",
+			"captures": {
+				"1": { "name": "keyword.control.import" },
+				"2": { "name": "entity.name.type.packtype" },
+				"3": { "name": "entity.name.type.packtype" }
+			}
+		},
+		{
+			"match": "\\b(\\w+)\\s*:\\s*(signed|unsigned)?\\s*(constant)\\s*(?:\\[\\s*(\\w+)\\s*\\])?\\s*=\\s*(.*?)$",
+			"captures": {
+				"1": { "name": "entity.name.type.packtype" },
+				"2": { "name": "storage.modifier.packtype" },
+				"3": { "name": "storage.type.packtype" },
+				"4": {
+					"patterns": [
+						{
+							"name": "constant.numeric.packtype",
+							"match": "\\b(\\d+|0[xX][a-fA-F0-9_]+)\\b"
+						},
+						{
+							"name": "entity.name.type.packtype",
+							"match": "\\b(\\w+)\\b"
+						}
+					]
+				},
+				"5": {
+					"patterns": [
+						{
+							"name": "constant.numeric.packtype",
+							"match": "\\b(\\d+|0[xX][a-fA-F0-9_]+)\\b"
+						},
+						{
+							"name": "entity.name.type.packtype",
+							"match": "\\b(\\w+)\\b"
+						}
+					]
+				}
+			}
+		},
+		{
+			"match": "\\b(\\w+)\\s*:\\s*(signed|unsigned)?\\s*(scalar)\\s*(?:\\[\\s*(\\w+)\\s*\\])?",
+			"captures": {
+				"1": { "name": "entity.name.type.packtype" },
+				"2": { "name": "storage.modifier.packtype" },
+				"3": { "name": "storage.type.packtype" },
+				"4": {
+					"patterns": [
+						{
+							"name": "constant.numeric.packtype",
+							"match": "\\b(\\d+)\\b"
+						},
+						{
+							"name": "entity.name.type.packtype",
+							"match": "\\b(\\w+)\\b"
+						}
+					]
+				}
+			}
+		},
+		{
+			"match": "\\b(enum)\\s+(onehot|gray|indexed)?\\s*(?:\\[\\s*(\\w+)\\s*\\])?\\s*(\\w+)\\b",
+			"captures": {
+				"1": { "name": "storage.type.packtype" },
+				"2": { "name": "storage.modifier.packtype" },
+				"3": {
+					"patterns": [
+						{
+							"name": "constant.numeric.packtype",
+							"match": "\\b(\\d+)\\b"
+						},
+						{
+							"name": "entity.name.type.packtype",
+							"match": "\\b(\\w+)\\b"
+						}
+					]
+				},
+				"4": { "name": "entity.name.type.packtype" }
+			}
+		},
+		{
+			"match": "\\b(struct)\\s+(msb|lsb|from_msb|from_lsb)?\\s*(?:\\[\\s*(\\w+)\\s*\\])?\\s*(\\w+)\\b",
+			"captures": {
+				"1": { "name": "storage.type.packtype" },
+				"2": { "name": "storage.modifier.packtype" },
+				"3": {
+					"patterns": [
+						{
+							"name": "constant.numeric.packtype",
+							"match": "\\b(\\d+)\\b"
+						},
+						{
+							"name": "entity.name.type.packtype",
+							"match": "\\b(\\w+)\\b"
+						}
+					]
+				},
+				"4": { "name": "entity.name.type.packtype" }
+			}
+		},
+		{
+			"match": "\\b(\\w+)\\s*:\\s*(\\w+)\\b",
+			"captures": {
+				"1": { "name": "entity.name.type.packtype" },
+				"2": { "name": "entity.name.type.packtype" }
+			}
+		},
+		{
+			"match": "\\b(union)\\s+(\\w+)\\b",
+			"captures": {
+				"1": { "name": "storage.type.packtype" },
+				"2": { "name": "entity.name.type.packtype" }
+			}
+		},
+		{
+			"match": "//.*$",
+			"name": "comment.line.double-slash.packtype"
+		},
+		{
+			"match": "\\b(0x[0-9a-fA-F]+|\\d+)\\b",
+			"name": "constant.numeric.packtype"
+		},
+		{
+			"match": "\\b(\\w+)\\b",
+			"name": "entity.name.type.packtype"
+		},
+		{
+			"include": "#strings"
+		}
+	],
+	"repository": {
+		"strings": {
+			"name": "string.quoted.double.packtype",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.packtype",
+					"match": "\\\\."
+				}
+			]
+		}
+	},
+	"scopeName": "source.packtype"
+}
