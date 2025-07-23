@@ -5,11 +5,9 @@
 from collections.abc import Callable
 from typing import Any, Self
 
-from ..types.base import Base
-from ..types.constant import Constant
 
-
-class DeclExpr:
+class Expression:
+    """ Encapsulates an expression that can be evalauted at a later time """
     OP_ADD = "+"
     OP_SUB = "-"
     OP_MUL = "*"
@@ -63,18 +61,10 @@ class DeclExpr:
         self.rhs = rhs
         self.operator = operator
 
-    def evaluate(
-        self,
-        cb_lookup: Callable[
-            [
-                str,
-            ],
-            int,
-        ],
-    ) -> int | type[Base]:
+    def evaluate(self, cb_lookup: Callable[[str], int]) -> int:
         # Flatten LHS
         lhs = self.lhs
-        if isinstance(self.lhs, DeclExpr | DeclExprFunction):
+        if isinstance(self.lhs, Expression | ExpressionFunction):
             lhs = self.lhs.evaluate(cb_lookup)
         elif isinstance(self.lhs, str):
             lhs = cb_lookup(self.lhs)
@@ -82,15 +72,18 @@ class DeclExpr:
         if self.operator:
             # Flatten RHS
             rhs = self.rhs
-            if isinstance(self.rhs, DeclExpr | DeclExprFunction):
+            if isinstance(self.rhs, Expression | ExpressionFunction):
                 rhs = self.rhs.evaluate(cb_lookup)
             elif isinstance(self.rhs, str):
                 rhs = cb_lookup(self.rhs)
             # Apply operator
             return int(self.operator(lhs, rhs))
-        # Otherwise just return LHS
+        # Check if the LHS is a _PT_BASE attribute
+        elif hasattr(lhs, "_PT_BASE") and type(lhs).__name__ != "Constant":
+            return lhs
+        # Otherwise, cast LHS to an integer
         else:
-            return lhs if not isinstance(lhs, Constant) and hasattr(lhs, "_PT_BASE") else int(lhs)
+            return int(lhs)
 
     def _wrap(
         self,
@@ -98,7 +91,7 @@ class DeclExpr:
         lhs: str | int | float | Self | None = None,
         rhs: str | int | float | Self | None = None,
     ) -> Self:
-        return DeclExpr(lhs=lhs or self, rhs=rhs, operator=operator)
+        return Expression(lhs=lhs or self, rhs=rhs, operator=operator)
 
     def __repr__(self):
         return self.__str__()
@@ -113,13 +106,13 @@ class DeclExpr:
     def digest(cls, expr: list[str | int | float | Self]) -> Self:
         """
         Digest an expression based on operator precedence, and progressively
-        reduce it to a single DeclExpr instance. Note that this does not handle
+        reduce it to a single Expression instance. Note that this does not handle
         brackets in the expression as this is expected to be handled by the
         parser before this point.
 
         :param expr: Expression as a list of strings (operators or variables),
-                     integers, floats, or DeclExpr instances.
-        :return: A single DeclExpr instance representing the expression.
+                     integers, floats, or Expression instances.
+        :return: A single Expression instance representing the expression.
         """
         # Take a copy so as not to mutate the original
         expr = list(expr)
@@ -131,12 +124,12 @@ class DeclExpr:
             # Look for every position an operator could exist (every other term)
             offset = 0
             for op_pos in [x for x in range(1, len(expr), 2) if expr[x] == search_op]:
-                # Replace the term with a DeclExpr instance
+                # Replace the term with a Expression instance
                 *before, lhs = expr[: op_pos + offset]
                 rhs, *after = expr[op_pos + offset + 1 :]
                 expr = [*before, cls.operate(lhs, search_op, rhs), *after]
                 offset -= 2
-        # Ensure that even a single term is returned as a DeclExpr instance
+        # Ensure that even a single term is returned as a Expression instance
         expr = expr[0]
         if not isinstance(expr, cls):
             expr = cls(lhs=expr)
@@ -336,28 +329,21 @@ class DeclExpr:
         return self._wrap(lambda x, y: x >= y, rhs=other)
 
 
-class DeclExprFunction:
+class ExpressionFunction:
+    """ Encapsulates a function call within an expression"""
     def __init__(
         self,
         operator: Callable[[Any], Any],
-        *args: str | int | float | Self | DeclExpr,
+        *args: str | int | float | Self | Expression,
     ) -> None:
         self.operator = operator
         self.args = args
 
-    def evaluate(
-        self,
-        cb_lookup: Callable[
-            [
-                str,
-            ],
-            int,
-        ],
-    ) -> int:
+    def evaluate(self, cb_lookup: Callable[[str], int]) -> int:
         # Resolve all arguments
         resolved = []
         for arg in self.args:
-            if isinstance(arg, DeclExpr | DeclExprFunction):
+            if isinstance(arg, Expression | ExpressionFunction):
                 resolved.append(arg.evaluate(cb_lookup))
             else:
                 resolved.append(arg)

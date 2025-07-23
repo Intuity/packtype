@@ -60,7 +60,7 @@ def resolve_to_object(
     return resolved
 
 
-def load_specification(spec_files: list[str]):
+def load_specification(spec_files: list[str], keep_expression: bool) -> list[Base]:
     log = get_log()
 
     # If multiple specifications are provided, check they all use .pt format
@@ -76,7 +76,7 @@ def load_specification(spec_files: list[str]):
         get_log().debug(f"Loading specification: {item}")
         # Packtype grammar files
         if item.lower().endswith((".pt", ".packtype", ".ptype")):
-            package = parse(Path(item), namespaces)
+            package = parse(Path(item), namespaces, keep_expression=keep_expression)
             namespaces[package.__name__] = package
         # If it ends with `.py` assume it's Python
         elif item.endswith(".py"):
@@ -109,9 +109,10 @@ def main(debug: bool):
 
 @main.command()
 @click.argument("spec_files", type=str, nargs=-1)
-def inspect(spec_files: list[str]):
+@click.option("--keep-expression", is_flag=True, help="Attach parsed expressions to constants")
+def inspect(spec_files: list[str], keep_expression: bool):
     log = get_log()
-    baseline = load_specification(spec_files)
+    baseline = load_specification(spec_files, keep_expression)
     log.warning("Use the 'baseline' namespace to inspect Packtype definitions")
     breakpoint()  # noqa: T100
     del baseline
@@ -131,7 +132,7 @@ def inspect(spec_files: list[str]):
 def svg(selection: str, output: Path | None, spec_files: list[str]):
     # Resolve selection to a struct
     resolved = resolve_to_object(
-        load_specification(spec_files),
+        load_specification(spec_files, keep_expression=False),
         *selection.split("."),
         acceptable=(Struct,),
     )
@@ -197,6 +198,7 @@ def svg(selection: str, output: Path | None, spec_files: list[str]):
     default=["snake", "lower", "suffix"],
     help="Select filters to apply to type names",
 )
+@click.option("--keep-expression", is_flag=True, help="Attach parsed expressions to constants")
 @click.argument("mode", type=click.Choice(("package", "register"), case_sensitive=False))
 @click.argument(
     "language",
@@ -218,12 +220,13 @@ def code(
     language: str,
     outdir: Path,
     spec_files: list[str],
+    keep_expression: bool,
 ):
     """Render Packtype package definitions using a language template"""
     log = get_log()
 
     # Load the baseline
-    resolved = load_specification(spec_files)
+    resolved = load_specification(spec_files, keep_expression)
 
     # Deferred imports for optional libraries
     from mako import exceptions

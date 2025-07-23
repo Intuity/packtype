@@ -25,7 +25,7 @@ from .declarations import (
     Signed,
     Unsigned,
 )
-from .expression import DeclExpr, DeclExprFunction
+from ..common.expression import Expression, ExpressionFunction
 
 
 class PacktypeTransformer(Transformer):
@@ -50,10 +50,10 @@ class PacktypeTransformer(Transformer):
                 method_func = utils.get_width
             case _:
                 method_func = getattr(math, method, None)
-        return DeclExprFunction(method_func, *args)
+        return ExpressionFunction(method_func, *args)
 
     def expr(self, body):
-        return DeclExpr.digest(body)
+        return Expression.digest(body)
 
     def signed(self, *_):
         return Signed
@@ -100,8 +100,8 @@ class PacktypeTransformer(Transformer):
         # Extract optional width and constant value
         if (
             len(remainder) >= 2
-            and isinstance(remainder[0], DeclExpr)
-            and isinstance(remainder[1], DeclExpr)
+            and isinstance(remainder[0], Expression)
+            and isinstance(remainder[1], Expression)
         ):
             width, expr, *remainder = remainder
         else:
@@ -134,7 +134,7 @@ class PacktypeTransformer(Transformer):
         else:
             mode = EnumMode.INDEXED
         # Pickup width if given
-        if remainder and isinstance(remainder[0], DeclExpr):
+        if remainder and isinstance(remainder[0], Expression):
             width, *remainder = remainder
         else:
             width = None
@@ -168,10 +168,10 @@ class PacktypeTransformer(Transformer):
         else:
             signed = Unsigned
         # Pickup width
-        if remainder and isinstance(remainder[0], DeclExpr):
+        if remainder and isinstance(remainder[0], Expression):
             width, *remainder = remainder
         else:
-            width = DeclExpr(1)
+            width = Expression(1)
         # Pickup description
         if remainder and isinstance(remainder[0], Description):
             descr = remainder[0]
@@ -188,7 +188,7 @@ class PacktypeTransformer(Transformer):
         else:
             packing = Packing.FROM_LSB
         # Extract width if given
-        if isinstance(remainder[0], DeclExpr):
+        if isinstance(remainder[0], Expression):
             width, name, *remainder = remainder
         else:
             width = None

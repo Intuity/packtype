@@ -4,10 +4,15 @@
 
 package calendar {
 
+    DAY_WIDTH : constant = 5
+    MONTH_WIDTH : constant = 4
+    YEAR_WIDTH : constant = 12
+    DATE_WIDTH : constant = DAY_WIDTH + MONTH_WIDTH + YEAR_WIDTH
+
     struct date_t {
-        day   : scalar[5]
-        month : scalar[4]
-        year  : scalar[12]
+        day   : scalar[DAY_WIDTH]
+        month : scalar[MONTH_WIDTH]
+        year  : scalar[YEAR_WIDTH]
     }
 
     struct msb [17] time_t {
