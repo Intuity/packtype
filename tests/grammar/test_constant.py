@@ -93,6 +93,42 @@ def test_parse_constant_override():
     assert pkg.C.value == 123 + 456
 
 
+def test_parse_constant_override_unknown():
+    """Test parsing a constant override that does not match any defined constant."""
+    with pytest.raises(
+        UnknownEntityError,
+        match="Constant override 'UNKNOWN' does not match any defined constant",
+    ):
+        parse_string(
+            """
+            package the_package {
+                A: constant = 42
+            }
+            """,
+            constant_overrides={"UNKNOWN": 123},
+        )
+
+
+def test_parse_constant_override_type_mismatch():
+    """Test parsing a constant override that does not match a defined constant."""
+    with pytest.raises(
+        TypeError,
+        match=(
+            "Constant override 'b' does not match a constant in package "
+            "'the_package', found Scalar_42U_0"
+        )
+    ):
+        parse_string(
+            """
+            package the_package {
+                A: constant = 42
+                b: scalar[A]
+            }
+            """,
+            constant_overrides={"b": 123},
+        )
+
+
 def test_parse_constant_no_value():
     """Test parsing a constant definition without a value."""
     with pytest.raises(ParseError, match="Failed to parse input"):

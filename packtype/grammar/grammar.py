@@ -177,6 +177,19 @@ def parse_string(
             case _:
                 raise Exception(f"Unhandled declaration: {decl}")
 
+    # Check for overrides that don't match up
+    for name in constant_overrides.keys():
+        if not hasattr(package, name):
+            raise UnknownEntityError(
+                f"Constant override '{name}' does not match any defined constant "
+                f"in package '{package.__name__}'"
+            )
+        elif not isinstance(getattr(package, name), Constant):
+            raise TypeError(
+                f"Constant override '{name}' does not match a constant in package "
+                f"'{package.__name__}', found {getattr(package, name).__name__}"
+            )
+
     return package
 
 
