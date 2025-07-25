@@ -144,6 +144,9 @@ class Numeric:
     def __abs__(self) -> int:
         return abs(int(self))
 
+    def __index__(self) -> int:
+        return int(self._pt_bv)
+
     def __invert__(self) -> int:
         return ~int(self)
 
