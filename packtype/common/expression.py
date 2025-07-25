@@ -7,7 +7,7 @@ from typing import Any, Self
 
 
 class Expression:
-    """Encapsulates an expression that can be evalauted at a later time"""
+    """Encapsulates an expression that can be evaluated at a later time"""
 
     OP_ADD = "+"
     OP_SUB = "-"
