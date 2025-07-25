@@ -61,17 +61,20 @@ def parse_string(
     namespaces: dict[str, Package] | None = None,
     constant_overrides: dict[str, int] | None = None,
     source: Path | None = None,
+    keep_expression: bool = False,
 ) -> Package:
     """
     Parse a Packtype definition from a string producing a Package object.
 
     :param definition:         The Packtype definition as a string.
     :param namespaces:         A dictionary of known packages to resolve imports.
-    :param source:             An optional source path for error reporting and
-                               associating each declaration with its source file.
     :param constant_overrides: Optional overrides for constants defined within
                                the package, where the key must precisely match
                                the constant's name
+    :param source:             An optional source path for error reporting and
+                               associating each declaration with its source file.
+    :param keep_expression:    If True, expressions will be attached to constants
+                               allowing them to be re-evaluated with new inputs.
     :return:                   A Package object representing the parsed definition.
     """
     # If no namespaces are provided, use an empty dict
@@ -145,7 +148,10 @@ def parse_string(
                 known_entities[decl.name] = (scalar, decl.position)
             # Build constants
             case DeclConstant():
-                package._pt_attach_constant(decl.name, constant := decl.to_instance(_resolve))
+                constant = decl.to_instance(_resolve)
+                if keep_expression:
+                    constant._PT_EXPRESSION = decl.expr
+                package._pt_attach_constant(decl.name, constant)
                 # Check for name collisions
                 _check_collision(decl.name)
                 # Check for a constant override
@@ -177,6 +183,19 @@ def parse_string(
             case _:
                 raise Exception(f"Unhandled declaration: {decl}")
 
+    # Check for overrides that don't match up
+    for name in constant_overrides.keys():
+        if not hasattr(package, name):
+            raise UnknownEntityError(
+                f"Constant override '{name}' does not match any defined constant "
+                f"in package '{package.__name__}'"
+            )
+        elif not isinstance(getattr(package, name), Constant):
+            raise TypeError(
+                f"Constant override '{name}' does not match a constant in package "
+                f"'{package.__name__}', found {getattr(package, name).__name__}"
+            )
+
     return package
 
 
@@ -184,6 +203,7 @@ def parse(
     path: Path,
     namespaces: dict[str, Package] | None = None,
     constant_overrides: dict[str, int] | None = None,
+    keep_expression: bool = False,
 ) -> Package:
     """
     Parse a Packtype definition from a file path producing a Package object.
@@ -193,7 +213,15 @@ def parse(
     :param constant_overrides: Optional overrides for constants defined within
                                the package, where the key must precisely match
                                the constant's name.
+    :param keep_expression:    If True, expressions will be attached to constants
+                               allowing them to be re-evaluated with new inputs.
     :return:                   A Package object representing the parsed definition.
     """
     with path.open("r", encoding="utf-8") as fh:
-        return parse_string(fh.read(), namespaces, constant_overrides, path)
+        return parse_string(
+            definition=fh.read(),
+            namespaces=namespaces,
+            constant_overrides=constant_overrides,
+            source=path,
+            keep_expression=keep_expression,
+        )

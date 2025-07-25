@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+from ..common.expression import Expression
 from .primitive import NumericPrimitive
 
 
 class Constant(NumericPrimitive):
-    pass
+    _PT_EXPRESSION: Expression | None = None

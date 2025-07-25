@@ -43,6 +43,7 @@ nav:
     - Unions: syntax/union.md
   - Utilities:
     - Basic: utilities/basic.md
+    - Constants: utilities/constant.md
     - Enums: utilities/enum.md
     - Structs: utilities/struct.md
     - Unions: utilities/union.md

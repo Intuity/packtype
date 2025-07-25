@@ -97,3 +97,6 @@ class NumericPrimitive(Base, Numeric, metaclass=MetaPrimitive):
 
     def __int__(self) -> int:
         return int(self._pt_bv)
+
+    def __float__(self) -> float:
+        return float(int(self))

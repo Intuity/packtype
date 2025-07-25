@@ -6,7 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..grammar.expression import DeclExpr
+from ..common.expression import Expression
 from ..types.alias import Alias
 from ..types.assembly import Packing
 from ..types.base import Base
@@ -78,8 +78,8 @@ class DeclAlias:
 class DeclConstant:
     position: Position
     name: str
-    width: DeclExpr
-    expr: DeclExpr
+    width: Expression
+    expr: Expression
     description: Description | None = None
 
     def to_instance(
@@ -93,7 +93,7 @@ class DeclConstant:
     ) -> Constant:
         # Resolve width
         width = self.width
-        if isinstance(width, DeclExpr):
+        if isinstance(width, Expression):
             width = width.evaluate(cb_resolve)
         # Evaluate the expression referring to known constants
         value = self.expr.evaluate(cb_resolve)
@@ -112,7 +112,7 @@ class DeclScalar:
     position: Position
     name: str
     signedness: type[Signed | Unsigned]
-    width: DeclExpr
+    width: Expression
     description: Description | None = None
 
     def resolve_width(
@@ -124,7 +124,7 @@ class DeclScalar:
             int | type[Base],
         ],
     ) -> int:
-        if isinstance(self.width, DeclExpr):
+        if isinstance(self.width, Expression):
             return self.width.evaluate(cb_resolve)
         elif self.width is None:
             return 1
@@ -167,7 +167,7 @@ class DeclEnum:
     position: Position
     name: str
     mode: EnumMode
-    width: DeclExpr | None
+    width: Expression | None
     description: Description | None
     modifiers: list[Modifier] | None
     values: list
@@ -187,7 +187,7 @@ class DeclEnum:
     ) -> type[Enum]:
         # Resolve width
         width = self.width
-        if isinstance(width, DeclExpr):
+        if isinstance(width, Expression):
             width = width.evaluate(cb_resolve)
         # Process entries
         entries = {}
@@ -227,7 +227,7 @@ class DeclStruct:
     position: Position
     name: str
     packing: Packing
-    width: DeclExpr | None
+    width: Expression | None
     description: Description | None
     modifiers: list[Modifier] | None
     fields: list[str]
@@ -247,7 +247,7 @@ class DeclStruct:
     ) -> type[Struct]:
         # Resolve width
         width = self.width
-        if isinstance(width, DeclExpr):
+        if isinstance(width, Expression):
             width = width.evaluate(cb_resolve)
         # Process entries
         fields = {}

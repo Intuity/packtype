@@ -45,6 +45,34 @@ def test_parse_constant():
     assert pkg.C.__doc__ == "Declarations are case insensitive"
 
 
+def test_parse_constant_keep_expression():
+    """Test keeping the expression when parsing a constant definition"""
+    # Not kept
+    pkg = parse_string(
+        """
+        package the_package {
+            A: constant = 1
+            B: constant = 2
+            C: constant = A + B
+        }
+        """
+    )()
+    assert pkg.C._PT_EXPRESSION is None
+    # Kept
+    pkg = parse_string(
+        """
+        package the_package {
+            A: constant = 1
+            B: constant = 2
+            C: constant = A + B
+        }
+        """,
+        keep_expression=True,
+    )()
+    assert pkg.C._PT_EXPRESSION is not None
+    assert pkg.C._PT_EXPRESSION.evaluate({"A": 4, "B": 5}.get) == 4 + 5
+
+
 def test_parse_constant_override():
     """Test parsing a constant definition within a package"""
     # Parse without overrides
@@ -91,6 +119,42 @@ def test_parse_constant_override():
     # C
     assert isinstance(pkg.C, Constant)
     assert pkg.C.value == 123 + 456
+
+
+def test_parse_constant_override_unknown():
+    """Test parsing a constant override that does not match any defined constant."""
+    with pytest.raises(
+        UnknownEntityError,
+        match="Constant override 'UNKNOWN' does not match any defined constant",
+    ):
+        parse_string(
+            """
+            package the_package {
+                A: constant = 42
+            }
+            """,
+            constant_overrides={"UNKNOWN": 123},
+        )
+
+
+def test_parse_constant_override_type_mismatch():
+    """Test parsing a constant override that does not match a defined constant."""
+    with pytest.raises(
+        TypeError,
+        match=(
+            "Constant override 'b' does not match a constant in package "
+            "'the_package', found Scalar_42U_0"
+        ),
+    ):
+        parse_string(
+            """
+            package the_package {
+                A: constant = 42
+                b: scalar[A]
+            }
+            """,
+            constant_overrides={"b": 123},
+        )
 
 
 def test_parse_constant_no_value():

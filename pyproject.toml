@@ -4,7 +4,7 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry]
 name = "packtype"
-version = "3.0.0"
+version = "3.0.1"
 description = "Packed data structure specifications for multi-language hardware projects"
 authors = ["Peter Birch <peter@intuity.io>"]
 license = "Apache-2.0"
