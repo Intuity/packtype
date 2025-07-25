@@ -7,7 +7,8 @@ from typing import Any, Self
 
 
 class Expression:
-    """ Encapsulates an expression that can be evalauted at a later time """
+    """Encapsulates an expression that can be evalauted at a later time"""
+
     OP_ADD = "+"
     OP_SUB = "-"
     OP_MUL = "*"
@@ -330,7 +331,8 @@ class Expression:
 
 
 class ExpressionFunction:
-    """ Encapsulates a function call within an expression"""
+    """Encapsulates a function call within an expression"""
+
     def __init__(
         self,
         operator: Callable[[Any], Any],

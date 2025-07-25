@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-import packtype
-from packtype import Constant, utils
+from packtype import utils
 from packtype.grammar.grammar import parse_string
 
 from ..fixtures import reset_registry
@@ -12,7 +11,7 @@ assert reset_registry
 
 
 def test_utils_enum_get_entries():
-    PackageA = parse_string(
+    PackageA = parse_string(  # noqa: N806
         """
         package PackageA {
             A: constant = 1
@@ -23,6 +22,4 @@ def test_utils_enum_get_entries():
         keep_expression=True,
     )
     assert utils.constant.get_expression(PackageA.C) is not None
-    assert utils.constant.get_expression(PackageA.C).evaluate(
-        {"A": 3, "B": 4}.get
-    ) == 3 + 4
+    assert utils.constant.get_expression(PackageA.C).evaluate({"A": 3, "B": 4}.get) == 3 + 4

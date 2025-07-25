@@ -70,7 +70,7 @@ def test_parse_constant_keep_expression():
         keep_expression=True,
     )()
     assert pkg.C._PT_EXPRESSION is not None
-    assert pkg.C._PT_EXPRESSION.evaluate({ "A": 4, "B": 5 }.get) == 4 + 5
+    assert pkg.C._PT_EXPRESSION.evaluate({"A": 4, "B": 5}.get) == 4 + 5
 
 
 def test_parse_constant_override():
@@ -144,7 +144,7 @@ def test_parse_constant_override_type_mismatch():
         match=(
             "Constant override 'b' does not match a constant in package "
             "'the_package', found Scalar_42U_0"
-        )
+        ),
     ):
         parse_string(
             """

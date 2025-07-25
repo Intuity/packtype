@@ -7,6 +7,7 @@ import math
 from lark import Transformer, v_args
 
 from .. import utils
+from ..common.expression import Expression, ExpressionFunction
 from ..types.assembly import Packing
 from ..types.enum import EnumMode
 from .declarations import (
@@ -25,7 +26,6 @@ from .declarations import (
     Signed,
     Unsigned,
 )
-from ..common.expression import Expression, ExpressionFunction
 
 
 class PacktypeTransformer(Transformer):

@@ -116,7 +116,7 @@ def test_constant_arithmetic():
     assert (TestPkg.A >= TestPkg.B) == (35 >= 17)
 
     # Check that math functions work without casting
-    math.log2(TestPkg.A) == math.log2(35)
+    assert math.log2(TestPkg.A) == math.log2(35)
 
     # For that the value can be used as an index
     expected = 0
