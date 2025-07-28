@@ -24,3 +24,13 @@ def get_entries(enum: Enum | type[Enum]) -> Iterable[tuple[str, int, bool]]:
     enum = _normalise_enum(enum)
     for idx, (v_name, v_val) in enumerate(enum._pt_as_dict().items()):
         yield v_name, int(v_val), idx == (len(enum._PT_LKP_INST) - 1)
+
+
+def get_prefix(enum: Enum | type[Enum]) -> str:
+    """
+    Get the prefix for an enum.
+    :param enum: The Packtype enum to inspect
+    :return: The prefix string
+    """
+    enum = _normalise_enum(enum)
+    return enum._PT_PREFIX
