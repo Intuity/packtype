@@ -125,8 +125,9 @@ def test_constant_arithmetic():
         expected += 1
 
     # Test out replication operator
-    assert [1,2,3] * TestPkg.A == [1, 2, 3] * 35
-    assert TestPkg.A * [1,2,3] == [1, 2, 3] * 35
+    assert [1, 2, 3] * TestPkg.A == [1, 2, 3] * 35
+    assert TestPkg.A * [1, 2, 3] == [1, 2, 3] * 35
+
 
 def test_constant_reference():
     @packtype.package()
