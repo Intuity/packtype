@@ -122,8 +122,34 @@ class PacktypeTransformer(Transformer):
         )
 
     @v_args(meta=True)
+    def enum_body_simple(self, meta, body):
+        return DeclConstant(
+            position=Position(meta.line, meta.column),
+            name=body[0],
+            width=None,
+            expr=None,
+            description=body[1] if len(body) > 1 else None,
+        )
+
+    @v_args(meta=True)
     def enum_body_assign(self, meta, body):
-        return DeclConstant(Position(meta.line, meta.column), body[0], None, body[1])
+        return DeclConstant(
+            position=Position(meta.line, meta.column),
+            name=body[0],
+            width=None,
+            expr=body[1],
+            description=body[2] if len(body) > 2 else None,
+        )
+
+    @v_args(meta=True)
+    def enum_body_typed(self, meta, body):
+        return DeclConstant(
+            position=Position(meta.line, meta.column),
+            name=body[0],
+            width=None,
+            expr=None,
+            description=body[1] if len(body) > 1 else None,
+        )
 
     @v_args(meta=True)
     def decl_enum(self, meta, body):

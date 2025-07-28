@@ -190,6 +190,7 @@ class DeclEnum:
         if isinstance(width, Expression):
             width = width.evaluate(cb_resolve)
         # Process entries
+        doc_strs = {}
         entries = {}
         for value in self.values:
             if isinstance(value, DeclConstant):
@@ -197,11 +198,13 @@ class DeclEnum:
                     Constant,
                     None if value.expr is None else value.expr.evaluate(cb_resolve),
                 )
+                doc_strs[value.name] = str(value.description) if value.description else None
             elif isinstance(value, str):
                 entries[value] = (Constant, None)
             else:
                 raise ValueError(f"Unexpected enum value name: {value}")
-        return build_from_fields(
+        # Build the enum
+        built = build_from_fields(
             Enum,
             self.name,
             fields=entries,
@@ -213,6 +216,12 @@ class DeclEnum:
             doc_str=str(self.description) if self.description else None,
             source=(source_file.as_posix() if source_file else "N/A", self.position.line),
         )
+        # Back-annotate the docstrings
+        for name, doc_str in doc_strs.items():
+            if doc_str is not None:
+                getattr(built, name).__doc__ = doc_str
+        # Return the built class
+        return built
 
 
 @dataclass()
@@ -220,6 +229,7 @@ class DeclField:
     position: Position
     name: str
     ref: str
+    description: Description | None = None
 
 
 @dataclass()
