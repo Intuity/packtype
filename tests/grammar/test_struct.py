@@ -118,15 +118,19 @@ def test_parse_struct_description():
     pkg = parse_string(
         """
         package the_package {
+            simple_type_t : scalar[3]
+
             struct simple_struct {
                 "This is a simple struct"
                 a: scalar[2]
-                b: scalar[3]
+                    "This is a field description"
+                b: simple_type_t
+                    "This is another field description"
             }
         }
         """
     )
-    assert len(pkg._PT_FIELDS) == 1
+    assert len(pkg._PT_FIELDS) == 2
     assert issubclass(pkg.simple_struct, Struct)
     assert get_width(pkg.simple_struct) == 5
     assert pkg.simple_struct.__doc__ == "This is a simple struct"

@@ -131,7 +131,7 @@ enum_mode_gray: "gray"i
 //
 // =============================================================================
 
-field: name ":" name
+field: name ":" name descr?
      | decl_scalar
 
 decl_struct: "struct"i packing_mode? width? name "{" descr? modifier* field* "}"

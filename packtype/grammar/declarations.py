@@ -229,6 +229,7 @@ class DeclField:
     position: Position
     name: str
     ref: str
+    description: Description | None = None
 
 
 @dataclass()

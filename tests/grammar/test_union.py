@@ -53,14 +53,21 @@ def test_parse_union_complex():
             }
 
             union a_union {
+                "This is a union of simple scalars"
                 a: scalar[8]
+                    "Member A"
                 b: scalar[8]
+                    "Member B"
             }
 
             union complex {
+                "This is a union of scalars and types"
                 a_scalar: a_scalar
+                    "Scalar member"
                 a_struct: a_struct
+                    "Struct member"
                 a_union: a_union
+                    "Union member"
             }
         }
         """
