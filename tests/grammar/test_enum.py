@@ -189,6 +189,41 @@ def test_parse_enum_modifiers():
     assert int(pkg.a.D) == 3
 
 
+def test_parse_enum_descriptions():
+    """Test parsing an enum definition with descriptions."""
+    pkg = parse_string(
+        """
+        package the_package {
+            // Default behaviours (implicit width, indexed)
+            enum a {
+                "This is an enum"
+                A
+                    "This is A"
+                B : constant
+                    "This is B"
+                C : constant = 2
+                    "This is C"
+                D = 3
+                    "This is D"
+            }
+        }
+        """
+    )
+    assert len(pkg._PT_FIELDS) == 1
+    assert issubclass(pkg.a, Enum)
+    assert get_width(pkg.a) == 2
+    assert pkg.a._PT_MODE is EnumMode.INDEXED
+    assert pkg.a.__doc__ == "This is an enum"
+    assert int(pkg.a.A) == 0
+    assert pkg.a.A.__doc__ == "This is A"
+    assert int(pkg.a.B) == 1
+    assert pkg.a.B.__doc__ == "This is B"
+    assert int(pkg.a.C) == 2
+    assert pkg.a.C.__doc__ == "This is C"
+    assert int(pkg.a.D) == 3
+    assert pkg.a.D.__doc__ == "This is D"
+
+
 def test_parse_enum_bad_field():
     """Test parsing an enum definition with a bad field."""
     with pytest.raises(ParseError, match="Failed to parse input"):

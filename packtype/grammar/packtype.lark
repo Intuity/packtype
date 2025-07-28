@@ -116,9 +116,9 @@ enum_mode_gray: "gray"i
           | enum_body_typed
           | enum_body_assign
           | decl_constant
-?enum_body_simple: name
-?enum_body_typed: name ":" "constant"i
-?enum_body_assign: name "=" expr
+?enum_body_simple: name descr?
+?enum_body_typed: name ":" "constant"i descr?
+?enum_body_assign: name "=" expr descr?
 
 // =============================================================================
 // Structs
