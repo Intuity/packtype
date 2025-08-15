@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import inspect
 import math
 
 from ..types.alias import Alias
@@ -97,3 +98,33 @@ def is_signed(ptype: type[NumericPrimitive] | NumericPrimitive) -> bool:
         return ptype._PT_SIGNED
     else:
         raise TypeError(f"{ptype} is not a Packtype definition")
+
+
+def unpack(ptype: type[Base], value: int) -> Base:
+    """
+    Unpack a value into a Packtype definition
+    :param ptype: The Packtype definition to unpack into
+    :param value: The value to unpack
+    :return: An instance of the Packtype definition with the unpacked value
+    """
+    if not inspect.isclass(ptype):
+        raise TypeError(f"{ptype} is an instance of a Packtype definition")
+    if not issubclass(ptype, Base):
+        raise TypeError(f"{ptype} is not a Packtype definition")
+    if issubclass(ptype, NumericPrimitive):
+        return ptype(value)
+    elif issubclass(ptype, Enum):
+        return ptype._pt_cast(value)
+    else:
+        return ptype._pt_unpack(value)
+
+
+def pack(pinst: Base) -> int:
+    """
+    Pack an instance of a Packtype definition into an integer
+    :param pinst: The instance of the Packtype definition to pack
+    :return: The packed value as an integer
+    """
+    if inspect.isclass(pinst):
+        raise TypeError(f"{pinst} is not an instance of a Packtype definition")
+    return int(pinst)
