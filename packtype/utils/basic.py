@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import inspect
 import math
 
 from ..types.alias import Alias
@@ -106,7 +107,7 @@ def unpack(ptype: type[Base], value: int) -> Base:
     :param value: The value to unpack
     :return: An instance of the Packtype definition with the unpacked value
     """
-    if isinstance(ptype, Base):
+    if not inspect.isclass(ptype):
         raise TypeError(f"{ptype} is an instance of a Packtype definition")
     if not issubclass(ptype, Base):
         raise TypeError(f"{ptype} is not a Packtype definition")
@@ -124,6 +125,6 @@ def pack(pinst: Base) -> int:
     :param pinst: The instance of the Packtype definition to pack
     :return: The packed value as an integer
     """
-    if not isinstance(pinst, Base):
+    if inspect.isclass(pinst):
         raise TypeError(f"{pinst} is not an instance of a Packtype definition")
     return int(pinst)
