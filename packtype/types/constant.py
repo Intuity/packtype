@@ -8,3 +8,11 @@ from .primitive import NumericPrimitive
 
 class Constant(NumericPrimitive):
     _PT_EXPRESSION: Expression | None = None
+
+    def __repr__(self) -> str:
+        as_str = "<Constant"
+        if self._pt_width is not None and self._pt_width > 0:
+            as_str += f"[{self._pt_width}]"
+        if self._pt_signed:
+            as_str += " signed"
+        return as_str + f" value={self.value}>"
