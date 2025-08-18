@@ -3,7 +3,7 @@
 #
 
 from . import constant, enum, package, struct, union
-from .basic import clog2, get_doc, get_name, get_source, get_width, is_signed
+from .basic import clog2, get_doc, get_name, get_source, get_width, is_signed, pack, unpack
 
 __all__ = [
     "clog2",
@@ -14,7 +14,9 @@ __all__ = [
     "get_source",
     "get_width",
     "is_signed",
+    "pack",
     "package",
     "struct",
     "union",
+    "unpack",
 ]
