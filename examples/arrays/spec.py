@@ -29,4 +29,4 @@ class ThreeDimension:
     Enum3D : TwoDimension.Enum2D[4]
     Struct3D : TwoDimension.Struct2D[5]
 
-breakpoint()
+me = ThreeDimension.Scalar3D()

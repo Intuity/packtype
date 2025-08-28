@@ -74,6 +74,7 @@ class ArraySpec:
     def __getitem__(self, key: int) -> Self:
         return type(self)(self.base, (key, *self.dimensions))
 
+
 class PackedArray:
     def __init__(
         self,
@@ -83,58 +84,68 @@ class PackedArray:
         _pt_per_inst: Callable[[int, list[Any], dict[str, Any]], tuple[list[Any], dict[str, Any]]]
         | None = None,
         packing: Packing = Packing.FROM_LSB,
+        dimensions: tuple[int] | None = None,
+        dim_path: tuple[int] | None = None,
         **kwds,
     ):
         self._pt_bv = BitVector(width=spec._pt_width) if _pt_bv is None else _pt_bv
         self._pt_entries = []
+        self._pt_dimensions = dimensions or spec.dimensions
+        self._pt_dim_path = dim_path or []
 
-        def _recurse_dimension(
-            remaining: tuple[int],
-            path: tuple[int],
-            msb: int,
-            lsb: int,
-        ):
-            # If no dimensions left, produce an element
-            if len(remaining) == 0:
+        # For a single dimension, instance elements
+        if len(self._pt_dimensions) == 1:
+            msb = self._pt_dimensions[0] * spec.base._PT_WIDTH - 1
+            lsb = 0
+            for idx in range(self._pt_dimensions[0]):
+                if packing is Packing.FROM_LSB:
+                    msb = lsb + spec.base._PT_WIDTH - 1
+                else:
+                    lsb = msb - spec.base._PT_WIDTH + 1
                 if callable(_pt_per_inst):
-                    inst_args, inst_kwds = _pt_per_inst(path, *args, **kwds)
+                    inst_args, inst_kwds = _pt_per_inst((*self._pt_dim_path, idx), *args, **kwds)
                 else:
                     inst_args, inst_kwds = args, kwds
-                return spec.base(
+                self._pt_entries.append(spec.base(
                     *inst_args,
                     _pt_bv=self._pt_bv.create_window(msb, lsb),
                     **inst_kwds,
+                ))
+                if packing is Packing.FROM_LSB:
+                    lsb += spec.base._PT_WIDTH
+                else:
+                    msb -= spec.base._PT_WIDTH
+        # Otherwise, nest another PackedArray
+        else:
+            dimension, *remaining = self._pt_dimensions
+            stepping = math.prod(remaining) * spec.base._PT_WIDTH
+            msb = dimension * stepping - 1
+            lsb = 0
+            for idx in range(dimension):
+                if packing is Packing.FROM_LSB:
+                    msb = lsb + stepping - 1
+                else:
+                    lsb = msb - stepping + 1
+                if callable(_pt_per_inst):
+                    inst_args, inst_kwds = _pt_per_inst((*self._pt_dim_path, idx), *args, **kwds)
+                else:
+                    inst_args, inst_kwds = args, kwds
+                self._pt_entries.append(
+                    PackedArray(
+                        spec,
+                        *args,
+                        _pt_bv=self._pt_bv.create_window(msb, lsb),
+                        _pt_per_inst=_pt_per_inst,
+                        packing=packing,
+                        dimensions=remaining,
+                        dim_path=(*self._pt_dim_path, idx),
+                        **kwds,
+                    )
                 )
-            # Otherwise, iterate over the dimension
-            else:
-                dimension, *remaining = remaining
-                stepping = math.prod((*remaining, 1)) * spec.base._PT_WIDTH
-                entries = []
-                for idx in range(dimension):
-                    if packing is Packing.FROM_LSB:
-                        lsb = lsb
-                        msb = lsb + stepping - 1
-                    else:
-                        msb = msb
-                        lsb = msb - stepping + 1
-                    entries.append(_recurse_dimension(
-                        remaining,
-                        (*path, idx),
-                        msb,
-                        lsb,
-                    ))
-                    if packing is Packing.FROM_LSB:
-                        lsb += stepping
-                    else:
-                        msb -= stepping
-                return entries
-
-        self._pt_entries = _recurse_dimension(
-            spec.dimensions,
-            [],
-            spec._pt_width - 1,
-            0,
-        )
+                if packing is Packing.FROM_LSB:
+                    lsb += stepping
+                else:
+                    msb -= stepping
 
     def __getitem__(self, key: int) -> Any:
         return self._pt_entries[key]
@@ -151,7 +162,22 @@ class PackedArray:
     @property
     @functools.cache  # noqa: B019
     def _pt_width(self) -> int:
-        return sum(x._pt_width for x in self._pt_entries)
+        return self._pt_bv.width
+
+    def _pt_pack(self) -> int:
+        return int(self._pt_bv)
+
+    @classmethod
+    def _pt_unpack(cls, packed: int) -> "PackedArray":
+        inst = cls()
+        inst._pt_set(packed)
+        return inst
+
+    def __int__(self) -> int:
+        return self._pt_pack()
+
+    def _pt_set(self, value: int) -> None:
+        self._pt_bv.set(value)
 
 
 class UnpackedArray:

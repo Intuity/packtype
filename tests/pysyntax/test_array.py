@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import itertools
+from random import getrandbits
+
 import packtype
 from packtype import Constant, Packing, Scalar
 
@@ -109,3 +112,29 @@ def test_array_unpack_from_msb():
     assert int(inst.cd[1]) == 2
     assert int(inst.cd[2]) == 3
     assert int(inst.ef) == 53
+
+
+def test_array_multidimensional():
+    @packtype.package()
+    class TestPkg:
+        # This will declare a Scalar[4] with dimensions 5x6x7
+        multi : Scalar[4][5][6][7]
+
+    inst = TestPkg.multi()
+    # Check size and dimensions
+    assert inst._pt_width == 4 * 5 * 6 * 7
+    assert len(inst) == 7
+    assert len(inst[0]) == 6
+    assert len(inst[0][0]) == 5
+    # Write in data
+    ref = {}
+    raw = 0
+    for x, y, z in itertools.product(range(7), range(6), range(5)):
+        ref[x, y, z] = getrandbits(4)
+        raw |= ref[x, y, z] << ((x * 6 * 5 * 4) + (y * 5 * 4) + (z * 4))
+        inst[x][y][z] = ref[x, y, z]
+    # Check persistance
+    for x, y, z in itertools.product(range(7), range(6), range(5)):
+        assert inst[x][y][z] == ref[x, y, z]
+    # Check overall value
+    assert int(inst) == raw
