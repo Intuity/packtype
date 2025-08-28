@@ -14,7 +14,7 @@ from .packing import Packing
 class ArraySpec:
     def __init__(self, base: Any, dimensions: int | tuple[int]) -> None:
         self.base = base
-        self.dimensions = (dimensions, ) if isinstance(dimensions, int) else dimensions
+        self.dimensions = dimensions if isinstance(dimensions, list | tuple) else (dimensions, )
 
     @property
     def _pt_flat_dimension(self) -> int:

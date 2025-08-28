@@ -19,12 +19,6 @@ from .bitvector import BitVector
 
 
 class MetaBase(type):
-    def __mul__(cls, other: int):
-        return ArraySpec(cls, other)
-
-    def __rmul__(cls, other: int):
-        return ArraySpec(cls, other)
-
     def __getitem__(cls, key: int):
         return ArraySpec(cls, key)
 

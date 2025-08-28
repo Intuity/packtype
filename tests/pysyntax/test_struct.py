@@ -323,7 +323,7 @@ def test_struct_constructor():
     @TestPkg.struct()
     class TestStruct:
         ab: Scalar[12]
-        cd: 3 * Scalar[3]
+        cd: Scalar[3][3]
         ef: Scalar[9]
         gh: InnerUnion
 
@@ -350,7 +350,7 @@ def test_struct_bad_constructor():
     @TestPkg.struct()
     class TestStruct:
         ab: Scalar[12]
-        cd: 3 * Scalar[3]
+        cd: Scalar[3][3]
         ef: Scalar[9]
 
     # Test a single value being assigned to an array

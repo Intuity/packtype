@@ -18,8 +18,8 @@ def test_array():
     @TestPkg.struct()
     class TestStruct:
         ab: Scalar[12]
-        cd: 3 * Scalar[3]
-        ef: TestPkg.EF_NUM * Scalar[9]
+        cd: Scalar[3][3]
+        ef: Scalar[9][TestPkg.EF_NUM]
 
     inst = TestStruct()
     assert inst._pt_width == 12 + (3 * 3) + (2 * 9)
@@ -39,7 +39,7 @@ def test_array_pack():
     @TestPkg.struct()
     class TestStruct:
         ab: Scalar[12]
-        cd: 3 * Scalar[3]
+        cd: Scalar[3][3]
         ef: Scalar[9]
 
     inst = TestStruct()
@@ -60,7 +60,7 @@ def test_array_pack_from_msb():
     @TestPkg.struct(packing=Packing.FROM_MSB)
     class TestStruct:
         ab: Scalar[12]
-        cd: 3 * Scalar[3]
+        cd: Scalar[3][3]
         ef: Scalar[9]
 
     inst = TestStruct()
@@ -81,7 +81,7 @@ def test_array_unpack():
     @TestPkg.struct()
     class TestStruct:
         ab: Scalar[12]
-        cd: 3 * Scalar[3]
+        cd: Scalar[3][3]
         ef: Scalar[9]
 
     inst = TestStruct._pt_unpack((53 << 21) | (3 << 18) | (2 << 15) | (1 << 12) | 123)
@@ -100,7 +100,7 @@ def test_array_unpack_from_msb():
     @TestPkg.struct(packing=Packing.FROM_MSB)
     class TestStruct:
         ab: Scalar[12]
-        cd: 3 * Scalar[3]
+        cd: Scalar[3][3]
         ef: Scalar[9]
 
     inst = TestStruct._pt_unpack((123 << 18) | (1 << 15) | (2 << 12) | (3 << 9) | 53)
