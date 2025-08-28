@@ -9,7 +9,7 @@ from ..types.alias import Alias
 from ..types.assembly import PackedAssembly
 from ..types.base import Base
 from ..types.enum import Enum
-from ..types.primitive import NumericPrimitive
+from ..types.primitive import NumericType
 from ..types.union import Union
 
 
@@ -24,9 +24,9 @@ def clog2(x: int) -> int:
 
 
 def get_width(
-    ptype: type[PackedAssembly | Enum | NumericPrimitive | Union]
+    ptype: type[PackedAssembly | Enum | NumericType | Union]
     | PackedAssembly
-    | NumericPrimitive
+    | NumericType
     | Union,
 ) -> int:
     """
@@ -34,9 +34,9 @@ def get_width(
     :param ptype: The Packtype definition to inspect
     :return: The width in bits of the Packtype definition
     """
-    if isinstance(ptype, PackedAssembly | Enum | NumericPrimitive | Union):
+    if isinstance(ptype, PackedAssembly | Enum | NumericType | Union):
         return ptype._pt_width
-    elif issubclass(ptype, PackedAssembly | Enum | NumericPrimitive | Union):
+    elif issubclass(ptype, PackedAssembly | Enum | NumericType | Union):
         return ptype._PT_WIDTH
     elif issubclass(ptype, Alias):
         return get_width(ptype._PT_ALIAS)
@@ -86,15 +86,15 @@ def get_source(ptype: type[Base] | Base) -> tuple[str, int]:
         raise TypeError(f"{ptype} is not a Packtype definition")
 
 
-def is_signed(ptype: type[NumericPrimitive] | NumericPrimitive) -> bool:
+def is_signed(ptype: type[NumericType] | NumericType) -> bool:
     """
     Check if a Packtype definition is signed
     :param ptype: The Packtype definition to check
     :return: True if the definition is signed, False otherwise
     """
-    if isinstance(ptype, NumericPrimitive):
+    if isinstance(ptype, NumericType):
         return ptype._pt_signed
-    elif issubclass(ptype, NumericPrimitive):
+    elif issubclass(ptype, NumericType):
         return ptype._PT_SIGNED
     else:
         raise TypeError(f"{ptype} is not a Packtype definition")
@@ -111,7 +111,7 @@ def unpack(ptype: type[Base], value: int) -> Base:
         raise TypeError(f"{ptype} is an instance of a Packtype definition")
     if not issubclass(ptype, Base):
         raise TypeError(f"{ptype} is not a Packtype definition")
-    if issubclass(ptype, NumericPrimitive):
+    if issubclass(ptype, NumericType):
         return ptype(value)
     elif issubclass(ptype, Enum):
         return ptype._pt_cast(value)

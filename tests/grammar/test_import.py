@@ -4,9 +4,10 @@
 
 import pytest
 
-from packtype import Constant, Scalar
+from packtype import Constant
 from packtype.grammar import ParseError, parse_string
 from packtype.types.struct import Struct
+from packtype.types.scalar import ScalarType
 from packtype.utils import get_width
 
 from ..fixtures import reset_registry
@@ -48,7 +49,7 @@ def test_parse_import():
     assert pkg_a.A.value == 42
     assert get_width(pkg_a.A) == -1
 
-    assert issubclass(pkg_a.a_sclr, Scalar)
+    assert issubclass(pkg_a.a_sclr, ScalarType)
     assert get_width(pkg_a.a_sclr) == 42
 
     # Package B

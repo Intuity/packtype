@@ -13,8 +13,8 @@ from .array import ArraySpec
 from .base import Base
 from .constant import Constant
 from .enum import Enum
-from .primitive import NumericPrimitive
-from .scalar import Scalar
+from .primitive import NumericType
+from .scalar import ScalarType
 from .struct import Struct
 from .union import Union
 from .wrap import get_wrapper
@@ -83,7 +83,7 @@ class Package(Base):
             if isinstance(obj, ArraySpec):
                 obj = obj.base
             # If it's not a primitive, immediately accept
-            if inspect.isclass(obj) and not issubclass(obj, NumericPrimitive):
+            if inspect.isclass(obj) and not issubclass(obj, NumericType):
                 return True
             # If not attached to a different package, accept
             return obj._PT_ATTACHED_TO is not None and type(obj._PT_ATTACHED_TO) is not cls
@@ -99,11 +99,11 @@ class Package(Base):
         return ((y, x) for x, y in self._pt_fields.items() if isinstance(x, Constant))
 
     @property
-    def _pt_scalars(self) -> Iterable[tuple[str, Scalar]]:
+    def _pt_scalars(self) -> Iterable[tuple[str, ScalarType]]:
         return (
             (y, x)
             for x, y in self._pt_fields.items()
-            if (inspect.isclass(x) and issubclass(x, Scalar))
+            if (inspect.isclass(x) and issubclass(x, ScalarType))
         )
 
     @property

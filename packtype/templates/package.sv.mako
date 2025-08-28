@@ -105,7 +105,7 @@ typedef struct packed {
             array_sfx = f" [{len(field)-1}:0]" if isinstance(field, PackedArray) else ""
             field = field[0] if isinstance(field, PackedArray) else field
 %>\
-            %if isinstance(field, Scalar):
+            %if isinstance(field, ScalarType):
                 %if field._PT_ATTACHED_TO:
 <%                  refers_to = field._pt_name() %>\
     ${refers_to | filters.type}${array_sfx} ${fname | tc.snake_case};
@@ -130,7 +130,7 @@ typedef union packed {
             array_sfx = f" [{len(field)-1}:0]" if isinstance(field, PackedArray) else ""
             field = field[0] if isinstance(field, PackedArray) else field
 %>\
-            %if isinstance(field, Scalar):
+            %if isinstance(field, ScalarType):
                 %if field._PT_ATTACHED_TO:
 <%                  refers_to = field._pt_name() %>\
     ${refers_to | filters.type} ${fname | tc.snake_case};

@@ -24,7 +24,7 @@ from .types.constant import Constant
 from .types.enum import Enum
 from .types.package import Package
 from .types.primitive import NumericPrimitive
-from .types.scalar import Scalar
+from .types.scalar import Scalar, ScalarType
 from .types.struct import Struct
 from .types.union import Union
 from .types.wrap import Registry
@@ -345,6 +345,7 @@ def code(
         Enum,
         Packing,
         Scalar,
+        ScalarType,
         Struct,
         Union,
         NumericPrimitive,

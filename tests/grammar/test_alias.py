@@ -4,8 +4,9 @@
 
 import pytest
 
-from packtype import Alias, Scalar
+from packtype import Alias
 from packtype.grammar import UnknownEntityError, parse_string
+from packtype.types.scalar import ScalarType
 from packtype.utils import get_width
 
 from ..fixtures import reset_registry
@@ -27,7 +28,7 @@ def test_parse_alias():
     )
     assert len(pkg._PT_FIELDS) == 2
     # original
-    assert issubclass(pkg.original, Scalar)
+    assert issubclass(pkg.original, ScalarType)
     assert get_width(pkg.original) == 8
     # alias
     assert issubclass(pkg.alias, Alias)

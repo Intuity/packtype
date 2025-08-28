@@ -4,8 +4,8 @@
 
 import pytest
 
-from packtype import Scalar
 from packtype.grammar import ParseError, parse_string
+from packtype.types.scalar import ScalarType
 from packtype.utils import get_width
 
 from ..fixtures import reset_registry
@@ -29,15 +29,15 @@ def test_parse_scalar():
     )
     assert len(pkg._PT_FIELDS) == 3
     # single_bit
-    assert issubclass(pkg.single_bit, Scalar)
+    assert issubclass(pkg.single_bit, ScalarType)
     assert get_width(pkg.single_bit) == 1
     assert pkg.single_bit.__doc__ == "Single bit scalar"
     # multi_bit_8
-    assert issubclass(pkg.multi_bit_8, Scalar)
+    assert issubclass(pkg.multi_bit_8, ScalarType)
     assert get_width(pkg.multi_bit_8) == 8
     assert pkg.multi_bit_8.__doc__ == "Multi-bit scalar"
     # multi_bit_12
-    assert issubclass(pkg.multi_bit_12, Scalar)
+    assert issubclass(pkg.multi_bit_12, ScalarType)
     assert get_width(pkg.multi_bit_12) == 12
     assert pkg.multi_bit_12.__doc__ == "Declarations are case insensitive"
 

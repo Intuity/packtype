@@ -5,7 +5,7 @@
 from collections.abc import Iterable
 
 from ..types.base import Base
-from ..types.scalar import Scalar
+from ..types.scalar import ScalarType
 from ..types.union import Union
 from .basic import get_name
 
@@ -44,7 +44,7 @@ def is_simple_member(member: Base) -> bool:
     :param member: The member to check
     :return: True if the member is a simple member, False otherwise
     """
-    return isinstance(member, Scalar) and not member._PT_ATTACHED_TO
+    return isinstance(member, ScalarType) and not member._PT_ATTACHED_TO
 
 
 def get_member_type(member: Base) -> str | None:

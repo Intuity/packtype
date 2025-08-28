@@ -143,7 +143,7 @@ def test_parse_constant_override_type_mismatch():
         TypeError,
         match=(
             "Constant override 'b' does not match a constant in package "
-            "'the_package', found Scalar_42U_0"
+            "'the_package', found ScalarType_42U_0"
         ),
     ):
         parse_string(

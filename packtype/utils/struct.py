@@ -3,7 +3,7 @@
 #
 
 from ..types.base import Base
-from ..types.scalar import Scalar
+from ..types.scalar import ScalarType
 from ..types.struct import Struct
 from .basic import get_name
 
@@ -51,7 +51,7 @@ def is_simple_field(field: Base) -> bool:
     :param field: The field to check
     :return: True if the field is a simple field, False otherwise
     """
-    return isinstance(field, Scalar) and not field._PT_ATTACHED_TO
+    return isinstance(field, ScalarType) and not field._PT_ATTACHED_TO
 
 
 def get_field_type(field: Base) -> str | None:

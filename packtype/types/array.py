@@ -28,6 +28,37 @@ class ArraySpec:
     def _PT_WIDTH(self) -> int:  # noqa: N802
         return self._pt_width
 
+    def _pt_ranges(
+        self,
+        packing: Packing = Packing.FROM_LSB,
+    ) -> dict[tuple[int], tuple[int, int]]:
+        def _recurse(
+            remaining: tuple[int],
+            path: tuple[int],
+            msb: int,
+            lsb: int,
+        ) -> tuple[tuple[int], int, int]:
+            # If no dimensions left, produce an element
+            if len(remaining) == 0:
+                yield path, msb, lsb
+            # Otherwise, iterate over the dimension
+            else:
+                dimension, *remaining = remaining
+                stepping = math.prod((*remaining, 1)) * self.base._PT_WIDTH
+                for idx in range(dimension):
+                    if packing is Packing.FROM_LSB:
+                        lsb = lsb
+                        msb = lsb + stepping - 1
+                    else:
+                        msb = msb
+                        lsb = msb - stepping + 1
+                    yield from _recurse(remaining, (*path, idx), msb, lsb)
+                    if packing is Packing.FROM_LSB:
+                        lsb += stepping
+                    else:
+                        msb -= stepping
+        return { x[0]: (x[1], x[2]) for x in _recurse(self.dimensions, [], self._pt_width-1, 0) }
+
     def _pt_references(self) -> Iterable[Any]:
         return self.base._pt_references()
 
@@ -69,7 +100,6 @@ class PackedArray:
                     inst_args, inst_kwds = _pt_per_inst(path, *args, **kwds)
                 else:
                     inst_args, inst_kwds = args, kwds
-                print(f"Creating window {msb}:{lsb} for {path}")
                 return spec.base(
                     *inst_args,
                     _pt_bv=self._pt_bv.create_window(msb, lsb),
