@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import inspect
 from collections import defaultdict
 from typing import Any
 
@@ -28,19 +29,31 @@ class MetaPrimitive(MetaBase):
 
     @staticmethod
     def get_variant(prim: Self, segments: tuple[str], kwargs: dict[str, Any]):
+        # Use the frame to determine declaration source
+        frame = inspect.currentframe()
+        for _ in range(2):
+            frame = frame.f_back
+        source = (frame.f_code.co_filename, frame.f_lineno)
+        # If the primitive provides a base type, use that instead
+        meta_type = prim._PT_META_USE_TYPE or prim
         # NOTE: Don't share primitives between creations as this prevents the
         #       parent being distinctly tracked (a problem when they are used as
         #       typedefs on a package)
         uid = MetaPrimitive.UNIQUE_ID[segments]
         MetaPrimitive.UNIQUE_ID[segments] += 1
-        return type(
-            prim.__name__ + "_" + "_".join(str(x) for x in segments) + f"_{uid}",
-            (prim,),
-            kwargs,
+        imposter = type(
+            meta_type.__name__ + "_" + "_".join(str(x) for x in segments) + f"_{uid}",
+            (meta_type,),
+            {
+                **kwargs,
+                "_PT_SOURCE": source,
+                "_PT_BASE": meta_type,
+            },
         )
+        return imposter
 
 
-class NumericPrimitive(Base, Numeric, metaclass=MetaPrimitive):
+class NumericType(Base, Numeric):
     _PT_WIDTH: int = -1
     _PT_SIGNED: bool = False
 
@@ -50,22 +63,6 @@ class NumericPrimitive(Base, Numeric, metaclass=MetaPrimitive):
         _pt_bv: BitVector | BitVectorWindow | None = None,
     ) -> None:
         super().__init__(_pt_bv=_pt_bv, default=default)
-
-    @classmethod
-    def _pt_meta_key(cls, key: int | tuple[int, bool]) -> tuple[tuple[str], dict[str, Any]]:
-        if isinstance(key, int) or hasattr(key, "__int__"):
-            key = int(key)
-            return ((str(key),), {"_PT_WIDTH": key})
-        elif (
-            isinstance(key, tuple)
-            and (isinstance(key[0], int) or hasattr(key[0], "__int__"))
-            and (isinstance(key[1], bool) or hasattr(key[1], "__bool__"))
-        ):
-            width, signed = int(key[0]), bool(key[1])
-            key = f"{width}{'S' if signed else 'U'}"
-            return ((key,), {"_PT_WIDTH": width, "_PT_SIGNED": signed})
-        else:
-            raise Exception(f"Unsupported NumericPrimitive key: {key}")
 
     @property
     def _pt_width(self) -> int:
@@ -100,3 +97,22 @@ class NumericPrimitive(Base, Numeric, metaclass=MetaPrimitive):
 
     def __float__(self) -> float:
         return float(int(self))
+
+
+class NumericPrimitive(NumericType, metaclass=MetaPrimitive):
+
+    @classmethod
+    def _pt_meta_key(cls, key: int | tuple[int, bool]) -> tuple[tuple[str], dict[str, Any]]:
+        if isinstance(key, int) or hasattr(key, "__int__"):
+            key = int(key)
+            return ((str(key),), {"_PT_WIDTH": key})
+        elif (
+            isinstance(key, tuple)
+            and (isinstance(key[0], int) or hasattr(key[0], "__int__"))
+            and (isinstance(key[1], bool) or hasattr(key[1], "__bool__"))
+        ):
+            width, signed = int(key[0]), bool(key[1])
+            key = f"{width}{'S' if signed else 'U'}"
+            return ((key,), {"_PT_WIDTH": width, "_PT_SIGNED": signed})
+        else:
+            raise Exception(f"Unsupported NumericPrimitive key: {key}")

@@ -2,10 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from .primitive import NumericPrimitive
+from typing import Type
+
+from .base import Base
+from .primitive import NumericType, NumericPrimitive
 
 
-class Scalar(NumericPrimitive):
+class ScalarType(NumericType):
     _PT_WIDTH: int = 1
 
     @classmethod
@@ -14,3 +17,7 @@ class Scalar(NumericPrimitive):
             return cls._PT_ATTACHED_TO._pt_lookup(cls)
         else:
             return NumericPrimitive._pt_name(cls)
+
+
+class Scalar(NumericPrimitive):
+    _PT_META_USE_TYPE: Type[Base] = ScalarType

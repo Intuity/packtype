@@ -29,7 +29,7 @@ class Package(Base):
         super()._pt_construct(parent)
         cls._PT_FIELDS = {}
         for fname, ftype, fval in cls._pt_definitions():
-            if issubclass(ftype, Constant):
+            if not isinstance(ftype, ArraySpec) and issubclass(ftype, Constant):
                 cls._pt_attach_constant(fname, ftype(default=fval))
             else:
                 cls._pt_attach(ftype, name=fname)

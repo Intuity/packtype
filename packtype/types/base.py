@@ -4,7 +4,7 @@
 
 import functools
 from collections import defaultdict
-from typing import Any
+from typing import Any, Type
 
 try:
     from typing import Self
@@ -25,22 +25,27 @@ class MetaBase(type):
     def __rmul__(cls, other: int):
         return ArraySpec(cls, other)
 
+    def __getitem__(cls, key: int):
+        return ArraySpec(cls, key)
+
 
 class Base(metaclass=MetaBase):
     # The base class type
-    _PT_BASE: type["Base"] | None = None
+    _PT_BASE: Type["Base"] | None = None
+    # Substitute type for metaclass
+    _PT_META_USE_TYPE: Type["Base"] | None = None
     # What contained types are allowed to have a default value (e.g. constants)
-    _PT_ALLOW_DEFAULTS: list[type["Base"]] = []
+    _PT_ALLOW_DEFAULTS: list[Type["Base"]] = []
     # Any other types to be attached to this one (e.g. struct to a package)
-    _PT_ATTACH: list[type["Base"]] | None = None
+    _PT_ATTACH: list[Type["Base"]] | None = None
     # Points upwards from an attached type to what it's attached to
-    _PT_ATTACHED_TO: type["Base"] | None = None
+    _PT_ATTACHED_TO: Type["Base"] | None = None
     # Attributes specific to a type (e.g. width of a struct)
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {}
     # Bit width
     _PT_WIDTH: int = 0
     # The fields definition
-    _PT_DEF: dict[str, tuple[type["Base"], Any]] = {}
+    _PT_DEF: dict[str, tuple[Type["Base"], Any]] = {}
     # Tuple of source file and line number where the type is defined
     _PT_SOURCE: tuple[str, int] = ("?", 0)
     # Handle to parent
@@ -70,14 +75,14 @@ class Base(metaclass=MetaBase):
         return [(n, t, d) for n, (t, d) in cls._PT_DEF.items()]
 
     @classmethod
-    def _pt_field_types(cls) -> list[type["Base"]]:
+    def _pt_field_types(cls) -> list[Type["Base"]]:
         if cls._PT_DEF:
             return OSet(t for t, _ in cls._PT_DEF.values())
         else:
             return OSet()
 
     @classmethod
-    def _pt_references(cls) -> list[type["Base"]]:
+    def _pt_references(cls) -> list[Type["Base"]]:
         def _unwrap(obj):
             # Unwrap arrays
             if isinstance(obj, ArraySpec):
