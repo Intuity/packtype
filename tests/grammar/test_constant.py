@@ -15,7 +15,7 @@ assert reset_registry
 
 def test_parse_constant():
     """Test parsing a constant definition within a package"""
-    pkg = parse_string(
+    pkg = next(parse_string(
         """
         package the_package {
             A: constant = 42
@@ -26,7 +26,7 @@ def test_parse_constant():
                 "Declarations are case insensitive"
         }
         """
-    )
+    ))
     assert len(pkg._PT_FIELDS) == 3
     # A
     assert isinstance(pkg.A, Constant)
@@ -48,7 +48,7 @@ def test_parse_constant():
 def test_parse_constant_keep_expression():
     """Test keeping the expression when parsing a constant definition"""
     # Not kept
-    pkg = parse_string(
+    pkg = next(parse_string(
         """
         package the_package {
             A: constant = 1
@@ -56,10 +56,10 @@ def test_parse_constant_keep_expression():
             C: constant = A + B
         }
         """
-    )()
+    ))()
     assert pkg.C._PT_EXPRESSION is None
     # Kept
-    pkg = parse_string(
+    pkg = next(parse_string(
         """
         package the_package {
             A: constant = 1
@@ -68,7 +68,7 @@ def test_parse_constant_keep_expression():
         }
         """,
         keep_expression=True,
-    )()
+    ))()
     assert pkg.C._PT_EXPRESSION is not None
     assert pkg.C._PT_EXPRESSION.evaluate({"A": 4, "B": 5}.get) == 4 + 5
 
@@ -76,7 +76,7 @@ def test_parse_constant_keep_expression():
 def test_parse_constant_override():
     """Test parsing a constant definition within a package"""
     # Parse without overrides
-    pkg = parse_string(
+    pkg = next(parse_string(
         """
         package the_package {
             A: constant = 42
@@ -84,7 +84,7 @@ def test_parse_constant_override():
             C: constant = A + B
         }
         """
-    )
+    ))
     assert len(pkg._PT_FIELDS) == 3
     # A
     assert isinstance(pkg.A, Constant)
@@ -96,7 +96,7 @@ def test_parse_constant_override():
     assert isinstance(pkg.C, Constant)
     assert pkg.C.value == 42 + 39
     # Parse with overrides
-    pkg = parse_string(
+    pkg = next(parse_string(
         """
         package the_package {
             A: constant = 42
@@ -108,7 +108,7 @@ def test_parse_constant_override():
             "A": 123,
             "B": 456,
         },
-    )
+    ))
     assert len(pkg._PT_FIELDS) == 3
     # A
     assert isinstance(pkg.A, Constant)
@@ -127,14 +127,14 @@ def test_parse_constant_override_unknown():
         UnknownEntityError,
         match="Constant override 'UNKNOWN' does not match any defined constant",
     ):
-        parse_string(
+        next(parse_string(
             """
             package the_package {
                 A: constant = 42
             }
             """,
             constant_overrides={"UNKNOWN": 123},
-        )
+        ))
 
 
 def test_parse_constant_override_type_mismatch():
@@ -146,7 +146,7 @@ def test_parse_constant_override_type_mismatch():
             "'the_package', found ScalarType_42U_0"
         ),
     ):
-        parse_string(
+        next(parse_string(
             """
             package the_package {
                 A: constant = 42
@@ -154,19 +154,19 @@ def test_parse_constant_override_type_mismatch():
             }
             """,
             constant_overrides={"b": 123},
-        )
+        ))
 
 
 def test_parse_constant_no_value():
     """Test parsing a constant definition without a value."""
     with pytest.raises(ParseError, match="Failed to parse input"):
-        parse_string(
+        next(parse_string(
             """
             package the_package {
                 A: CONSTANT[12]
             }
             """
-        )
+        ))
 
 
 def test_parse_constant_bad_reference():
@@ -174,18 +174,18 @@ def test_parse_constant_bad_reference():
     with pytest.raises(
         UnknownEntityError, match="Failed to resolve 'NON_EXISTENT' to a known constant"
     ):
-        parse_string(
+        next(parse_string(
             """
             package the_package {
                 A: CONSTANT[12] = NON_EXISTENT + 1
             }
             """
-        )
+        ))
 
 
 def test_parse_constant_expression():
     """Check that a complex expression is evaluated correctly"""
-    pkg = parse_string(
+    pkg = next(parse_string(
         """
         package the_package {
             A: Constant = 32
@@ -196,5 +196,5 @@ def test_parse_constant_expression():
             F: Constant = ((A * B) ** C) / D + E
         }
         """
-    )
+    ))
     assert int(pkg.F) == (32 * 9) ** 2 // -4 + 43

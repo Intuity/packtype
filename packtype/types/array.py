@@ -195,7 +195,7 @@ class UnpackedArray:
     ):
         self._pt_spec = spec
         self._pt_entries = []
-        for idx in range(spec.dimension):
+        for idx in range(spec.dimensions[0]):
             inst_args, inst_kwds = (
                 _pt_per_inst(idx, *args, **kwds) if callable(_pt_per_inst) else (args, kwds)
             )

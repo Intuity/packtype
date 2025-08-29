@@ -15,7 +15,7 @@ assert reset_registry
 
 def test_parse_union():
     """Parse simple union definitions."""
-    pkg = parse_string(
+    pkg = next(parse_string(
         """
         package the_package {
             union with_descr {
@@ -29,7 +29,7 @@ def test_parse_union():
             }
         }
         """
-    )
+    ))
     assert len(pkg._PT_FIELDS) == 2
     # with_descr
     assert issubclass(pkg.with_descr, Union)
@@ -43,7 +43,7 @@ def test_parse_union():
 
 def test_parse_union_complex():
     """Check that unions can refer to other types."""
-    pkg = parse_string(
+    pkg = next(parse_string(
         """
         package the_package {
             a_scalar: scalar[8]
@@ -71,7 +71,7 @@ def test_parse_union_complex():
             }
         }
         """
-    )
+    ))
     assert len(pkg._PT_FIELDS) == 4
     assert issubclass(pkg.complex, Union)
     assert get_width(pkg.complex) == 8
@@ -87,7 +87,7 @@ def test_parse_union_mismatched_sizes():
         UnionError,
         match="Union member b has a width of 4 that differs from the expected width of 2",
     ):
-        parse_string(
+        next(parse_string(
             """
             package the_package {
                 union mismatched {
@@ -96,7 +96,7 @@ def test_parse_union_mismatched_sizes():
                 }
             }
             """
-        )
+        ))
 
 
 def test_parse_union_bad_field_ref():
@@ -104,7 +104,7 @@ def test_parse_union_bad_field_ref():
     with pytest.raises(
         UnknownEntityError, match="Failed to resolve 'non_existent' to a known constant or type"
     ):
-        parse_string(
+        next(parse_string(
             """
             package the_package {
                 union bad_union {
@@ -112,4 +112,4 @@ def test_parse_union_bad_field_ref():
                 }
             }
             """
-        )
+        ))

@@ -16,7 +16,7 @@ assert reset_registry
 
 def test_parse_alias():
     """Test parsing an alias definition within a package"""
-    pkg = parse_string(
+    pkg = next(parse_string(
         """
         package the_package {
             // Original scalar
@@ -25,7 +25,7 @@ def test_parse_alias():
             alias: original
         }
         """
-    )
+    ))
     assert len(pkg._PT_FIELDS) == 2
     # original
     assert issubclass(pkg.original, ScalarType)
@@ -41,10 +41,10 @@ def test_parse_alias_bad_reference():
         UnknownEntityError,
         match="Failed to resolve 'non_existent' to a known constant or type",
     ):
-        parse_string(
+        next(parse_string(
             """
             package the_package {
                 alias: non_existent
             }
             """
-        )
+        ))

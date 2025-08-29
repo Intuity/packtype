@@ -134,18 +134,18 @@ def parse_string(
                 # Imports
                 case DeclImport():
                     # Resolve the package
-                    if (foreign_pkg := namespaces.get(decl.package, None)) is None:
-                        raise ImportError(f"Unknown package '{decl.package}'")
+                    if (foreign_pkg := namespaces.get(decl.foreign.package, None)) is None:
+                        raise ImportError(f"Unknown package '{decl.foreign.package}'")
                     # Resolve the type
-                    if (foreign_type := getattr(foreign_pkg, decl.name, None)) is None:
-                        raise ImportError(f"'{decl.name}' not declared in package '{decl.package}'")
+                    if (foreign_type := getattr(foreign_pkg, decl.foreign.name, None)) is None:
+                        raise ImportError(f"'{decl.foreign.name}' not declared in package '{decl.foreign.package}'")
                     # Check for name collisions
-                    _check_collision(decl.name)
+                    _check_collision(decl.foreign.name)
                     # Remember this type
                     if isinstance(foreign_type, Constant):
-                        known_entities[decl.name] = (foreign_type, decl.position)
+                        known_entities[decl.foreign.name] = (foreign_type, decl.position)
                     else:
-                        known_entities[decl.name] = (foreign_type, decl.position)
+                        known_entities[decl.foreign.name] = (foreign_type, decl.position)
                 # Aliases
                 case DeclAlias():
                     package._pt_attach(

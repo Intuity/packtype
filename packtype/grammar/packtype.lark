@@ -103,7 +103,7 @@ decl_scalar: name ":" (signed|unsigned)? "scalar"i  dimensions? descr?
 //
 // =============================================================================
 
-decl_enum: "enum"i enum_mode? dimensions? name "{" descr? modifier* enum_body* "}"
+decl_enum: "enum"i enum_mode? dimension? name "{" descr? modifier* enum_body* "}"
 
 ?enum_mode: enum_mode_indexed
           | enum_mode_onehot

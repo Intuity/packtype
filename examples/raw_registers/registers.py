@@ -47,7 +47,7 @@ class ResetControl:
 
 @packtype.registers.group()
 class ControlGroup:
-    core_reset: 4 * ResetControl
+    core_reset: ResetControl[4]
 
 
 # === Communications ===
@@ -76,4 +76,4 @@ class CommsGroup:
 class Control:
     device: DeviceGroup
     control: ControlGroup
-    comms: 2 * CommsGroup
+    comms: CommsGroup[2]
