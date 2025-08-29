@@ -115,6 +115,7 @@ def test_array_unpack_from_msb():
 
 
 def test_array_multidimensional_scalar():
+    """Basic test that a multi-dimensional scalar value can be declared"""
     @packtype.package()
     class TestPkg:
         # This will declare a Scalar[4] with dimensions 5x6x7
@@ -141,6 +142,7 @@ def test_array_multidimensional_scalar():
 
 
 def test_array_multidimensional_rich():
+    """Test that multi-dimensional structs, enums, and unions can be declared"""
     @packtype.package()
     class Pkg1D:
         pass
@@ -238,4 +240,49 @@ def test_array_multidimensional_rich():
 
     # Check overall value
     assert int(inst_union) == raw
+
+def test_array_multidimensional_struct_field():
+    """Test that structs can have multi-dimensional fields"""
+    @packtype.package()
+    class TestPkg:
+        Scalar3D : Scalar[2][3][4]
+
+    @TestPkg.struct()
+    class TestStruct:
+        field_a : TestPkg.Scalar3D
+        field_b : Scalar[3][4][5]
+
+    inst = TestStruct()
+    assert inst._pt_width == (2 * 3 * 4) + (3 * 4 * 5)
+    inst.field_a = (data_a := getrandbits(2 * 3 * 4))
+    inst.field_b = (data_b := getrandbits(3 * 4 * 5))
+    assert int(inst.field_a) == data_a
+    assert int(inst.field_b) == data_b
+    assert int(inst) == data_a | (data_b << (2 * 3 * 4))
+    for x, y in itertools.product(range(4), range(3)):
+        assert inst.field_a[x][y] == (data_a >> ((x * 3 * 2) + (y * 2))) & 0b11
+    for x, y in itertools.product(range(5), range(4)):
+        assert inst.field_b[x][y] == (data_b >> ((x * 4 * 3) + (y * 3))) & 0b111
+
+
+def test_array_multidimensional_union_member():
+    """Test that unions can have multi-dimensional field members"""
+
+    @packtype.package()
+    class TestPkg:
+        Scalar3D : Scalar[2][3][4]
+
+    @TestPkg.union()
+    class TestUnion:
+        member_a : TestPkg.Scalar3D
+        member_b : Scalar[2 * 3 * 4]
+
+    inst = TestUnion()
+    assert inst._pt_width == 2 * 3 * 4
+    inst.member_a = (data_a := getrandbits(2 * 3 * 4))
+    assert int(inst.member_a) == data_a
+    assert int(inst.member_b) == data_a
+    assert int(inst) == data_a
+    for x, y in itertools.product(range(4), range(3)):
+        assert inst.member_a[x][y] == (data_a >> ((x * 3 * 2) + (y * 2))) & 0b11
 
