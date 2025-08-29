@@ -14,7 +14,7 @@ from .packing import Packing
 class ArraySpec:
     def __init__(self, base: Any, dimensions: int | tuple[int]) -> None:
         self.base = base
-        self.dimensions = dimensions if isinstance(dimensions, list | tuple) else (dimensions, )
+        self.dimensions = dimensions if isinstance(dimensions, list | tuple) else (dimensions,)
 
     @property
     def _pt_flat_dimension(self) -> int:
@@ -57,7 +57,8 @@ class ArraySpec:
                         lsb += stepping
                     else:
                         msb -= stepping
-        return { x[0]: (x[1], x[2]) for x in _recurse(self.dimensions, [], self._pt_width-1, 0) }
+
+        return {x[0]: (x[1], x[2]) for x in _recurse(self.dimensions, [], self._pt_width - 1, 0)}
 
     def _pt_references(self) -> Iterable[Any]:
         return self.base._pt_references()
@@ -107,11 +108,13 @@ class PackedArray:
                     inst_args, inst_kwds = _pt_per_inst((*self._pt_dim_path, idx), *args, **kwds)
                 else:
                     inst_args, inst_kwds = args, kwds
-                self._pt_entries.append(spec.base(
-                    *inst_args,
-                    _pt_bv=self._pt_bv.create_window(msb, lsb),
-                    **inst_kwds,
-                ))
+                self._pt_entries.append(
+                    spec.base(
+                        *inst_args,
+                        _pt_bv=self._pt_bv.create_window(msb, lsb),
+                        **inst_kwds,
+                    )
+                )
                 if packing is Packing.FROM_LSB:
                     lsb += spec.base._PT_WIDTH
                 else:

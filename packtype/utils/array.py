@@ -4,7 +4,7 @@
 
 from typing import Any
 
-from ..types.array import PackedArray, UnpackedArray
+from ..types.array import PackedArray
 
 
 def is_packed_array(ptype: Any) -> bool:
@@ -14,4 +14,3 @@ def is_packed_array(ptype: Any) -> bool:
     :return: True if the field is a packed array instance, False otherwise
     """
     return isinstance(ptype, PackedArray)
-

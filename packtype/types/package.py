@@ -4,7 +4,7 @@
 
 import inspect
 from collections.abc import Iterable
-from typing import Any, Type
+from typing import Any
 
 from ordered_set import OrderedSet as OSet
 
@@ -21,7 +21,7 @@ from .wrap import get_wrapper
 
 
 class Package(Base):
-    _PT_ALLOW_DEFAULTS: list[Type[Base]] = [Constant]
+    _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant]
     _PT_FIELDS: dict
 
     @classmethod
@@ -42,7 +42,7 @@ class Package(Base):
         return finst
 
     @classmethod
-    def _pt_attach(cls, field: Type[Base], name: str | None = None) -> Base:
+    def _pt_attach(cls, field: type[Base], name: str | None = None) -> Base:
         cls._PT_ATTACH.append(field)
         field._PT_ATTACHED_TO = cls
         setattr(cls, name or field.__name__, field)
@@ -98,7 +98,7 @@ class Package(Base):
     def _pt_constants(self) -> Iterable[Constant]:
         return ((y, x) for x, y in self._pt_fields.items() if isinstance(x, Constant))
 
-    def _pt_filter_for_class(self, ctype: Type[Base]) -> Iterable[tuple[str, Type[Base]]]:
+    def _pt_filter_for_class(self, ctype: type[Base]) -> Iterable[tuple[str, type[Base]]]:
         return (
             (y, x)
             for x, y in self._pt_fields.items()
@@ -134,5 +134,5 @@ class Package(Base):
         return self._pt_filter_for_class(Struct | Union)
 
     @classmethod
-    def _pt_lookup(cls, field: Type[Base] | Base) -> str:
+    def _pt_lookup(cls, field: type[Base] | Base) -> str:
         return cls._PT_FIELDS[field]

@@ -116,10 +116,11 @@ def test_array_unpack_from_msb():
 
 def test_array_multidimensional_scalar():
     """Basic test that a multi-dimensional scalar value can be declared"""
+
     @packtype.package()
     class TestPkg:
         # This will declare a Scalar[4] with dimensions 5x6x7
-        multi : Scalar[4][5][6][7]
+        multi: Scalar[4][5][6][7]
 
     inst = TestPkg.multi()
     # Check size and dimensions
@@ -143,41 +144,42 @@ def test_array_multidimensional_scalar():
 
 def test_array_multidimensional_rich():
     """Test that multi-dimensional structs, enums, and unions can be declared"""
+
     @packtype.package()
     class Pkg1D:
         pass
 
     @Pkg1D.struct()
     class Struct1D:
-        field_a : Scalar[1]
-        field_b : Scalar[2]
+        field_a: Scalar[1]
+        field_b: Scalar[2]
 
     @Pkg1D.enum()
     class Enum1D:
-        VAL_A : Constant
-        VAL_B : Constant
-        VAL_C : Constant
+        VAL_A: Constant
+        VAL_B: Constant
+        VAL_C: Constant
 
     @Pkg1D.union()
     class Union1D:
-        raw : Scalar[3]
-        struct : Struct1D
+        raw: Scalar[3]
+        struct: Struct1D
 
     @packtype.package()
     class Pkg2D:
-        Struct2D : Struct1D[4]
-        Enum2D : Enum1D[5]
-        Union2D : Union1D[6]
+        Struct2D: Struct1D[4]
+        Enum2D: Enum1D[5]
+        Union2D: Union1D[6]
 
     @packtype.package()
     class Pkg3D:
-        Struct3D : Pkg2D.Struct2D[2]
-        Enum3D : Pkg2D.Enum2D[3]
-        Union3D : Pkg2D.Union2D[4]
+        Struct3D: Pkg2D.Struct2D[2]
+        Enum3D: Pkg2D.Enum2D[3]
+        Union3D: Pkg2D.Union2D[4]
 
     # === Check struct ===
     inst_struct = Pkg3D.Struct3D()
-    assert inst_struct._pt_width ==  (1+2) * 4 * 2
+    assert inst_struct._pt_width == (1 + 2) * 4 * 2
     assert len(inst_struct) == 2
     assert len(inst_struct[0]) == 4
 
@@ -241,16 +243,18 @@ def test_array_multidimensional_rich():
     # Check overall value
     assert int(inst_union) == raw
 
+
 def test_array_multidimensional_struct_field():
     """Test that structs can have multi-dimensional fields"""
+
     @packtype.package()
     class TestPkg:
-        Scalar3D : Scalar[2][3][4]
+        Scalar3D: Scalar[2][3][4]
 
     @TestPkg.struct()
     class TestStruct:
-        field_a : TestPkg.Scalar3D
-        field_b : Scalar[3][4][5]
+        field_a: TestPkg.Scalar3D
+        field_b: Scalar[3][4][5]
 
     inst = TestStruct()
     assert inst._pt_width == (2 * 3 * 4) + (3 * 4 * 5)
@@ -270,12 +274,12 @@ def test_array_multidimensional_union_member():
 
     @packtype.package()
     class TestPkg:
-        Scalar3D : Scalar[2][3][4]
+        Scalar3D: Scalar[2][3][4]
 
     @TestPkg.union()
     class TestUnion:
-        member_a : TestPkg.Scalar3D
-        member_b : Scalar[2 * 3 * 4]
+        member_a: TestPkg.Scalar3D
+        member_b: Scalar[2 * 3 * 4]
 
     inst = TestUnion()
     assert inst._pt_width == 2 * 3 * 4
@@ -285,4 +289,3 @@ def test_array_multidimensional_union_member():
     assert int(inst) == data_a
     for x, y in itertools.product(range(4), range(3)):
         assert inst.member_a[x][y] == (data_a >> ((x * 3 * 2) + (y * 2))) & 0b11
-

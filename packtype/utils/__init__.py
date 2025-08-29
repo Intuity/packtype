@@ -3,7 +3,17 @@
 #
 
 from . import array, constant, enum, package, struct, union
-from .basic import clog2, get_doc, get_name, get_source, get_width, is_signed, pack, unpack, is_scalar
+from .basic import (
+    clog2,
+    get_doc,
+    get_name,
+    get_source,
+    get_width,
+    is_scalar,
+    is_signed,
+    pack,
+    unpack,
+)
 
 __all__ = [
     "array",

@@ -25,10 +25,7 @@ def clog2(x: int) -> int:
 
 
 def get_width(
-    ptype: type[PackedAssembly | Enum | NumericType | Union]
-    | PackedAssembly
-    | NumericType
-    | Union,
+    ptype: type[PackedAssembly | Enum | NumericType | Union] | PackedAssembly | NumericType | Union,
 ) -> int:
     """
     Get the width of a Packtype definition
@@ -137,4 +134,6 @@ def is_scalar(ptype: type[Base] | Base) -> bool:
     :param ptype: The Packtype definition to check
     :return: True if the definition is a scalar type, False otherwise
     """
-    return isinstance(ptype, ScalarType) or (inspect.isclass(ptype) and issubclass(ptype, ScalarType))
+    return isinstance(ptype, ScalarType) or (
+        inspect.isclass(ptype) and issubclass(ptype, ScalarType)
+    )

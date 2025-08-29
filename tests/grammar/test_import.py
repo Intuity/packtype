@@ -6,8 +6,8 @@ import pytest
 
 from packtype import Constant
 from packtype.grammar import ParseError, parse_string
-from packtype.types.struct import Struct
 from packtype.types.scalar import ScalarType
+from packtype.types.struct import Struct
 from packtype.utils import get_width
 
 from ..fixtures import reset_registry

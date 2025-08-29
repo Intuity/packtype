@@ -100,7 +100,6 @@ class NumericType(Base, Numeric):
 
 
 class NumericPrimitive(NumericType, metaclass=MetaPrimitive):
-
     @classmethod
     def _pt_meta_key(cls, key: int | tuple[int, bool]) -> tuple[tuple[str], dict[str, Any]]:
         if isinstance(key, int) or hasattr(key, "__int__"):
