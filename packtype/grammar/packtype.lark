@@ -38,7 +38,8 @@ COMMENT: /\/\/[^\n]*/
 ?signed: "signed"
 ?unsigned: "unsigned"
 
-?width: "[" expr "]"
+dimension: "[" expr "]"
+dimensions: dimension+
 
 ?name: CNAME
 descr: ESCAPED_STRING
@@ -50,7 +51,7 @@ modifier: "@" name "=" (name | ESCAPED_STRING | NUMERIC)
 // =============================================================================
 
 // Allowable root nodes
-?root: decl_package
+?root: decl_package*
     // | decl_regblock
 
 // =============================================================================
@@ -73,20 +74,21 @@ decl_package: "package"i name "{" descr? modifier* package_body* "}"
 // =============================================================================
 
 // Example: import other_pkg::VALUE_A
-decl_import: "import" name "::" name
+foreign_ref: name "::" name
+decl_import: "import" foreign_ref
 
 // =============================================================================
 // Simple Declarations
 // =============================================================================
 
 // Example: local_type_t : foreign_type_t
-decl_alias: name ":" name
+decl_alias: name ":" (name | foreign_ref) dimensions? descr?
 
 // Example: MY_CONSTANT : constant[8] = 123
-decl_constant: name ":" "constant"i width? "=" expr descr?
+decl_constant: name ":" "constant"i dimension? "=" expr descr?
 
 // Example: simple_type_t : scalar[8]
-decl_scalar: name ":" (signed|unsigned)? "scalar"i  width? descr?
+decl_scalar: name ":" (signed|unsigned)? "scalar"i  dimensions? descr?
 
 // =============================================================================
 // Enumerations
@@ -101,7 +103,7 @@ decl_scalar: name ":" (signed|unsigned)? "scalar"i  width? descr?
 //
 // =============================================================================
 
-decl_enum: "enum"i enum_mode? width? name "{" descr? modifier* enum_body* "}"
+decl_enum: "enum"i enum_mode? dimensions? name "{" descr? modifier* enum_body* "}"
 
 ?enum_mode: enum_mode_indexed
           | enum_mode_onehot
@@ -131,10 +133,10 @@ enum_mode_gray: "gray"i
 //
 // =============================================================================
 
-field: name ":" name descr?
+field: name ":" (name | foreign_ref) dimensions? descr?
      | decl_scalar
 
-decl_struct: "struct"i packing_mode? width? name "{" descr? modifier* field* "}"
+decl_struct: "struct"i packing_mode? dimension? name "{" descr? modifier* field* "}"
 
 ?packing_mode: packing_mode_msb
              | packing_mode_lsb

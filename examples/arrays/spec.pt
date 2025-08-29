@@ -1,0 +1,33 @@
+package one_dimension {
+    scalar_1d : scalar[4]
+
+    struct struct_1d {
+        field_a : scalar[4][3][2]
+        field_b : scalar[2][3][4]
+    }
+
+    enum enum_1d {
+        VAL_A: constant
+        VAL_B: constant
+        VAL_C: constant
+    }
+
+    union union_1d {
+        member_a: struct_1d[2][3]
+        member_b: scalar[4][12][2][3]
+    }
+}
+
+package two_dimension {
+    scalar_2d : one_dimension::scalar_1d[3]
+    enum_2d : one_dimension::enum_1d[2]
+    struct_2d : one_dimension::struct_1d[4]
+    union_2d : one_dimension::union_1d[2]
+}
+
+// package three_dimension {
+//     scalar_3d: two_dimension::scalar_2d[2]
+//     enum_3d: two_dimension::enum_2d[4]
+//     struct_3d: two_dimension::struct_2d[5]
+//     union_3d: two_dimension::union_2d[3]
+// }

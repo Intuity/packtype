@@ -76,8 +76,8 @@ def load_specification(spec_files: list[str], keep_expression: bool) -> list[Bas
         get_log().debug(f"Loading specification: {item}")
         # Packtype grammar files
         if item.lower().endswith((".pt", ".packtype", ".ptype")):
-            package = parse(Path(item), namespaces, keep_expression=keep_expression)
-            namespaces[package.__name__] = package
+            for package in parse(Path(item), namespaces, keep_expression=keep_expression):
+                namespaces[package.__name__] = package
         # If it ends with `.py` assume it's Python
         elif item.endswith(".py"):
             item = Path(item)
