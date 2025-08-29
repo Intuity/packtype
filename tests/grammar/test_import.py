@@ -4,8 +4,9 @@
 
 import pytest
 
-from packtype import Constant, Scalar
+from packtype import Constant
 from packtype.grammar import ParseError, parse_string
+from packtype.types.scalar import ScalarType
 from packtype.types.struct import Struct
 from packtype.utils import get_width
 
@@ -17,17 +18,20 @@ assert reset_registry
 def test_parse_import():
     """Test parsing an import statement"""
     # First package
-    pkg_a = parse_string(
-        """
+    pkg_a = next(
+        parse_string(
+            """
         package pkg_a {
             A: constant = 42
             a_sclr: scalar[A]
         }
         """
+        )
     )
     # Second package with import
-    pkg_b = parse_string(
-        """
+    pkg_b = next(
+        parse_string(
+            """
         package another_package {
             import pkg_a::A
             import pkg_a::a_sclr
@@ -38,7 +42,8 @@ def test_parse_import():
             }
         }
         """,
-        namespaces={"pkg_a": pkg_a},
+            namespaces={"pkg_a": pkg_a},
+        )
     )
 
     # Package A
@@ -48,7 +53,7 @@ def test_parse_import():
     assert pkg_a.A.value == 42
     assert get_width(pkg_a.A) == -1
 
-    assert issubclass(pkg_a.a_sclr, Scalar)
+    assert issubclass(pkg_a.a_sclr, ScalarType)
     assert get_width(pkg_a.a_sclr) == 42
 
     # Package B
@@ -65,32 +70,38 @@ def test_parse_import():
 def test_parse_import_bad():
     """Test parsing an import statement with a bad import statement"""
     with pytest.raises(ParseError, match="Failed to parse input"):
-        parse_string(
-            """
+        next(
+            parse_string(
+                """
             package the_package {
                 import pkg_a::
             }
             """
+            )
         )
 
 
 def test_parse_import_unknown():
     """Test parsing an import statement with an unknwown package"""
     with pytest.raises(ImportError, match="Unknown package 'pkg_a'"):
-        parse_string(
-            """
+        next(
+            parse_string(
+                """
             package the_package {
                 import pkg_a::B
             }
             """
+            )
         )
     with pytest.raises(ImportError, match="'B' not declared in package 'pkg_a'"):
-        pkg_a = parse_string(r"package pkg_a {}")
-        parse_string(
-            """
+        pkg_a = next(parse_string(r"package pkg_a {}"))
+        next(
+            parse_string(
+                """
             package the_package {
                 import pkg_a::B
             }
             """,
-            namespaces={"pkg_a": pkg_a},
+                namespaces={"pkg_a": pkg_a},
+            )
         )

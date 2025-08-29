@@ -8,6 +8,7 @@ import pytest
 
 import packtype
 from packtype import Constant, Scalar, utils
+from packtype.types.scalar import ScalarType
 
 from ..fixtures import reset_registry
 
@@ -76,7 +77,7 @@ def test_utils_basic_unpack_pack():
 
     # Unpack a scalar
     inst_sc = utils.unpack(TestPkg.sc_unsigned, 123)
-    assert isinstance(inst_sc, Scalar)
+    assert isinstance(inst_sc, ScalarType)
     assert inst_sc == 123
     assert isinstance(utils.pack(inst_sc), int)
     assert utils.pack(inst_sc) == 123

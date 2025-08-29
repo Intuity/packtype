@@ -16,8 +16,9 @@ assert reset_registry
 
 def test_parse_enum():
     """Test parsing an enum definition."""
-    pkg = parse_string(
-        """
+    pkg = next(
+        parse_string(
+            """
         package the_package {
             // Default behaviours (implicit width, indexed)
             enum a {
@@ -84,6 +85,7 @@ def test_parse_enum():
             }
         }
         """
+        )
     )
     assert len(pkg._PT_FIELDS) == 9
     # a
@@ -135,8 +137,9 @@ def test_parse_enum():
 
 def test_parse_enum_description():
     """Test parsing an enum definition with a description."""
-    pkg = parse_string(
-        """
+    pkg = next(
+        parse_string(
+            """
         package the_package {
             // Default behaviours (implicit width, indexed)
             enum a {
@@ -148,6 +151,7 @@ def test_parse_enum_description():
             }
         }
         """
+        )
     )
     assert len(pkg._PT_FIELDS) == 1
     assert issubclass(pkg.a, Enum)
@@ -162,8 +166,9 @@ def test_parse_enum_description():
 
 def test_parse_enum_modifiers():
     """Test parsing an enum definition with modifiers."""
-    pkg = parse_string(
-        """
+    pkg = next(
+        parse_string(
+            """
         package the_package {
             // Default behaviours (implicit width, indexed)
             enum a {
@@ -176,6 +181,7 @@ def test_parse_enum_modifiers():
             }
         }
         """
+        )
     )
     assert len(pkg._PT_FIELDS) == 1
     assert issubclass(pkg.a, Enum)
@@ -191,8 +197,9 @@ def test_parse_enum_modifiers():
 
 def test_parse_enum_descriptions():
     """Test parsing an enum definition with descriptions."""
-    pkg = parse_string(
-        """
+    pkg = next(
+        parse_string(
+            """
         package the_package {
             // Default behaviours (implicit width, indexed)
             enum a {
@@ -208,6 +215,7 @@ def test_parse_enum_descriptions():
             }
         }
         """
+        )
     )
     assert len(pkg._PT_FIELDS) == 1
     assert issubclass(pkg.a, Enum)
@@ -227,14 +235,16 @@ def test_parse_enum_descriptions():
 def test_parse_enum_bad_field():
     """Test parsing an enum definition with a bad field."""
     with pytest.raises(ParseError, match="Failed to parse input"):
-        parse_string(
-            """
+        next(
+            parse_string(
+                """
             package the_package {
                 enum a {
                     A : scalar[4]
                 }
             }
             """
+            )
         )
 
 
@@ -243,8 +253,9 @@ def test_parse_enum_bad_width():
     with pytest.raises(
         EnumError, match="Enum entry E has value 4 that cannot be encoded in a bit width of 2"
     ):
-        parse_string(
-            """
+        next(
+            parse_string(
+                """
             package the_package {
                 enum [2] a {
                     A
@@ -255,14 +266,16 @@ def test_parse_enum_bad_width():
                 }
             }
             """
+            )
         )
 
 
 def test_parse_enum_bad_modifier():
     """Test parsing an enum where an unrecognised modifier is used."""
     with pytest.raises(BadAttributeError, match="Unsupported attribute 'blargh' for Enum"):
-        parse_string(
-            """
+        next(
+            parse_string(
+                """
             package the_package {
                 enum [2] a {
                     @blargh=123
@@ -273,4 +286,5 @@ def test_parse_enum_bad_modifier():
                 }
             }
             """
+            )
         )

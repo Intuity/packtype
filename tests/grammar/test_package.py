@@ -13,12 +13,14 @@ assert reset_registry
 
 def test_parse_package():
     """Test parsing a package definition."""
-    pkg = parse_string(
-        """
+    pkg = next(
+        parse_string(
+            """
         package the_package {
             "This describes the package"
         }
         """
+        )
     )
     assert pkg.__name__ == "the_package"
     assert pkg._pt_name() == "the_package"
@@ -29,31 +31,37 @@ def test_parse_package():
 def test_parse_package_unclosed():
     """Test parsing a package definition that is not closed."""
     with pytest.raises(ParseError, match="Failed to parse input"):
-        parse_string(
-            """
+        next(
+            parse_string(
+                """
             package the_package {
                 "This describes the package"
             """
+            )
         )
 
 
 def test_parse_package_collision():
     """Check that multiple definitions within a package of the same name raises an error."""
     with pytest.raises(RedefinitionError, match="'the_name' is already defined as a Scalar"):
-        parse_string(
-            """
+        next(
+            parse_string(
+                """
             package the_package {
                 the_name : scalar[3]
                 the_name : constant = 42
             }
             """
+            )
         )
     with pytest.raises(RedefinitionError, match="'the_name' is already defined as a Constant"):
-        parse_string(
-            """
+        next(
+            parse_string(
+                """
             package the_package {
                 the_name : constant = 42
                 the_name : scalar[3]
             }
             """
+            )
         )

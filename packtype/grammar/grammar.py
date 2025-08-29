@@ -4,6 +4,7 @@
 
 import functools
 import inspect
+from collections.abc import Iterable
 from pathlib import Path
 
 from lark import Lark
@@ -19,9 +20,11 @@ from .declarations import (
     DeclConstant,
     DeclEnum,
     DeclImport,
+    DeclPackage,
     DeclScalar,
     DeclStruct,
     DeclUnion,
+    ForeignRef,
     Position,
 )
 from .transformer import PacktypeTransformer
@@ -62,7 +65,7 @@ def parse_string(
     constant_overrides: dict[str, int] | None = None,
     source: Path | None = None,
     keep_expression: bool = False,
-) -> Package:
+) -> Iterable[Package]:
     """
     Parse a Packtype definition from a string producing a Package object.
 
@@ -75,7 +78,7 @@ def parse_string(
                                associating each declaration with its source file.
     :param keep_expression:    If True, expressions will be attached to constants
                                allowing them to be re-evaluated with new inputs.
-    :return:                   A Package object representing the parsed definition.
+    :yields:                   A Package object representing the parsed definition.
     """
     # If no namespaces are provided, use an empty dict
     namespaces = namespaces or {}
@@ -83,7 +86,7 @@ def parse_string(
     constant_overrides = constant_overrides or {}
     # Parse the definition
     try:
-        defn = PacktypeTransformer().transform(create_parser().parse(definition))
+        definitions = PacktypeTransformer().transform(create_parser().parse(definition))
     except UnexpectedToken as exc:
         raise ParseError(
             f"Failed to parse {source.name if source else 'input'} on line {exc.line}: "
@@ -102,101 +105,117 @@ def parse_string(
                 f"on line {pos.line}"
             )
 
-    def _resolve(name: str) -> int:
+    def _resolve(ref: str | ForeignRef) -> int:
         nonlocal known_entities
-        if name in known_entities:
-            return known_entities[name][0]
-        raise UnknownEntityError(f"Failed to resolve '{name}' to a known constant or type")
-
-    # Create the package
-    package: Package = build_from_fields(
-        base=Package,
-        cname=defn.name,
-        fields={},
-        kwds=defn.get_modifiers(),
-        doc_str=str(defn.description) if defn.description else None,
-        source=(source.as_posix() if source else "N/A", defn.position.line),
-    )
-
-    # Run through the declarations
-    for decl in defn.declarations:
-        match decl:
-            # Imports
-            case DeclImport():
-                # Resolve the package
-                if (foreign_pkg := namespaces.get(decl.package, None)) is None:
-                    raise ImportError(f"Unknown package '{decl.package}'")
-                # Resolve the type
-                if (foreign_type := getattr(foreign_pkg, decl.name, None)) is None:
-                    raise ImportError(f"'{decl.name}' not declared in package '{decl.package}'")
-                # Check for name collisions
-                _check_collision(decl.name)
-                # Remember this type
-                if isinstance(foreign_type, Constant):
-                    known_entities[decl.name] = (foreign_type, decl.position)
-                else:
-                    known_entities[decl.name] = (foreign_type, decl.position)
-            # Aliases
-            case DeclAlias():
-                package._pt_attach(
-                    scalar := decl.to_class(_resolve),
-                    name=decl.name,
+        if isinstance(ref, ForeignRef):
+            if ref.package not in namespaces:
+                raise UnknownEntityError(f"Failed to resolve package '{ref.package}'")
+            if not hasattr(namespaces[ref.package], ref.name):
+                raise UnknownEntityError(
+                    f"Failed to resolve '{ref.name}' in package '{ref.package}'"
                 )
-                # Check for name collisions
-                _check_collision(decl.name)
-                # Remember this type
-                known_entities[decl.name] = (scalar, decl.position)
-            # Build constants
-            case DeclConstant():
-                constant = decl.to_instance(_resolve)
-                if keep_expression:
-                    constant._PT_EXPRESSION = decl.expr
-                package._pt_attach_constant(decl.name, constant)
-                # Check for name collisions
-                _check_collision(decl.name)
-                # Check for a constant override
-                if decl.name in constant_overrides:
-                    get_log().debug(
-                        f"Overriding constant '{decl.name}' with value "
-                        f"{constant_overrides[decl.name]}"
+            return getattr(namespaces[ref.package], ref.name)
+        elif ref in known_entities:
+            return known_entities[ref][0]
+        raise UnknownEntityError(f"Failed to resolve '{ref}' to a known constant or type")
+
+    for defn in [definitions] if isinstance(definitions, DeclPackage) else definitions:
+        # Create the package
+        package: Package = build_from_fields(
+            base=Package,
+            cname=defn.name,
+            fields={},
+            kwds=defn.get_modifiers(),
+            doc_str=str(defn.description) if defn.description else None,
+            source=(source.as_posix() if source else "N/A", defn.position.line),
+        )
+
+        # Run through the declarations
+        for decl in defn.declarations:
+            match decl:
+                # Imports
+                case DeclImport():
+                    # Resolve the package
+                    if (foreign_pkg := namespaces.get(decl.foreign.package, None)) is None:
+                        raise ImportError(f"Unknown package '{decl.foreign.package}'")
+                    # Resolve the type
+                    if (foreign_type := getattr(foreign_pkg, decl.foreign.name, None)) is None:
+                        raise ImportError(
+                            f"'{decl.foreign.name}' not declared in package "
+                            f"'{decl.foreign.package}'"
+                        )
+                    # Check for name collisions
+                    _check_collision(decl.foreign.name)
+                    # Remember this type
+                    if isinstance(foreign_type, Constant):
+                        known_entities[decl.foreign.name] = (foreign_type, decl.position)
+                    else:
+                        known_entities[decl.foreign.name] = (foreign_type, decl.position)
+                # Aliases
+                case DeclAlias():
+                    package._pt_attach(
+                        alias := decl.to_class(_resolve),
+                        name=decl.name,
                     )
-                    constant._pt_set(int(constant_overrides[decl.name]))
-                # Remember this constant
-                known_entities[decl.name] = (constant, decl.position)
-            # Build aliases and scalars
-            case DeclScalar() | DeclAlias():
-                package._pt_attach(
-                    obj := decl.to_class(_resolve),
-                    name=decl.name,
+                    # Check for name collisions
+                    _check_collision(decl.name)
+                    # Remember this type
+                    known_entities[decl.name] = (alias, decl.position)
+                # Build constants
+                case DeclConstant():
+                    constant = decl.to_instance(_resolve)
+                    if keep_expression:
+                        constant._PT_EXPRESSION = decl.expr
+                    package._pt_attach_constant(decl.name, constant)
+                    # Check for name collisions
+                    _check_collision(decl.name)
+                    # Check for a constant override
+                    if decl.name in constant_overrides:
+                        get_log().debug(
+                            f"Overriding constant '{decl.name}' with value "
+                            f"{constant_overrides[decl.name]}"
+                        )
+                        constant._pt_set(int(constant_overrides[decl.name]))
+                    # Remember this constant
+                    known_entities[decl.name] = (constant, decl.position)
+                # Build aliases and scalars
+                case DeclScalar() | DeclAlias():
+                    package._pt_attach(
+                        obj := decl.to_class(_resolve),
+                        name=decl.name,
+                    )
+                    # Check for name collisions
+                    _check_collision(decl.name)
+                    # Remember this type
+                    known_entities[decl.name] = (obj, decl.position)
+                # Build enums, structs, and unions
+                case DeclEnum() | DeclStruct() | DeclUnion():
+                    package._pt_attach(obj := decl.to_class(source, _resolve))
+                    # Check for name collisions
+                    _check_collision(decl.name)
+                    # Remember this type
+                    known_entities[decl.name] = (obj, decl.position)
+                case _:
+                    raise Exception(f"Unhandled declaration: {decl}")
+
+        # Check for overrides that don't match up
+        for name in constant_overrides.keys():
+            if not hasattr(package, name):
+                raise UnknownEntityError(
+                    f"Constant override '{name}' does not match any defined constant "
+                    f"in package '{package.__name__}'"
                 )
-                # Check for name collisions
-                _check_collision(decl.name)
-                # Remember this type
-                known_entities[decl.name] = (obj, decl.position)
-            # Build enums, structs, and unions
-            case DeclEnum() | DeclStruct() | DeclUnion():
-                package._pt_attach(obj := decl.to_class(source, _resolve))
-                # Check for name collisions
-                _check_collision(decl.name)
-                # Remember this type
-                known_entities[decl.name] = (obj, decl.position)
-            case _:
-                raise Exception(f"Unhandled declaration: {decl}")
+            elif not isinstance(getattr(package, name), Constant):
+                raise TypeError(
+                    f"Constant override '{name}' does not match a constant in package "
+                    f"'{package.__name__}', found {getattr(package, name).__name__}"
+                )
 
-    # Check for overrides that don't match up
-    for name in constant_overrides.keys():
-        if not hasattr(package, name):
-            raise UnknownEntityError(
-                f"Constant override '{name}' does not match any defined constant "
-                f"in package '{package.__name__}'"
-            )
-        elif not isinstance(getattr(package, name), Constant):
-            raise TypeError(
-                f"Constant override '{name}' does not match a constant in package "
-                f"'{package.__name__}', found {getattr(package, name).__name__}"
-            )
+        # Register with namespace
+        namespaces[package.__name__] = package
 
-    return package
+        # Yield the package
+        yield package
 
 
 def parse(
@@ -204,7 +223,7 @@ def parse(
     namespaces: dict[str, Package] | None = None,
     constant_overrides: dict[str, int] | None = None,
     keep_expression: bool = False,
-) -> Package:
+) -> Iterable[Package]:
     """
     Parse a Packtype definition from a file path producing a Package object.
 
@@ -215,10 +234,10 @@ def parse(
                                the constant's name.
     :param keep_expression:    If True, expressions will be attached to constants
                                allowing them to be re-evaluated with new inputs.
-    :return:                   A Package object representing the parsed definition.
+    :yields:                   Package objects representing the parsed definition.
     """
     with path.open("r", encoding="utf-8") as fh:
-        return parse_string(
+        yield from parse_string(
             definition=fh.read(),
             namespaces=namespaces,
             constant_overrides=constant_overrides,

@@ -14,8 +14,8 @@ from ..types.base import Base
 from ..types.constant import Constant
 from ..types.enum import Enum
 from ..types.packing import Packing
-from ..types.primitive import NumericPrimitive
-from ..types.scalar import Scalar
+from ..types.primitive import NumericType
+from ..types.scalar import Scalar, ScalarType
 from ..types.struct import Struct
 from ..types.wrap import build_from_fields, get_wrapper
 
@@ -97,7 +97,7 @@ class Register(PackedAssembly):
     """Defines a single register with a behaviour, width, and alignment"""
 
     # Allow both constants and scalars to be assigned values
-    _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant, Enum, Scalar, Struct]
+    _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant, Enum, ScalarType, Struct]
     # Detail custom attributes that registers offer
     _PT_ATTRIBUTES: dict[str, tuple[Any, list[Any]]] = {
         "behaviour": (Behaviour.CONSTANT, list(Behaviour)),
@@ -326,7 +326,7 @@ class Group(Base):
                     parent=fbase,
                 )
             # Insert a placeholder entry to offsets
-            dimension = ftype.dimension if isinstance(ftype, ArraySpec) else 1
+            dimension = ftype.dimensions[0] if isinstance(ftype, ArraySpec) else 1
             for idx in range(dimension):
                 cls._PT_OFFSETS[fname, idx] = (
                     fbase._PT_BYTE_SIZE,
@@ -384,7 +384,7 @@ class File(Group):
             if obj._PT_BASE in (Group, Register):
                 return False
             # If it's not a primitive, immediately accept
-            if inspect.isclass(obj) and not issubclass(obj, NumericPrimitive):
+            if inspect.isclass(obj) and not issubclass(obj, NumericType):
                 return True
             # If not attached to a different package, accept
             return obj._PT_ATTACHED_TO is not None and type(obj._PT_ATTACHED_TO) is not cls

@@ -198,11 +198,10 @@ class PackedAssembly(Assembly):
             for fname, ftype, _ in cls._pt_definitions():
                 # For arrays record each component placement separately
                 if isinstance(ftype, ArraySpec):
-                    fwidth = ftype.base()._pt_width
-                    part_lsb = lsb
-                    for idx in range(ftype.dimension):
-                        cls._PT_RANGES[fname, idx] = (part_lsb, part_lsb + fwidth - 1)
-                        part_lsb += fwidth
+                    for dimension, (part_msb, part_lsb) in ftype._pt_ranges(
+                        cls._PT_PACKING
+                    ).items():
+                        cls._PT_RANGES[fname, dimension] = (lsb + part_msb, lsb + part_lsb)
                 # For every field type (including arrays) record full placement
                 fwidth = ftype()._pt_width
                 cls._PT_RANGES[fname] = (lsb, lsb + fwidth - 1)
@@ -217,11 +216,14 @@ class PackedAssembly(Assembly):
             for fname, ftype, _ in cls._pt_definitions():
                 # For arrays record each component placement separately
                 if isinstance(ftype, ArraySpec):
-                    fwidth = ftype.base()._pt_width
-                    part_msb = msb
-                    for idx in range(ftype.dimension):
-                        cls._PT_RANGES[fname, idx] = (part_msb - fwidth + 1, part_msb)
-                        part_msb -= fwidth
+                    root_lsb = msb - ftype._PT_WIDTH + 1
+                    for dimension, (part_msb, part_lsb) in ftype._pt_ranges(
+                        cls._PT_PACKING
+                    ).items():
+                        cls._PT_RANGES[fname, dimension] = (
+                            part_msb + root_lsb,
+                            part_lsb + root_lsb,
+                        )
                 # For every field type (including arrays) record full placement
                 fwidth = ftype()._pt_width
                 cls._PT_RANGES[fname] = (msb - fwidth + 1, msb)
@@ -253,11 +255,7 @@ class PackedAssembly(Assembly):
     def _pt_fields_lsb_asc(self) -> list[tuple[int, int, tuple[str, Base]]]:
         pairs = []
         for finst, fname in self._pt_fields.items():
-            if isinstance(finst, PackedArray):
-                lsb = min(self._PT_RANGES[(fname, x)][0] for x in range(len(finst)))
-                msb = max(self._PT_RANGES[(fname, x)][1] for x in range(len(finst)))
-            else:
-                lsb, msb = self._PT_RANGES[fname]
+            lsb, msb = self._PT_RANGES[fname]
             pairs.append((lsb, msb, (fname, finst)))
         return sorted(pairs, key=lambda x: x[0])
 
@@ -266,11 +264,7 @@ class PackedAssembly(Assembly):
     def _pt_fields_msb_desc(self) -> list[tuple[int, int, tuple[str, Base]]]:
         pairs = []
         for finst, fname in self._pt_fields.items():
-            if isinstance(finst, PackedArray):
-                lsb = min(self._PT_RANGES[(fname, x)][0] for x in range(len(finst)))
-                msb = max(self._PT_RANGES[(fname, x)][1] for x in range(len(finst)))
-            else:
-                lsb, msb = self._PT_RANGES[fname]
+            lsb, msb = self._PT_RANGES[fname]
             pairs.append((lsb, msb, (fname, finst)))
         return sorted(pairs, key=lambda x: x[1], reverse=True)
 

@@ -19,16 +19,15 @@ from .bitvector import BitVector
 
 
 class MetaBase(type):
-    def __mul__(cls, other: int):
-        return ArraySpec(cls, other)
-
-    def __rmul__(cls, other: int):
-        return ArraySpec(cls, other)
+    def __getitem__(cls, key: int):
+        return ArraySpec(cls, key)
 
 
 class Base(metaclass=MetaBase):
     # The base class type
     _PT_BASE: type["Base"] | None = None
+    # Substitute type for metaclass
+    _PT_META_USE_TYPE: type["Base"] | None = None
     # What contained types are allowed to have a default value (e.g. constants)
     _PT_ALLOW_DEFAULTS: list[type["Base"]] = []
     # Any other types to be attached to this one (e.g. struct to a package)

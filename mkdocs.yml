@@ -35,6 +35,7 @@ nav:
   - Packtype: index.md
   - Syntax:
     - Alias: syntax/alias.md
+    - Arrays: syntax/arrays.md
     - Constants: syntax/constant.md
     - Enumerations: syntax/enum.md
     - Packages: syntax/package.md

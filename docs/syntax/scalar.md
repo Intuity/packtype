@@ -9,21 +9,21 @@ custom grammar:
 
 === "Python (.py)"
 
-  ```python linenums="1"
-  import packtype
-  from packtype import Constant, Scalar
+    ```python linenums="1"
+    import packtype
+    from packtype import Constant, Scalar
 
-  @packtype.package()
-  class MyPackage:
-      # Constants
-      TYPE_A_W : Constant = 29
-      TYPE_B_W : Constant = 13
+    @packtype.package()
+    class MyPackage:
+        # Constants
+        TYPE_A_W : Constant = 29
+        TYPE_B_W : Constant = 13
 
-      # Typedefs
-      TypeA : Scalar[TYPE_A_W]
-      TypeB : Scalar[TYPE_B_W]
-      TypeC : Scalar[7]
-  ```
+        # Typedefs
+        TypeA : Scalar[TYPE_A_W]
+        TypeB : Scalar[TYPE_B_W]
+        TypeC : Scalar[7]
+    ```
 
 === "Packtype (.pt)"
 

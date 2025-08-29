@@ -8,6 +8,7 @@ from pathlib import Path
 
 from ..common.expression import Expression
 from ..types.alias import Alias
+from ..types.array import ArraySpec
 from ..types.assembly import Packing
 from ..types.base import Base
 from ..types.constant import Constant
@@ -50,10 +51,37 @@ class Position:
 
 
 @dataclass()
-class DeclImport:
-    position: Position
+class ForeignRef:
     package: str
     name: str
+
+
+@dataclass()
+class DeclImport:
+    position: Position
+    foreign: ForeignRef
+
+
+@dataclass()
+class DeclDimensions:
+    dimensions: list[int]
+
+    def resolve(
+        self,
+        cb_resolve: Callable[
+            [
+                str,
+            ],
+            int | type[Base],
+        ],
+    ) -> list[int]:
+        eval_dims = []
+        for raw_dim in self.dimensions:
+            if isinstance(raw_dim, Expression):
+                eval_dims.append(raw_dim.evaluate(cb_resolve))
+            else:
+                raise Exception("Unexpected width type in DeclScalar")
+        return eval_dims
 
 
 @dataclass()
@@ -61,6 +89,8 @@ class DeclAlias:
     position: Position
     name: str
     foreign: str
+    dimensions: DeclDimensions | None = None
+    description: Description | None = None
 
     def to_class(
         self,
@@ -70,8 +100,14 @@ class DeclAlias:
             ],
             int | type[Base],
         ],
-    ) -> type[Alias]:
-        return Alias[cb_resolve(self.foreign)]
+    ) -> type[Alias] | ArraySpec:
+        entity = cb_resolve(self.foreign)
+        if self.dimensions:
+            for dim in self.dimensions.resolve(cb_resolve):
+                entity = entity[dim]
+            return entity
+        else:
+            return Alias[entity]
 
 
 @dataclass()
@@ -112,24 +148,8 @@ class DeclScalar:
     position: Position
     name: str
     signedness: type[Signed | Unsigned]
-    width: Expression
+    dimensions: DeclDimensions
     description: Description | None = None
-
-    def resolve_width(
-        self,
-        cb_resolve: Callable[
-            [
-                str,
-            ],
-            int | type[Base],
-        ],
-    ) -> int:
-        if isinstance(self.width, Expression):
-            return self.width.evaluate(cb_resolve)
-        elif self.width is None:
-            return 1
-        else:
-            raise Exception("Unexpected width type in DeclScalar")
 
     def to_field_def(
         self,
@@ -154,12 +174,14 @@ class DeclScalar:
             int | type[Base],
         ],
     ) -> type[Scalar]:
-        scalar_cls = Scalar[
-            self.resolve_width(cb_resolve),
-            (self.signedness is Signed),
-        ]
-        scalar_cls.__doc__ = str(self.description) if self.description else None
-        return scalar_cls
+        entity = None
+        for dim in self.dimensions.resolve(cb_resolve):
+            if entity is None:
+                entity = Scalar[dim, (self.signedness is Signed)]
+            else:
+                entity = entity[dim]
+        entity.__doc__ = str(self.description) if self.description else None
+        return entity
 
 
 @dataclass()
@@ -229,6 +251,7 @@ class DeclField:
     position: Position
     name: str
     ref: str
+    dimensions: DeclDimensions | None = None
     description: Description | None = None
 
 
@@ -265,7 +288,11 @@ class DeclStruct:
             if isinstance(fdecl, DeclScalar):
                 fields[fdecl.name] = fdecl.to_field_def(cb_resolve)
             elif isinstance(fdecl, DeclField):
-                fields[fdecl.name] = (cb_resolve(fdecl.ref), None)
+                ftype = cb_resolve(fdecl.ref)
+                if fdecl.dimensions:
+                    for dim in fdecl.dimensions.resolve(cb_resolve):
+                        ftype = ftype[dim]
+                fields[fdecl.name] = (ftype, None)
             else:
                 raise ValueError(f"Unexpected struct field name: {fdecl}")
         return build_from_fields(
@@ -309,7 +336,11 @@ class DeclUnion:
             if isinstance(fdecl, DeclScalar):
                 fields[fdecl.name] = fdecl.to_field_def(cb_resolve)
             elif isinstance(fdecl, DeclField):
-                fields[fdecl.name] = (cb_resolve(fdecl.ref), None)
+                ftype = cb_resolve(fdecl.ref)
+                if fdecl.dimensions:
+                    for dim in fdecl.dimensions.resolve(cb_resolve):
+                        ftype = ftype[dim]
+                fields[fdecl.name] = (ftype, None)
             else:
                 raise ValueError(f"Unexpected struct field name: {fdecl}")
         return build_from_fields(

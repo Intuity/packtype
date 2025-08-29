@@ -60,6 +60,22 @@ typedef logic [${utils.get_width(obj)-1}:0] ${name | filters.type};
 // ${name}
 typedef ${obj._PT_ALIAS._pt_name() | filters.type} ${name | filters.type};
 %endfor
+%for name, spec in baseline._pt_arrays:
+// ${name}
+typedef \
+    %if utils.is_scalar(spec.base):
+logic \
+    %else:
+${utils.get_name(spec.base) | filters.type} \
+    %endif
+%for dim in spec.dimensions:
+[${dim-1}:0]\
+%endfor
+    %if utils.is_scalar(spec.base):
+[${utils.get_width(spec.base)-1}:0]\
+    %endif
+ ${name | filters.type};
+%endfor
 
 // =============================================================================
 // Enumerations
@@ -102,16 +118,18 @@ typedef struct packed {
 <%              pad_idx += 1 %>\
             %endif
 <%
-            array_sfx = f" [{len(field)-1}:0]" if isinstance(field, PackedArray) else ""
-            field = field[0] if isinstance(field, PackedArray) else field
+            array_sfx = ""
+            if utils.array.is_packed_array(field):
+                array_sfx = " " + "".join(f"[{x-1}:0]" for x in field._pt_spec.dimensions)
+                field = field._pt_spec.base()
 %>\
-            %if isinstance(field, Scalar):
+            %if utils.is_scalar(field):
                 %if field._PT_ATTACHED_TO:
 <%                  refers_to = field._pt_name() %>\
     ${refers_to | filters.type}${array_sfx} ${fname | tc.snake_case};
                 %else:
 <%                  sign_sfx = " signed" if field._pt_signed else "" %>\
-    logic${sign_sfx}${array_sfx}${f" [{utils.get_width(field)}:0]" if utils.get_width(field) > 1 else ""} ${fname | tc.snake_case};
+    logic${sign_sfx}${array_sfx}${f" [{utils.get_width(field)-1}:0]" if utils.get_width(field) > 1 else ""} ${fname | tc.snake_case};
                 %endif
             %elif isinstance(field, Alias | Enum | Struct | Union):
     ${field._pt_name() | filters.type}${array_sfx} ${fname | tc.snake_case};
@@ -127,16 +145,18 @@ typedef struct packed {
 typedef union packed {
         %for field, fname in obj._pt_fields.items():
 <%
-            array_sfx = f" [{len(field)-1}:0]" if isinstance(field, PackedArray) else ""
-            field = field[0] if isinstance(field, PackedArray) else field
+            array_sfx = ""
+            if utils.array.is_packed_array(field):
+                array_sfx = " " + "".join(f"[{x-1}:0]" for x in field._pt_spec.dimensions)
+                field = field._pt_spec.base()
 %>\
-            %if isinstance(field, Scalar):
+            %if isinstance(field, ScalarType):
                 %if field._PT_ATTACHED_TO:
 <%                  refers_to = field._pt_name() %>\
     ${refers_to | filters.type} ${fname | tc.snake_case};
                 %else:
 <%                  sign_sfx = " signed" if field._pt_signed else "" %>\
-    logic${sign_sfx}${f" [{utils.get_width(field)}:0]" if utils.get_width(field) > 1 else ""} ${fname | tc.snake_case};
+    logic${sign_sfx}${array_sfx}${f" [{utils.get_width(field)-1}:0]" if utils.get_width(field) > 1 else ""} ${fname | tc.snake_case};
                 %endif
             %elif isinstance(field, Enum | Struct | Alias | Union):
     ${field._pt_name() | filters.type}${array_sfx} ${fname | tc.snake_case};

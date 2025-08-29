@@ -13,6 +13,7 @@ from ..types.enum import EnumMode
 from .declarations import (
     DeclAlias,
     DeclConstant,
+    DeclDimensions,
     DeclEnum,
     DeclField,
     DeclImport,
@@ -21,6 +22,7 @@ from .declarations import (
     DeclStruct,
     DeclUnion,
     Description,
+    ForeignRef,
     Modifier,
     Position,
     Signed,
@@ -85,6 +87,15 @@ class PacktypeTransformer(Transformer):
     def modifier(self, body):
         return Modifier(*body)
 
+    def dimension(self, body):
+        return body[0]
+
+    def dimensions(self, body):
+        return DeclDimensions(dimensions=body)
+
+    def foreign_ref(self, body):
+        return ForeignRef(*body)
+
     @v_args(meta=True)
     def decl_import(self, meta, body):
         return DeclImport(Position(meta.line, meta.column), *body)
@@ -115,11 +126,16 @@ class PacktypeTransformer(Transformer):
 
     @v_args(meta=True)
     def field(self, meta, body):
-        return (
-            body[0]
-            if isinstance(body[0], DeclScalar)
-            else DeclField(Position(meta.line, meta.column), *body)
-        )
+        if isinstance(body[0], DeclScalar):
+            return body[0]
+        else:
+            return DeclField(
+                Position(meta.line, meta.column),
+                name=body.pop(0),
+                ref=body.pop(0),
+                dimensions=body.pop(0) if body and isinstance(body[0], DeclDimensions) else None,
+                description=body.pop(0) if body and isinstance(body[0], Description) else None,
+            )
 
     @v_args(meta=True)
     def enum_body_simple(self, meta, body):
@@ -193,17 +209,17 @@ class PacktypeTransformer(Transformer):
             signed, *remainder = remainder
         else:
             signed = Unsigned
-        # Pickup width
-        if remainder and isinstance(remainder[0], Expression):
-            width, *remainder = remainder
+        # Pickup dimensions
+        if remainder and isinstance(remainder[0], DeclDimensions):
+            dimensions, *remainder = remainder
         else:
-            width = Expression(1)
+            dimensions = DeclDimensions(dimensions=[Expression(1)])
         # Pickup description
         if remainder and isinstance(remainder[0], Description):
             descr = remainder[0]
         else:
             descr = None
-        return DeclScalar(Position(meta.line, meta.column), s_type, signed, width, descr)
+        return DeclScalar(Position(meta.line, meta.column), s_type, signed, dimensions, descr)
 
     @v_args(meta=True)
     def decl_struct(self, meta, body):
@@ -260,3 +276,6 @@ class PacktypeTransformer(Transformer):
         while remainder and isinstance(remainder[0], Modifier):
             mods.append(remainder.pop(0))
         return DeclPackage(Position(meta.line, meta.column), p_name, description, mods, remainder)
+
+    def root(self, body):
+        return body

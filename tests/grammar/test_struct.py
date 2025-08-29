@@ -16,8 +16,9 @@ assert reset_registry
 
 def test_parse_struct():
     """Test parsing a struct definition."""
-    pkg = parse_string(
-        """
+    pkg = next(
+        parse_string(
+            """
         package the_package {
             // Implicit width, implicitly packed from LSB
             struct a {
@@ -69,6 +70,7 @@ def test_parse_struct():
             }
         }
         """
+        )
     )
     assert len(pkg._PT_FIELDS) == 8
     # a
@@ -115,8 +117,9 @@ def test_parse_struct():
 
 def test_parse_struct_description():
     """Check that a struct can have a description"""
-    pkg = parse_string(
-        """
+    pkg = next(
+        parse_string(
+            """
         package the_package {
             simple_type_t : scalar[3]
 
@@ -129,6 +132,7 @@ def test_parse_struct_description():
             }
         }
         """
+        )
     )
     assert len(pkg._PT_FIELDS) == 2
     assert issubclass(pkg.simple_struct, Struct)
@@ -138,8 +142,9 @@ def test_parse_struct_description():
 
 def test_parse_struct_reference():
     """Check that a struct can reference other known types"""
-    pkg = parse_string(
-        """
+    pkg = next(
+        parse_string(
+            """
         package the_package {
             single_bit: scalar
             multi_bit: scalar[8]
@@ -154,6 +159,7 @@ def test_parse_struct_reference():
             }
         }
         """
+        )
     )
     assert len(pkg._PT_FIELDS) == 4
     assert issubclass(pkg.compound_struct, Struct)
@@ -172,8 +178,9 @@ def test_parse_struct_oversized():
         match="Fields of oversized_struct total 56 bits which does not fit "
         "within the specified width of 8 bits",
     ):
-        parse_string(
-            """
+        next(
+            parse_string(
+                """
             package the_package {
                 struct [8] oversized_struct {
                     a: scalar[8]
@@ -182,14 +189,16 @@ def test_parse_struct_oversized():
                 }
             }
             """
+            )
         )
 
 
 def test_parse_struct_bad_decl():
     """Check that an error is raised if packing order and width are mixed up"""
     with pytest.raises(ParseError, match="Failed to parse"):
-        parse_string(
-            """
+        next(
+            parse_string(
+                """
             package the_package {
                 struct [60] msb bad_struct {
                     a: scalar[8]
@@ -198,6 +207,7 @@ def test_parse_struct_bad_decl():
                 }
             }
             """
+            )
         )
 
 
@@ -206,12 +216,14 @@ def test_parse_struct_bad_field_ref():
     with pytest.raises(
         UnknownEntityError, match="Failed to resolve 'non_existent' to a known constant or type"
     ):
-        parse_string(
-            """
+        next(
+            parse_string(
+                """
             package the_package {
                 struct bad_struct {
                     a: non_existent
                 }
             }
             """
+            )
         )

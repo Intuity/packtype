@@ -24,7 +24,7 @@ from .types.constant import Constant
 from .types.enum import Enum
 from .types.package import Package
 from .types.primitive import NumericPrimitive
-from .types.scalar import Scalar
+from .types.scalar import Scalar, ScalarType
 from .types.struct import Struct
 from .types.union import Union
 from .types.wrap import Registry
@@ -76,8 +76,8 @@ def load_specification(spec_files: list[str], keep_expression: bool) -> list[Bas
         get_log().debug(f"Loading specification: {item}")
         # Packtype grammar files
         if item.lower().endswith((".pt", ".packtype", ".ptype")):
-            package = parse(Path(item), namespaces, keep_expression=keep_expression)
-            namespaces[package.__name__] = package
+            for package in parse(Path(item), namespaces, keep_expression=keep_expression):
+                namespaces[package.__name__] = package
         # If it ends with `.py` assume it's Python
         elif item.endswith(".py"):
             item = Path(item)
@@ -345,6 +345,7 @@ def code(
         Enum,
         Packing,
         Scalar,
+        ScalarType,
         Struct,
         Union,
         NumericPrimitive,
