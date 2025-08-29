@@ -3,7 +3,7 @@
 #
 
 import itertools
-from random import getrandbits
+from random import choice, getrandbits
 
 import packtype
 from packtype import Constant, Packing, Scalar
@@ -114,7 +114,7 @@ def test_array_unpack_from_msb():
     assert int(inst.ef) == 53
 
 
-def test_array_multidimensional():
+def test_array_multidimensional_scalar():
     @packtype.package()
     class TestPkg:
         # This will declare a Scalar[4] with dimensions 5x6x7
@@ -138,3 +138,104 @@ def test_array_multidimensional():
         assert inst[x][y][z] == ref[x, y, z]
     # Check overall value
     assert int(inst) == raw
+
+
+def test_array_multidimensional_rich():
+    @packtype.package()
+    class Pkg1D:
+        pass
+
+    @Pkg1D.struct()
+    class Struct1D:
+        field_a : Scalar[1]
+        field_b : Scalar[2]
+
+    @Pkg1D.enum()
+    class Enum1D:
+        VAL_A : Constant
+        VAL_B : Constant
+        VAL_C : Constant
+
+    @Pkg1D.union()
+    class Union1D:
+        raw : Scalar[3]
+        struct : Struct1D
+
+    @packtype.package()
+    class Pkg2D:
+        Struct2D : Struct1D[4]
+        Enum2D : Enum1D[5]
+        Union2D : Union1D[6]
+
+    @packtype.package()
+    class Pkg3D:
+        Struct3D : Pkg2D.Struct2D[2]
+        Enum3D : Pkg2D.Enum2D[3]
+        Union3D : Pkg2D.Union2D[4]
+
+    # === Check struct ===
+    inst_struct = Pkg3D.Struct3D()
+    assert inst_struct._pt_width ==  (1+2) * 4 * 2
+    assert len(inst_struct) == 2
+    assert len(inst_struct[0]) == 4
+
+    # Write in data
+    ref = {}
+    raw = 0
+    for x, y in itertools.product(range(2), range(4)):
+        ref[x, y] = (a := getrandbits(1)), (b := getrandbits(2))
+        raw |= (a | (b << 1)) << ((x * 4 * 3) + (y * 3))
+        inst_struct[x][y].field_a = a
+        inst_struct[x][y].field_b = b
+
+    # Check persistance
+    for x, y in itertools.product(range(2), range(4)):
+        assert inst_struct[x][y].field_a == ref[x, y][0]
+        assert inst_struct[x][y].field_b == ref[x, y][1]
+
+    # Check overall value
+    assert int(inst_struct) == raw
+
+    # === Check enum ===
+    inst_enum = Pkg3D.Enum3D()
+    assert inst_enum._pt_width == 2 * 5 * 3
+    assert len(inst_enum) == 3
+    assert len(inst_enum[0]) == 5
+
+    # Write in data
+    ref = {}
+    raw = 0
+    for x, y in itertools.product(range(3), range(5)):
+        ref[x, y] = choice((Enum1D.VAL_A, Enum1D.VAL_B, Enum1D.VAL_C))
+        raw |= ref[x, y] << ((x * 5 * 2) + (y * 2))
+        inst_enum[x][y] = ref[x, y]
+
+    # Check persistance
+    for x, y in itertools.product(range(3), range(5)):
+        assert inst_enum[x][y] == ref[x, y]
+
+    # Check overall value
+    assert int(inst_enum) == raw
+
+    # === Check union ===
+    inst_union = Pkg3D.Union3D()
+    assert inst_union._pt_width == 3 * 6 * 4
+    assert len(inst_union) == 4
+    assert len(inst_union[0]) == 6
+
+    # Write in data
+    ref = {}
+    raw = 0
+    for x, y in itertools.product(range(4), range(6)):
+        ref[x, y] = getrandbits(3)
+        raw |= ref[x, y] << ((x * 6 * 3) + (y * 3))
+        inst_union[x][y].raw = ref[x, y]
+
+    # Check persistance
+    for x, y in itertools.product(range(4), range(6)):
+        assert inst_union[x][y].raw == ref[x, y]
+        assert inst_union[x][y].struct == ref[x, y]
+
+    # Check overall value
+    assert int(inst_union) == raw
+
