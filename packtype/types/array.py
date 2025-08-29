@@ -88,6 +88,7 @@ class PackedArray:
         dim_path: tuple[int] | None = None,
         **kwds,
     ):
+        self._pt_spec = spec
         self._pt_bv = BitVector(width=spec._pt_width) if _pt_bv is None else _pt_bv
         self._pt_entries = []
         self._pt_dimensions = dimensions or spec.dimensions
@@ -189,6 +190,7 @@ class UnpackedArray:
         | None = None,
         **kwds,
     ):
+        self._pt_spec = spec
         self._pt_entries = []
         for idx in range(spec.dimension):
             inst_args, inst_kwds = (

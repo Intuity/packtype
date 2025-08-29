@@ -10,6 +10,7 @@ from ..types.assembly import PackedAssembly
 from ..types.base import Base
 from ..types.enum import Enum
 from ..types.primitive import NumericType
+from ..types.scalar import ScalarType
 from ..types.union import Union
 
 
@@ -128,3 +129,12 @@ def pack(pinst: Base) -> int:
     if inspect.isclass(pinst):
         raise TypeError(f"{pinst} is not an instance of a Packtype definition")
     return int(pinst)
+
+
+def is_scalar(ptype: type[Base] | Base) -> bool:
+    """
+    Check if a Packtype definition is a scalar type
+    :param ptype: The Packtype definition to check
+    :return: True if the definition is a scalar type, False otherwise
+    """
+    return isinstance(ptype, ScalarType) or (inspect.isclass(ptype) and issubclass(ptype, ScalarType))

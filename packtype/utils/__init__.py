@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from . import constant, enum, package, struct, union
-from .basic import clog2, get_doc, get_name, get_source, get_width, is_signed, pack, unpack
+from . import array, constant, enum, package, struct, union
+from .basic import clog2, get_doc, get_name, get_source, get_width, is_signed, pack, unpack, is_scalar
 
 __all__ = [
+    "array",
     "clog2",
     "constant",
     "enum",
@@ -13,6 +14,7 @@ __all__ = [
     "get_name",
     "get_source",
     "get_width",
+    "is_scalar",
     "is_signed",
     "pack",
     "package",

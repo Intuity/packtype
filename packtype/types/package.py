@@ -4,7 +4,7 @@
 
 import inspect
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, Type
 
 from ordered_set import OrderedSet as OSet
 
@@ -21,7 +21,7 @@ from .wrap import get_wrapper
 
 
 class Package(Base):
-    _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant]
+    _PT_ALLOW_DEFAULTS: list[Type[Base]] = [Constant]
     _PT_FIELDS: dict
 
     @classmethod
@@ -29,7 +29,7 @@ class Package(Base):
         super()._pt_construct(parent)
         cls._PT_FIELDS = {}
         for fname, ftype, fval in cls._pt_definitions():
-            if not isinstance(ftype, ArraySpec) and issubclass(ftype, Constant):
+            if inspect.isclass(ftype) and issubclass(ftype, Constant):
                 cls._pt_attach_constant(fname, ftype(default=fval))
             else:
                 cls._pt_attach(ftype, name=fname)
@@ -42,7 +42,7 @@ class Package(Base):
         return finst
 
     @classmethod
-    def _pt_attach(cls, field: type[Base], name: str | None = None) -> Base:
+    def _pt_attach(cls, field: Type[Base], name: str | None = None) -> Base:
         cls._PT_ATTACH.append(field)
         field._PT_ATTACHED_TO = cls
         setattr(cls, name or field.__name__, field)
@@ -98,38 +98,41 @@ class Package(Base):
     def _pt_constants(self) -> Iterable[Constant]:
         return ((y, x) for x, y in self._pt_fields.items() if isinstance(x, Constant))
 
-    @property
-    def _pt_scalars(self) -> Iterable[tuple[str, ScalarType]]:
+    def _pt_filter_for_class(self, ctype: Type[Base]) -> Iterable[tuple[str, Type[Base]]]:
         return (
             (y, x)
             for x, y in self._pt_fields.items()
-            if (inspect.isclass(x) and issubclass(x, ScalarType))
+            if (inspect.isclass(x) and issubclass(x, ctype))
         )
+
+    @property
+    def _pt_scalars(self) -> Iterable[tuple[str, ScalarType]]:
+        return self._pt_filter_for_class(ScalarType)
+
+    @property
+    def _pt_arrays(self) -> Iterable[tuple[str, ArraySpec]]:
+        return ((y, x) for x, y in self._pt_fields.items() if isinstance(x, ArraySpec))
 
     @property
     def _pt_aliases(self) -> Iterable[Alias]:
-        return (
-            (y, x)
-            for x, y in self._pt_fields.items()
-            if inspect.isclass(x) and issubclass(x, Alias)
-        )
+        return self._pt_filter_for_class(Alias)
 
     @property
     def _pt_enums(self) -> Iterable[tuple[str, Enum]]:
-        return ((x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Enum))
+        return self._pt_filter_for_class(Enum)
 
     @property
     def _pt_structs(self) -> Iterable[tuple[str, Struct]]:
-        return ((x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Struct))
+        return self._pt_filter_for_class(Struct)
 
     @property
     def _pt_unions(self) -> Iterable[tuple[str, Union]]:
-        return ((x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Union))
+        return self._pt_filter_for_class(Union)
 
     @property
     def _pt_structs_and_unions(self) -> Iterable[tuple[str, Struct | Union]]:
-        return ((x._pt_name(), x) for x in self._PT_ATTACH if issubclass(x, Struct | Union))
+        return self._pt_filter_for_class(Struct | Union)
 
     @classmethod
-    def _pt_lookup(cls, field: type[Base] | Base) -> str:
+    def _pt_lookup(cls, field: Type[Base] | Base) -> str:
         return cls._PT_FIELDS[field]
