@@ -149,13 +149,13 @@ def parse_string(
                 # Aliases
                 case DeclAlias():
                     package._pt_attach(
-                        scalar := decl.to_class(_resolve),
+                        alias := decl.to_class(_resolve),
                         name=decl.name,
                     )
                     # Check for name collisions
                     _check_collision(decl.name)
                     # Remember this type
-                    known_entities[decl.name] = (scalar, decl.position)
+                    known_entities[decl.name] = (alias, decl.position)
                 # Build constants
                 case DeclConstant():
                     constant = decl.to_instance(_resolve)

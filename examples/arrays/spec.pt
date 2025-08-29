@@ -20,14 +20,14 @@ package one_dimension {
 
 package two_dimension {
     scalar_2d : one_dimension::scalar_1d[3]
-    enum_2d : one_dimension::enum_1d[2]
+    enum_2d   : one_dimension::enum_1d[2]
     struct_2d : one_dimension::struct_1d[4]
-    union_2d : one_dimension::union_1d[2]
+    union_2d  : one_dimension::union_1d[2]
 }
 
-// package three_dimension {
-//     scalar_3d: two_dimension::scalar_2d[2]
-//     enum_3d: two_dimension::enum_2d[4]
-//     struct_3d: two_dimension::struct_2d[5]
-//     union_3d: two_dimension::union_2d[3]
-// }
+package three_dimension {
+    scalar_3d : two_dimension::scalar_2d[2]
+    enum_3d   : two_dimension::enum_2d[4]
+    struct_3d : two_dimension::struct_2d[5]
+    union_3d  : two_dimension::union_2d[3]
+}

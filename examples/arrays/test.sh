@@ -11,8 +11,8 @@ this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 export PYTHONPATH=${this_dir}/../..:$PYTHONPATH
 
 # Invoke packtype on Python syntax
-# python3 -m packtype --debug code package sv ${this_dir}/out_py ${this_dir}/spec.py
+python3 -m packtype --debug code package sv ${this_dir}/out_py ${this_dir}/spec.py
 
 # Invoke packtype on Packtype syntax
-python3 -m pdb -m packtype --debug code package sv ${this_dir}/out_pt ${this_dir}/spec.pt
+python3 -m packtype --debug code package sv ${this_dir}/out_pt ${this_dir}/spec.pt
 

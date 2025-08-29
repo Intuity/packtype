@@ -101,7 +101,13 @@ class DeclAlias:
             int | type[Base],
         ],
     ) -> type[Alias]:
-        return Alias[cb_resolve(self.foreign)]
+        entity = cb_resolve(self.foreign)
+        if self.dimensions:
+            for dim in self.dimensions.resolve(cb_resolve):
+                entity = entity[dim]
+            return entity
+        else:
+            return Alias[entity]
 
 
 @dataclass()
