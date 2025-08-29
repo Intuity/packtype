@@ -8,6 +8,7 @@ from pathlib import Path
 
 from ..common.expression import Expression
 from ..types.alias import Alias
+from ..types.array import ArraySpec
 from ..types.assembly import Packing
 from ..types.base import Base
 from ..types.constant import Constant
@@ -99,7 +100,7 @@ class DeclAlias:
             ],
             int | type[Base],
         ],
-    ) -> type[Alias]:
+    ) -> type[Alias] | ArraySpec:
         entity = cb_resolve(self.foreign)
         if self.dimensions:
             for dim in self.dimensions.resolve(cb_resolve):
