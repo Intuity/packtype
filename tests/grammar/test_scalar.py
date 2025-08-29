@@ -15,8 +15,9 @@ assert reset_registry
 
 def test_parse_scalar():
     """Test parsing a scalar definition within a package"""
-    pkg = next(parse_string(
-        """
+    pkg = next(
+        parse_string(
+            """
         package the_package {
             single_bit: scalar
                 "Single bit scalar"
@@ -26,7 +27,8 @@ def test_parse_scalar():
                 "Declarations are case insensitive"
         }
         """
-    ))
+        )
+    )
     assert len(pkg._PT_FIELDS) == 3
     # single_bit
     assert issubclass(pkg.single_bit, ScalarType)
@@ -45,10 +47,12 @@ def test_parse_scalar():
 def test_parse_scalar_bad_assign():
     """Test parsing a scalar definition with an invalid assignment."""
     with pytest.raises(ParseError, match="Failed to parse input"):
-        next(parse_string(
-            """
+        next(
+            parse_string(
+                """
             package the_package {
                 A: scalar[8] = 42
             }
             """
-        ))
+            )
+        )

@@ -4,8 +4,8 @@
 
 import functools
 import inspect
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 from lark import Lark
 from lark.exceptions import UnexpectedToken
@@ -111,7 +111,9 @@ def parse_string(
             if ref.package not in namespaces:
                 raise UnknownEntityError(f"Failed to resolve package '{ref.package}'")
             if not hasattr(namespaces[ref.package], ref.name):
-                raise UnknownEntityError(f"Failed to resolve '{ref.name}' in package '{ref.package}'")
+                raise UnknownEntityError(
+                    f"Failed to resolve '{ref.name}' in package '{ref.package}'"
+                )
             return getattr(namespaces[ref.package], ref.name)
         elif ref in known_entities:
             return known_entities[ref][0]
@@ -138,7 +140,10 @@ def parse_string(
                         raise ImportError(f"Unknown package '{decl.foreign.package}'")
                     # Resolve the type
                     if (foreign_type := getattr(foreign_pkg, decl.foreign.name, None)) is None:
-                        raise ImportError(f"'{decl.foreign.name}' not declared in package '{decl.foreign.package}'")
+                        raise ImportError(
+                            f"'{decl.foreign.name}' not declared in package "
+                            f"'{decl.foreign.package}'"
+                        )
                     # Check for name collisions
                     _check_collision(decl.foreign.name)
                     # Remember this type

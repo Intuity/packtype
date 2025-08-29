@@ -15,4 +15,3 @@ python3 -m packtype --debug code package sv ${this_dir}/out_py ${this_dir}/spec.
 
 # Invoke packtype on Packtype syntax
 python3 -m packtype --debug code package sv ${this_dir}/out_pt ${this_dir}/spec.pt
-

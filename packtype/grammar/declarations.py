@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ..common.expression import Expression
-from ..types.array import ArraySpec
 from ..types.alias import Alias
 from ..types.assembly import Packing
 from ..types.base import Base

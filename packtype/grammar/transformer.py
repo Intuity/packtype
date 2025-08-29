@@ -134,7 +134,7 @@ class PacktypeTransformer(Transformer):
                 name=body.pop(0),
                 ref=body.pop(0),
                 dimensions=body.pop(0) if body and isinstance(body[0], DeclDimensions) else None,
-                description= body.pop(0) if body and isinstance(body[0], Description) else None,
+                description=body.pop(0) if body and isinstance(body[0], Description) else None,
             )
 
     @v_args(meta=True)

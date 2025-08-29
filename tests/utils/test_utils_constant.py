@@ -11,15 +11,17 @@ assert reset_registry
 
 
 def test_utils_enum_get_entries():
-    PackageA = next(parse_string(  # noqa: N806
-        """
+    PackageA = next(  # noqa: N806
+        parse_string(
+            """
         package PackageA {
             A: constant = 1
             B: constant = 2
             C: constant = A + B
         }
         """,
-        keep_expression=True,
-    ))
+            keep_expression=True,
+        )
+    )
     assert utils.constant.get_expression(PackageA.C) is not None
     assert utils.constant.get_expression(PackageA.C).evaluate({"A": 3, "B": 4}.get) == 3 + 4
