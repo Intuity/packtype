@@ -13,6 +13,7 @@ from .array import ArraySpec
 from .base import Base
 from .constant import Constant
 from .enum import Enum
+from .instance import Instance
 from .primitive import NumericType
 from .scalar import ScalarType
 from .struct import Struct
@@ -36,6 +37,13 @@ class Package(Base):
 
     @classmethod
     def _pt_attach_constant(cls, fname: str, finst: Constant) -> Constant:
+        setattr(cls, fname, finst)
+        finst._PT_ATTACHED_TO = cls
+        cls._PT_FIELDS[finst] = fname
+        return finst
+
+    @classmethod
+    def _pt_attach_instance(cls, fname: str, finst: Instance) -> Constant:
         setattr(cls, fname, finst)
         finst._PT_ATTACHED_TO = cls
         cls._PT_FIELDS[finst] = fname
@@ -97,6 +105,10 @@ class Package(Base):
     @property
     def _pt_constants(self) -> Iterable[Constant]:
         return ((y, x) for x, y in self._pt_fields.items() if isinstance(x, Constant))
+
+    @property
+    def _pt_instances(self) -> Iterable[Instance]:
+        return ((y, x) for x, y in self._pt_fields.items() if isinstance(x, Instance))
 
     def _pt_filter_for_class(self, ctype: type[Base]) -> Iterable[tuple[str, type[Base]]]:
         return (

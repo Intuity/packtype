@@ -82,6 +82,10 @@ class Expression:
         # Check if the LHS is a _PT_BASE attribute
         elif hasattr(lhs, "_PT_BASE") and type(lhs).__name__ != "Constant":
             return lhs
+        # Check if the LHS is a foreign-reference (supports enum references)
+        elif type(lhs).__name__ == "ForeignRef":
+            f_type = cb_lookup(lhs.package)
+            return int(getattr(f_type, lhs.name))
         # Otherwise, cast LHS to an integer
         else:
             return int(lhs)
