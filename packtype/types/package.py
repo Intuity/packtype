@@ -107,7 +107,11 @@ class Package(Base):
 
     @property
     def _pt_instances(self) -> Iterable[tuple[str, Base]]:
-        return ((y, x) for x, y in self._pt_fields.items() if isinstance(x, Base) and not isinstance(x, Constant))
+        return (
+            (y, x)
+            for x, y in self._pt_fields.items()
+            if isinstance(x, Base) and not isinstance(x, Constant)
+        )
 
     def _pt_filter_for_class(self, ctype: type[Base]) -> Iterable[tuple[str, type[Base]]]:
         return (

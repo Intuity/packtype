@@ -115,9 +115,17 @@ class PacktypeTransformer(Transformer):
         ref = body.pop(0)
         dimensions = body.pop(0) if body and isinstance(body[0], DeclDimensions) else None
         if body and isinstance(body[0], Expression | FieldAssignments):
-            return DeclInstance(Position(meta.line, meta.column), name, ref, body[0], body[1] if len(body) > 1 else None)
+            return DeclInstance(
+                Position(meta.line, meta.column),
+                name,
+                ref,
+                body[0],
+                body[1] if len(body) > 1 else None,
+            )
         else:
-            return DeclAlias(Position(meta.line, meta.column), name, ref, dimensions, body[0] if body else None)
+            return DeclAlias(
+                Position(meta.line, meta.column), name, ref, dimensions, body[0] if body else None
+            )
 
     @v_args(meta=True)
     def decl_constant(self, meta, body):

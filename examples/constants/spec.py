@@ -18,29 +18,29 @@ class DateConsts:
 
 @DateConsts.enum()
 class Weekday:
-        MON : Constant
-        TUE : Constant
-        WED : Constant
-        THU : Constant
-        FRI : Constant
-        SAT : Constant
-        SUN : Constant
+    MON: Constant
+    TUE: Constant
+    WED: Constant
+    THU: Constant
+    FRI: Constant
+    SAT: Constant
+    SUN: Constant
 
 
 @DateConsts.enum()
 class Month:
-    JAN : Constant
-    FEB : Constant
-    MAR : Constant
-    APR : Constant
-    MAY : Constant
-    JUN : Constant
-    JUL : Constant
-    AUG : Constant
-    SEP : Constant
-    OCT : Constant
-    NOV : Constant
-    DEC : Constant
+    JAN: Constant
+    FEB: Constant
+    MAR: Constant
+    APR: Constant
+    MAY: Constant
+    JUN: Constant
+    JUL: Constant
+    AUG: Constant
+    SEP: Constant
+    OCT: Constant
+    NOV: Constant
+    DEC: Constant
 
 
 @DateConsts.struct()

@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from .. import utils
 from ..common.expression import Expression
 from ..types.alias import Alias
 from ..types.array import ArraySpec
@@ -17,7 +18,6 @@ from ..types.scalar import Scalar
 from ..types.struct import Struct
 from ..types.union import Union
 from ..types.wrap import build_from_fields
-from .. import utils
 
 
 class Signed:
@@ -178,18 +178,16 @@ class DeclInstance:
         # either a scalar or an enum
         if isinstance(self.assignment, Expression):
             if not issubclass(ref, Scalar | Enum):
-                raise Expression(
-                    f"{ref} must be a scalar or enum for simple expression assignment"
-                )
+                raise Expression(f"{ref} must be a scalar or enum for simple expression assignment")
             return utils.unpack(ref, self.assignment.evaluate(cb_resolve))
         # If instead we get a field assigment, referenced type needs to be a
         # struct or union
         elif isinstance(self.assignment, FieldAssignments):
             if not issubclass(ref, Struct | Union):
-                raise Expression(
-                    f"{ref} must be a struct or union for field assignment"
-                )
-            return ref(**{x.field: x.value.evaluate(cb_resolve) for x in self.assignment.assignments})
+                raise Expression(f"{ref} must be a struct or union for field assignment")
+            return ref(
+                **{x.field: x.value.evaluate(cb_resolve) for x in self.assignment.assignments}
+            )
 
 
 @dataclass()

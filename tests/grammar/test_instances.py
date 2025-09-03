@@ -2,12 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-import pytest
 
-from packtype import Alias
-from packtype.grammar import UnknownEntityError, parse_string
-from packtype.types.scalar import ScalarType
-from packtype.utils import get_width
+from packtype.grammar import parse_string
 
 from ..fixtures import reset_registry
 
