@@ -178,13 +178,13 @@ class DeclInstance:
         # either a scalar or an enum
         if isinstance(self.assignment, Expression):
             if not issubclass(ref, Scalar | Enum):
-                raise ValueError(f"{ref} must be a scalar or enum for simple expression assignment")
+                raise TypeError(f"{ref} must be a scalar or enum for simple expression assignment")
             return utils.unpack(ref, self.assignment.evaluate(cb_resolve))
         # If instead we get a field assigment, referenced type needs to be a
         # struct or union
         elif isinstance(self.assignment, FieldAssignments):
             if not issubclass(ref, Struct | Union):
-                raise ValueError(f"{ref} must be a struct or union for field assignment")
+                raise TypeError(f"{ref} must be a struct or union for field assignment")
             return ref(
                 **{x.field: x.value.evaluate(cb_resolve) for x in self.assignment.assignments}
             )
