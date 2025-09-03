@@ -166,7 +166,33 @@ typedef union packed {
     %endif
 
 %endfor
+// =============================================================================
+// Instances
+// =============================================================================
 
+%for name, inst in baseline._pt_instances:
+// ${name | filters.constant}
+localparam ${utils.get_name(inst) | filters.type} ${name | filters.constant} = \
+    %if isinstance(inst, Struct):
+'{
+<%  first = True %>\
+    %for _msb, _lsb, (name, field) in utils.struct.get_fields_msb_desc(inst):
+<%      value = int(field) %>\
+    ${" " if first else ","} ${name}: \
+        %if isinstance(field, ScalarType):
+${utils.get_width(field)}'h${f"{value:X}"}
+        %else:
+${utils.get_name(field) | filters.type}'(${value})
+        %endif
+<%      first = False %>\
+    %endfor
+}\
+    %else:
+${name | filters.constant}'(${f"{int(inst):X}"})\
+    %endif
+;
+
+%endfor
 endpackage : ${baseline._pt_name() | filters.package}
 
 /* verilator lint_on UNUSEDPARAM */

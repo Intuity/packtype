@@ -48,7 +48,10 @@ def get_name(ptype: type[Base] | Base) -> str:
     :param ptype: The Packtype definition to inspect
     :return: The name of the Packtype definition
     """
-    if isinstance(ptype, Base) or issubclass(ptype, Base):
+    if isinstance(ptype, ScalarType) or (inspect.isclass(ptype) and issubclass(ptype, ScalarType)):
+        ptype = ptype if inspect.isclass(ptype) else type(ptype)
+        return ptype._PT_ATTACHED_TO._PT_FIELDS[ptype]
+    elif isinstance(ptype, Base) or (inspect.isclass(ptype) and issubclass(ptype, Base)):
         return ptype._pt_name()
     elif issubclass(ptype, Alias):
         return get_name(ptype._PT_ALIAS)

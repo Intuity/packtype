@@ -13,7 +13,6 @@ from lark.exceptions import UnexpectedToken
 from ..common.logging import get_log
 from ..types.base import Base
 from ..types.constant import Constant
-from ..types.instance import Instance
 from ..types.package import Package
 from ..types.wrap import build_from_fields
 from .declarations import (
@@ -189,7 +188,7 @@ def parse_string(
                     # Attach to the package
                     package._pt_attach_instance(
                         decl.name,
-                        inst := Instance(decl.name, decl.to_instance(_resolve)),
+                        inst := decl.to_instance(_resolve),
                     )
                     # Remember this type
                     known_entities[decl.name] = (inst, decl.position)
