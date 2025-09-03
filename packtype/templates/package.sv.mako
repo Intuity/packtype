@@ -188,7 +188,7 @@ ${utils.get_name(field) | filters.type}'(${value})
     %endfor
 }\
     %else:
-${name | filters.constant}'(${f"{int(inst):X}"})\
+${utils.get_name(inst) | filters.type}'(${f"{int(inst):X}"})\
     %endif
 ;
 

@@ -38,6 +38,7 @@ nav:
     - Arrays: syntax/arrays.md
     - Constants: syntax/constant.md
     - Enumerations: syntax/enum.md
+    - Instances: syntax/instance.md
     - Packages: syntax/package.md
     - Scalars: syntax/scalar.md
     - Structs: syntax/struct.md
