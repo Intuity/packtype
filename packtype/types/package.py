@@ -42,7 +42,7 @@ class Package(Base):
         return finst
 
     @classmethod
-    def _pt_attach_instance(cls, fname: str, finst: Base) -> Constant:
+    def _pt_attach_instance(cls, fname: str, finst: Base) -> Base:
         setattr(cls, fname, finst)
         finst._PT_ATTACHED_TO = cls
         cls._PT_FIELDS[finst] = fname
