@@ -20,6 +20,7 @@ from .declarations import (
     DeclConstant,
     DeclEnum,
     DeclImport,
+    DeclInstance,
     DeclPackage,
     DeclScalar,
     DeclStruct,
@@ -135,6 +136,8 @@ def parse_string(
             match decl:
                 # Imports
                 case DeclImport():
+                    # Check for name collisions
+                    _check_collision(decl.foreign.name)
                     # Resolve the package
                     if (foreign_pkg := namespaces.get(decl.foreign.package, None)) is None:
                         raise ImportError(f"Unknown package '{decl.foreign.package}'")
@@ -144,8 +147,6 @@ def parse_string(
                             f"'{decl.foreign.name}' not declared in package "
                             f"'{decl.foreign.package}'"
                         )
-                    # Check for name collisions
-                    _check_collision(decl.foreign.name)
                     # Remember this type
                     if isinstance(foreign_type, Constant):
                         known_entities[decl.foreign.name] = (foreign_type, decl.position)
@@ -153,22 +154,24 @@ def parse_string(
                         known_entities[decl.foreign.name] = (foreign_type, decl.position)
                 # Aliases
                 case DeclAlias():
+                    # Check for name collisions
+                    _check_collision(decl.name)
+                    # Attach to the package
                     package._pt_attach(
                         alias := decl.to_class(_resolve),
                         name=decl.name,
                     )
-                    # Check for name collisions
-                    _check_collision(decl.name)
                     # Remember this type
                     known_entities[decl.name] = (alias, decl.position)
                 # Build constants
                 case DeclConstant():
+                    # Check for name collisions
+                    _check_collision(decl.name)
+                    # Attach to the package
                     constant = decl.to_instance(_resolve)
                     if keep_expression:
                         constant._PT_EXPRESSION = decl.expr
                     package._pt_attach_constant(decl.name, constant)
-                    # Check for name collisions
-                    _check_collision(decl.name)
                     # Check for a constant override
                     if decl.name in constant_overrides:
                         get_log().debug(
@@ -178,21 +181,34 @@ def parse_string(
                         constant._pt_set(int(constant_overrides[decl.name]))
                     # Remember this constant
                     known_entities[decl.name] = (constant, decl.position)
+                # Build instances (constants that reference other types)
+                case DeclInstance():
+                    # Check for name collisions
+                    _check_collision(decl.name)
+                    # Attach to the package
+                    package._pt_attach_instance(
+                        decl.name,
+                        inst := decl.to_instance(_resolve),
+                    )
+                    # Remember this type
+                    known_entities[decl.name] = (inst, decl.position)
                 # Build aliases and scalars
                 case DeclScalar() | DeclAlias():
+                    # Check for name collisions
+                    _check_collision(decl.name)
+                    # Attach to the package
                     package._pt_attach(
                         obj := decl.to_class(_resolve),
                         name=decl.name,
                     )
-                    # Check for name collisions
-                    _check_collision(decl.name)
                     # Remember this type
                     known_entities[decl.name] = (obj, decl.position)
                 # Build enums, structs, and unions
                 case DeclEnum() | DeclStruct() | DeclUnion():
-                    package._pt_attach(obj := decl.to_class(source, _resolve))
                     # Check for name collisions
                     _check_collision(decl.name)
+                    # Attach to the package
+                    package._pt_attach(obj := decl.to_class(source, _resolve))
                     # Remember this type
                     known_entities[decl.name] = (obj, decl.position)
                 case _:

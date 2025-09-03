@@ -1,0 +1,52 @@
+package date_consts {
+
+    // Basic definitions
+    DAYS_PER_YEAR : constant    = 365
+    DAYS_PER_WEEK : constant    = 7
+    HOURS_PER_DAY : constant[8] = 24
+    MINS_PER_HOUR : constant    = 60
+
+    // Weekdays
+    enum weekday_e {
+        MON : constant
+        TUE : constant
+        WED : constant
+        THU : constant
+        FRI : constant
+        SAT : constant
+        SUN : constant
+    }
+
+    START_OF_WEEK : weekday_e = weekday_e::MON
+    END_OF_WEEK   : weekday_e = weekday_e::SUN
+
+    // Months
+    enum month_e {
+        JAN : constant
+        FEB : constant
+        MAR : constant
+        APR : constant
+        MAY : constant
+        JUN : constant
+        JUL : constant
+        AUG : constant
+        SEP : constant
+        OCT : constant
+        NOV : constant
+        DEC : constant
+    }
+
+    // Date
+    struct date_t {
+        year  : scalar[12]
+        month : month_e
+        day   : scalar[5]
+    }
+
+    CHRISTMAS : date_t = {
+        year  = 2025
+        month = month_e::DEC
+        day   = 25
+    }
+
+}

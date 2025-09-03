@@ -42,6 +42,13 @@ class Package(Base):
         return finst
 
     @classmethod
+    def _pt_attach_instance(cls, fname: str, finst: Base) -> Base:
+        setattr(cls, fname, finst)
+        finst._PT_ATTACHED_TO = cls
+        cls._PT_FIELDS[finst] = fname
+        return finst
+
+    @classmethod
     def _pt_attach(cls, field: type[Base], name: str | None = None) -> Base:
         cls._PT_ATTACH.append(field)
         field._PT_ATTACHED_TO = cls
@@ -95,8 +102,16 @@ class Package(Base):
         return self._PT_FIELDS
 
     @property
-    def _pt_constants(self) -> Iterable[Constant]:
+    def _pt_constants(self) -> Iterable[tuple[str, Constant]]:
         return ((y, x) for x, y in self._pt_fields.items() if isinstance(x, Constant))
+
+    @property
+    def _pt_instances(self) -> Iterable[tuple[str, Base]]:
+        return (
+            (y, x)
+            for x, y in self._pt_fields.items()
+            if isinstance(x, Base) and not isinstance(x, Constant)
+        )
 
     def _pt_filter_for_class(self, ctype: type[Base]) -> Iterable[tuple[str, type[Base]]]:
         return (

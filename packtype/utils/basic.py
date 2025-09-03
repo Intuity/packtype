@@ -48,12 +48,27 @@ def get_name(ptype: type[Base] | Base) -> str:
     :param ptype: The Packtype definition to inspect
     :return: The name of the Packtype definition
     """
-    if isinstance(ptype, Base) or issubclass(ptype, Base):
+    if isinstance(ptype, ScalarType) or (inspect.isclass(ptype) and issubclass(ptype, ScalarType)):
+        ptype = ptype if inspect.isclass(ptype) else type(ptype)
+        return ptype._PT_ATTACHED_TO._PT_FIELDS[ptype]
+    elif isinstance(ptype, Base) or (inspect.isclass(ptype) and issubclass(ptype, Base)):
         return ptype._pt_name()
     elif issubclass(ptype, Alias):
         return get_name(ptype._PT_ALIAS)
     else:
         raise TypeError(f"{ptype} is not a Packtype definition")
+
+
+def get_package(ptype: type[Base] | Base) -> type[Base] | None:
+    """
+    Get the package a Packtype definition is attached to, if the type is not
+    associated to a package then None will be returned
+    :param ptype: The Packtype definition to inspect
+    :return: The Package to which this type is attached
+    """
+    if not isinstance(ptype, Base) and not (inspect.isclass(ptype) and issubclass(ptype, Base)):
+        raise TypeError(f"{ptype} is not a Packtype definition")
+    return ptype._PT_ATTACHED_TO
 
 
 def get_doc(ptype: type[Base] | Base) -> str:

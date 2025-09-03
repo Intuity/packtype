@@ -17,11 +17,14 @@ from .declarations import (
     DeclEnum,
     DeclField,
     DeclImport,
+    DeclInstance,
     DeclPackage,
     DeclScalar,
     DeclStruct,
     DeclUnion,
     Description,
+    FieldAssignment,
+    FieldAssignments,
     ForeignRef,
     Modifier,
     Position,
@@ -96,13 +99,33 @@ class PacktypeTransformer(Transformer):
     def foreign_ref(self, body):
         return ForeignRef(*body)
 
+    def field_assignment(self, body):
+        return FieldAssignment(*body)
+
+    def field_assignments(self, body):
+        return FieldAssignments(assignments=body)
+
     @v_args(meta=True)
     def decl_import(self, meta, body):
         return DeclImport(Position(meta.line, meta.column), *body)
 
     @v_args(meta=True)
     def decl_alias(self, meta, body):
-        return DeclAlias(Position(meta.line, meta.column), *body)
+        name = body.pop(0)
+        ref = body.pop(0)
+        dimensions = body.pop(0) if body and isinstance(body[0], DeclDimensions) else None
+        if body and isinstance(body[0], Expression | FieldAssignments):
+            return DeclInstance(
+                Position(meta.line, meta.column),
+                name,
+                ref,
+                body[0],
+                body[1] if len(body) > 1 else None,
+            )
+        else:
+            return DeclAlias(
+                Position(meta.line, meta.column), name, ref, dimensions, body[0] if body else None
+            )
 
     @v_args(meta=True)
     def decl_constant(self, meta, body):

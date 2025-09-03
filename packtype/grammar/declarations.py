@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from .. import utils
 from ..common.expression import Expression
 from ..types.alias import Alias
 from ..types.array import ArraySpec
@@ -80,7 +81,7 @@ class DeclDimensions:
             if isinstance(raw_dim, Expression):
                 eval_dims.append(raw_dim.evaluate(cb_resolve))
             else:
-                raise Exception("Unexpected width type in DeclScalar")
+                raise ValueError("Unexpected width type in DeclScalar")
         return eval_dims
 
 
@@ -141,6 +142,52 @@ class DeclConstant:
         # Attach optional description
         const.__doc__ = str(self.description) if self.description else None
         return const
+
+
+@dataclass
+class FieldAssignment:
+    field: str
+    value: Expression
+
+
+@dataclass()
+class FieldAssignments:
+    assignments: list[FieldAssignment]
+
+
+@dataclass()
+class DeclInstance:
+    position: Position
+    name: str
+    ref: str
+    assignment: Expression | FieldAssignments
+    description: Description | None = None
+
+    def to_instance(
+        self,
+        cb_resolve: Callable[
+            [
+                str,
+            ],
+            int | type[Base],
+        ],
+    ) -> Base:
+        # Get the referenced type
+        ref = cb_resolve(self.ref)
+        # If the assignment is a simple expression, referenced type needs to be
+        # either a scalar or an enum
+        if isinstance(self.assignment, Expression):
+            if not issubclass(ref, Scalar | Enum):
+                raise TypeError(f"{ref} must be a scalar or enum for simple expression assignment")
+            return utils.unpack(ref, self.assignment.evaluate(cb_resolve))
+        # If instead we get a field assigment, referenced type needs to be a
+        # struct or union
+        elif isinstance(self.assignment, FieldAssignments):
+            if not issubclass(ref, Struct | Union):
+                raise TypeError(f"{ref} must be a struct or union for field assignment")
+            return ref(
+                **{x.field: x.value.evaluate(cb_resolve) for x in self.assignment.assignments}
+            )
 
 
 @dataclass()

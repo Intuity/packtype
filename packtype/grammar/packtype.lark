@@ -82,13 +82,16 @@ decl_import: "import" foreign_ref
 // =============================================================================
 
 // Example: local_type_t : foreign_type_t
-decl_alias: name ":" (name | foreign_ref) dimensions? descr?
+decl_alias: name ":" (name | foreign_ref) dimensions? ("=" (expr | field_assignments))? descr?
 
 // Example: MY_CONSTANT : constant[8] = 123
 decl_constant: name ":" "constant"i dimension? "=" expr descr?
 
 // Example: simple_type_t : scalar[8]
 decl_scalar: name ":" (signed|unsigned)? "scalar"i  dimensions? descr?
+
+field_assignment: name "=" expr descr?
+?field_assignments: "{" field_assignment* "}"
 
 // =============================================================================
 // Enumerations
@@ -166,6 +169,7 @@ decl_union: "union"i name "{" descr? modifier* field* "}"
 expr: expr_term (OPERATOR expr_term)*
 
 ?expr_term: name
+          | foreign_ref
           | HEX
           | BINARY
           | DECIMAL
