@@ -104,7 +104,7 @@ def test_struct_unpacking():
         f"TestStruct: 0x{value:06X}\n"
         f" |- [11: 0] ab = 0x{ab_value:03X}\n"
         f" |- [14:12] cd = 0x{cd_value:01X}\n"
-        f" |- [23:15] ef = 0x{ef_value:02X}"
+        f" |- [23:15] ef = 0x{ef_value:03X}"
     )
 
 

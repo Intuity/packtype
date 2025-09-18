@@ -18,7 +18,7 @@ class ScalarType(NumericType):
             return f"{['Unsigned', 'Signed'][cls._PT_SIGNED]} Scalar[{cls._PT_WIDTH}]"
 
     def __str__(self) -> str:
-        return f"{type(self)._pt_name()}: 0x{int(self):0{self._PT_WIDTH // 4}X}"
+        return f"{type(self)._pt_name()}: 0x{int(self):0{(self._PT_WIDTH + 3) // 4}X}"
 
     def __repr__(self):
         return str(self)

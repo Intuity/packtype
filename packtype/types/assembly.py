@@ -47,7 +47,7 @@ class Assembly(Base, Numeric):
 
     @property
     @functools.lru_cache  # noqa: B019
-    def _pt_fields(self) -> dict[str, Base]:
+    def _pt_fields(self) -> dict[Base, str]:
         return {getattr(self, x): x for x in self._PT_DEF.keys()}
 
 
@@ -139,7 +139,7 @@ class PackedAssembly(Assembly):
             width = msb - lsb + 1
             lines.append(
                 f" |- [{msb:{max_bits}}:{lsb:{max_bits}}] {fname:{max_name}} "
-                f"= 0x{int(finst):0{width // 4}X}"
+                f"= 0x{int(finst):0{(width + 3) // 4}X}"
             )
         return "\n".join(lines)
 
