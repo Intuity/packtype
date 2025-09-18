@@ -140,12 +140,27 @@ def test_union_unpack():
         raw: Scalar[32]
         header: Header
 
-    inst = Packet._pt_unpack((0x7 << 28) | (0x5 << 24) | (0x75 << 16) | 0x1234)
-    assert int(inst.raw) == (0x7 << 28) | (0x5 << 24) | (0x75 << 16) | 0x1234
-    assert int(inst.header.address) == 0x1234
-    assert int(inst.header.length) == 0x75
-    assert int(inst.header.mode) == 0x5
-    assert int(inst.header.flags) == 0x7
+    hdr_addr_val = 0x1234
+    hdr_len_val = 0x75
+    hdr_mode_val = 0x5
+    hdr_flags_val = 0x7
+    value = (hdr_flags_val << 28) | (hdr_mode_val << 24) | (hdr_len_val << 16) | hdr_addr_val
+    inst = Packet._pt_unpack(value)
+    assert int(inst.raw) == value
+    assert int(inst.header.address) == hdr_addr_val
+    assert int(inst.header.length) == hdr_len_val
+    assert int(inst.header.mode) == hdr_mode_val
+    assert int(inst.header.flags) == hdr_flags_val
+
+    assert str(inst) == (
+        f"Packet: 0x{value:08X} (union):\n"
+        f" |- raw    -> Unsigned Scalar[32]: 0x{value:08X}\n"
+        f" |- header -> Header: 0x{value:08X}\n"
+        f"               |- [15: 0] address = 0x{hdr_addr_val:04X}\n"
+        f"               |- [23:16] length  = 0x{hdr_len_val:02X}\n"
+        f"               |- [27:24] mode    = 0x{hdr_mode_val:01X}\n"
+        f"               |- [31:28] flags   = 0x{hdr_flags_val:01X}"
+    )
 
 
 def test_union_bad_widths():

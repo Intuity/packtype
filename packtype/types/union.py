@@ -3,6 +3,7 @@
 #
 
 import functools
+import textwrap
 
 from .array import ArraySpec
 from .assembly import Assembly
@@ -29,6 +30,19 @@ class Union(Assembly):
             value = 0 if default is None else default
         # NOTE: Fields are not constructed at this point, instead they are filled
         #       in lazily as they are requested by the consumer
+
+    def __str__(self) -> str:
+        parts = {}
+        for finst, fname in self._pt_fields.items():
+            parts[fname] = str(finst)
+        max_prefix = max(map(len, parts.keys()))
+        return (
+            f"{type(self).__name__}: 0x{int(self):X} (union):\n" +
+            "\n".join((f" |- {p:{max_prefix}s} -> " + textwrap.indent(v, " " * (max_prefix + 8)).lstrip()) for p, v in parts.items())
+        )
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def __getattribute__(self, fname: str):
         # Attempt to resolve the attribute from existing properties
