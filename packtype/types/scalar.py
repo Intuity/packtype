@@ -15,7 +15,13 @@ class ScalarType(NumericType):
         if cls._PT_ATTACHED_TO is not None:
             return cls._PT_ATTACHED_TO._pt_lookup(cls)
         else:
-            return NumericPrimitive._pt_name(cls)
+            return f"{['Unsigned', 'Signed'][cls._PT_SIGNED]} Scalar[{cls._PT_WIDTH}]"
+
+    def __str__(self) -> str:
+        return f"{type(self)._pt_name()}: 0x{int(self):0{(self._PT_WIDTH + 3) // 4}X}"
+
+    def __repr__(self):
+        return str(self)
 
 
 class Scalar(NumericPrimitive):

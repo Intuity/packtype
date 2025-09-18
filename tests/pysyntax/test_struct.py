@@ -94,10 +94,18 @@ def test_struct_unpacking():
         cd: Scalar[3]
         ef: Scalar[9]
 
-    inst = TestStruct._pt_unpack((39 << 15) | (5 << 12) | 123)
-    assert inst.ab.value == 123
-    assert inst.cd.value == 5
-    assert inst.ef.value == 39
+    value = (39 << 15) | (5 << 12) | 123
+    inst = TestStruct._pt_unpack(value)
+    assert inst.ab.value == (ab_value := 123)
+    assert inst.cd.value == (cd_value := 5)
+    assert inst.ef.value == (ef_value := 39)
+
+    assert str(inst) == (
+        f"TestStruct: 0x{value:06X}\n"
+        f" |- [11: 0] ab = 0x{ab_value:03X}\n"
+        f" |- [14:12] cd = 0x{cd_value:01X}\n"
+        f" |- [23:15] ef = 0x{ef_value:03X}"
+    )
 
 
 def test_struct_unpacking_from_msb():
