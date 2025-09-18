@@ -138,7 +138,8 @@ class PackedAssembly(Assembly):
             lsb, msb = self._PT_RANGES[fname]
             width = msb - lsb + 1
             lines.append(
-                f" |- [{msb:{max_bits}}:{lsb:{max_bits}}] {fname:{max_name}} = 0x{int(finst):0{width // 4}X}"
+                f" |- [{msb:{max_bits}}:{lsb:{max_bits}}] {fname:{max_name}} "
+                f"= 0x{int(finst):0{width // 4}X}"
             )
         return "\n".join(lines)
 

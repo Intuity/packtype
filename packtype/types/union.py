@@ -36,9 +36,9 @@ class Union(Assembly):
         for finst, fname in self._pt_fields.items():
             parts[fname] = str(finst)
         max_prefix = max(map(len, parts.keys()))
-        return (
-            f"{type(self).__name__}: 0x{int(self):X} (union):\n" +
-            "\n".join((f" |- {p:{max_prefix}s} -> " + textwrap.indent(v, " " * (max_prefix + 8)).lstrip()) for p, v in parts.items())
+        return f"{type(self).__name__}: 0x{int(self):X} (union):\n" + "\n".join(
+            (f" |- {p:{max_prefix}s} -> " + textwrap.indent(v, " " * (max_prefix + 8)).lstrip())
+            for p, v in parts.items()
         )
 
     def __repr__(self) -> str:
