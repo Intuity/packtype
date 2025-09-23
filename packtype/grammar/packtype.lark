@@ -18,9 +18,11 @@
 
 %import common.CNAME
 %import common.ESCAPED_STRING
+%import common._STRING_ESC_INNER
 %import common.INT
 %import common.SIGNED_INT
 %import common.WS
+%import common.NEWLINE
 %ignore WS
 
 // =============================================================================
@@ -42,7 +44,12 @@ dimension: "[" expr "]"
 dimensions: dimension+
 
 ?name: CNAME
-descr: ESCAPED_STRING
+
+// Multiline docstrings as with Python - start and end with three double-quotes
+_DOCSTRING_QUOTES: "\"\"\""
+ESCAPED_MULTILINE_DOCSTRING: _DOCSTRING_QUOTES (_STRING_ESC_INNER|NEWLINE)* _DOCSTRING_QUOTES
+
+descr: (ESCAPED_STRING | ESCAPED_MULTILINE_DOCSTRING)
 
 modifier: "@" name "=" (name | ESCAPED_STRING | NUMERIC)
 

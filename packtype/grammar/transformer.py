@@ -32,6 +32,8 @@ from .declarations import (
     Unsigned,
 )
 
+import textwrap
+
 
 class PacktypeTransformer(Transformer):
     def DECIMAL(self, body):  # noqa: N802
@@ -85,7 +87,12 @@ class PacktypeTransformer(Transformer):
         return str(body)
 
     def descr(self, body):
-        return Description(str(body[0]).strip('"'))
+        """
+        Take description and trim surrounding quotes,
+        then remove common indentation and remove leading and trailing newlines.
+        """
+        print(textwrap.dedent(str(body[0]).strip('"')).strip('\n'))
+        return Description(textwrap.dedent(str(body[0]).strip('"')).strip('\n'))
 
     def modifier(self, body):
         return Modifier(*body)
