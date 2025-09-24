@@ -22,7 +22,7 @@ custom grammar:
 
     ```sv linenums="1"
     package my_package {
-        "Description of what purpose this package serves"
+        """Description of what purpose this package serves"""
         // ...
     }
     ```
