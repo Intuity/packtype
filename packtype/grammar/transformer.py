@@ -91,7 +91,6 @@ class PacktypeTransformer(Transformer):
         Take description and trim surrounding quotes,
         then remove common indentation and remove leading and trailing newlines.
         """
-        print(textwrap.dedent(str(body[0]).strip('"')).strip('\n'))
         return Description(textwrap.dedent(str(body[0]).strip('"')).strip('\n'))
 
     def modifier(self, body):

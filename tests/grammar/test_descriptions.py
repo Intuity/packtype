@@ -87,15 +87,15 @@ def test_multiline_docstring_struct():
                     documentation.
                     """
                     field1: scalar[8]
-                    """
-                    Each field
-                    can have a multiline docstring too
-                    """
+                        """
+                        Each field
+                        can have a multiline docstring too
+                        """
                     field2: scalar[16]
-                    """
-                    Including this one
-                    :)
-                    """
+                        """
+                        Including this one
+                        :)
+                        """
                 }
             }
             '''

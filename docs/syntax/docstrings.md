@@ -1,4 +1,4 @@
-    Descriptions can be added to packtype definitions as shown below.
+Descriptions can be added to packtype definitions as shown below.
 The documentation is attached to the code in a way that will allow automated generation of documentation,
 as with Python docstrings.
 
@@ -47,16 +47,16 @@ Descriptions can be added with normal [Python docstrings]((https://peps.python.o
             """
             @prefix=FRUIT
             APPLE  : constant
-            "This is an apple"
+                "This is an apple"
             ORANGE : constant
-            """
-            Member descriptions can also be multiline.
-            Use triple quotes for these.
-            """
+                """
+                Member descriptions can also be multiline.
+                Use triple quotes for these.
+                """
             PEAR   : constant
-            "This is a pear"
+                "This is a pear"
             BANANA : constant
-            "This is a banana"
+                "This is a banana"
         }
 
     }
