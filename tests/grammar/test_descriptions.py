@@ -234,3 +234,42 @@ def test_multiline_docstring_with_special_characters():
     assert "/" in pkg.__doc__
     assert "'" in pkg.__doc__
     assert "\"" in pkg.__doc__
+
+
+def test_mixed_docstring_quotes_enum():
+    """Test mixing single and triple quote docstrings on enum fields"""
+    pkg = next(
+        parse_string(
+            '''
+            package test_pkg {
+                enum mixed_quotes_enum {
+                    """
+                    An enum with mixed quote styles
+                    for documentation.
+                    """
+                    SINGLE_QUOTE
+                        "Single line with single quotes"
+                    TRIPLE_QUOTE
+                        """
+                        Multi-line with triple quotes
+
+                        This has multiple lines
+                        and formatting.
+                        """
+                    ANOTHER_SINGLE
+                        "Another single line docstring"
+                    FINAL_TRIPLE
+                        """
+                        Final field with triple quotes
+                        and special characters: @#$%
+                        """
+                }
+            }
+            '''
+        )
+    )
+    assert pkg.mixed_quotes_enum.__doc__ == "An enum with mixed quote styles\nfor documentation."
+    assert pkg.mixed_quotes_enum.SINGLE_QUOTE.__doc__ == "Single line with single quotes"
+    assert pkg.mixed_quotes_enum.TRIPLE_QUOTE.__doc__ == "Multi-line with triple quotes\n\nThis has multiple lines\nand formatting."
+    assert pkg.mixed_quotes_enum.ANOTHER_SINGLE.__doc__ == "Another single line docstring"
+    assert pkg.mixed_quotes_enum.FINAL_TRIPLE.__doc__ == "Final field with triple quotes\nand special characters: @#$%"
