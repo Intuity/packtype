@@ -3,7 +3,6 @@
 #
 
 from packtype.grammar import parse_string
-
 from tests.fixtures import reset_registry
 
 assert reset_registry
@@ -26,7 +25,11 @@ def test_multiline_docstring_package():
             '''
         )
     )
-    assert pkg.__doc__ == "This is a multiline docstring\nfor the package.\n\nIt can contain multiple lines\nand preserve formatting."
+    assert (
+        pkg.__doc__
+        == "This is a multiline docstring\nfor the package.\n\n"
+        + "It can contain multiple lines\nand preserve formatting."
+    )
 
 
 def test_multiline_docstring_constant():
@@ -47,7 +50,11 @@ def test_multiline_docstring_constant():
             '''
         )
     )
-    assert pkg.MY_CONSTANT.__doc__ == "This is a multiline docstring\nfor a constant.\n\nIt explains what the constant\nrepresents and its purpose."
+    assert (
+        pkg.MY_CONSTANT.__doc__
+        == "This is a multiline docstring\nfor a constant.\n\n"
+        + "It explains what the constant\nrepresents and its purpose."
+    )
 
 
 def test_multiline_docstring_scalar():
@@ -68,7 +75,11 @@ def test_multiline_docstring_scalar():
             '''
         )
     )
-    assert pkg.my_scalar.__doc__ == "A scalar type with multiline\ndocumentation.\n\nThis describes the purpose\nand usage of the scalar."
+    assert (
+        pkg.my_scalar.__doc__
+        == "A scalar type with multiline\ndocumentation.\n\n"
+        + "This describes the purpose\nand usage of the scalar."
+    )
 
 
 def test_multiline_docstring_struct():
@@ -101,7 +112,11 @@ def test_multiline_docstring_struct():
             '''
         )
     )
-    assert pkg.my_struct.__doc__ == "A struct with multiline\ndocumentation.\n\nThis struct contains multiple\nfields and has detailed\ndocumentation."
+    assert (
+        pkg.my_struct.__doc__
+        == "A struct with multiline\ndocumentation.\n\n"
+        + "This struct contains multiple\nfields and has detailed\ndocumentation."
+    )
 
 
 def test_multiline_docstring_enum():
@@ -126,7 +141,11 @@ def test_multiline_docstring_enum():
             '''
         )
     )
-    assert pkg.my_enum.__doc__ == "An enumeration with multiline\ndocumentation.\n\nThis enum defines various\nstates and their meanings."
+    assert (
+        pkg.my_enum.__doc__
+        == "An enumeration with multiline\ndocumentation.\n\n"
+        + "This enum defines various\nstates and their meanings."
+    )
 
 
 def test_multiline_docstring_union():
@@ -154,7 +173,11 @@ def test_multiline_docstring_union():
             '''
         )
     )
-    assert pkg.my_union.__doc__ == "A union with multiline\ndocumentation.\n\nThis union can hold different\ntypes of data structures."
+    assert (
+        pkg.my_union.__doc__
+        == "A union with multiline\ndocumentation.\n\n"
+        + "This union can hold different\ntypes of data structures."
+    )
 
 
 def test_multiline_docstring_with_quotes():
@@ -233,7 +256,7 @@ def test_multiline_docstring_with_special_characters():
     assert "\\" in pkg.__doc__
     assert "/" in pkg.__doc__
     assert "'" in pkg.__doc__
-    assert "\"" in pkg.__doc__
+    assert '"' in pkg.__doc__
 
 
 def test_mixed_docstring_quotes_enum():
@@ -270,6 +293,12 @@ def test_mixed_docstring_quotes_enum():
     )
     assert pkg.mixed_quotes_enum.__doc__ == "An enum with mixed quote styles\nfor documentation."
     assert pkg.mixed_quotes_enum.SINGLE_QUOTE.__doc__ == "Single line with single quotes"
-    assert pkg.mixed_quotes_enum.TRIPLE_QUOTE.__doc__ == "Multi-line with triple quotes\n\nThis has multiple lines\nand formatting."
+    assert (
+        pkg.mixed_quotes_enum.TRIPLE_QUOTE.__doc__
+        == "Multi-line with triple quotes\n\nThis has multiple lines\nand formatting."
+    )
     assert pkg.mixed_quotes_enum.ANOTHER_SINGLE.__doc__ == "Another single line docstring"
-    assert pkg.mixed_quotes_enum.FINAL_TRIPLE.__doc__ == "Final field with triple quotes\nand special characters: @#$%"
+    assert (
+        pkg.mixed_quotes_enum.FINAL_TRIPLE.__doc__
+        == "Final field with triple quotes\nand special characters: @#$%"
+    )

@@ -33,6 +33,7 @@ from .declarations import (
     Unsigned,
 )
 
+
 class PacktypeTransformer(Transformer):
     def DECIMAL(self, body):  # noqa: N802
         return int(body, 10)
@@ -89,7 +90,7 @@ class PacktypeTransformer(Transformer):
         Take description and trim surrounding quotes,
         then remove common indentation and remove leading and trailing newlines.
         """
-        return Description(textwrap.dedent(str(body[0]).strip('"')).strip('\n'))
+        return Description(textwrap.dedent(str(body[0]).strip('"')).strip("\n"))
 
     def modifier(self, body):
         return Modifier(*body)
