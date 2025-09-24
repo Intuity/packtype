@@ -3,6 +3,7 @@
 #
 
 import math
+import textwrap
 
 from lark import Transformer, v_args
 
@@ -31,9 +32,6 @@ from .declarations import (
     Signed,
     Unsigned,
 )
-
-import textwrap
-
 
 class PacktypeTransformer(Transformer):
     def DECIMAL(self, body):  # noqa: N802
