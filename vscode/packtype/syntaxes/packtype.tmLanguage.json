@@ -136,10 +136,24 @@
 			"name": "entity.name.type.packtype"
 		},
 		{
+			"include": "#docstrings"
+		},
+		{
 			"include": "#strings"
 		}
 	],
 	"repository": {
+		"docstrings": {
+			"name": "string.quoted.docstring.packtype",
+			"begin": "\"\"\"",
+			"end": "\"\"\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.packtype",
+					"match": "\\\\."
+				}
+			]
+		},
 		"strings": {
 			"name": "string.quoted.double.packtype",
 			"begin": "\"",

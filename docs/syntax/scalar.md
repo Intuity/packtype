@@ -39,6 +39,10 @@ custom grammar:
         TypeB : Scalar[TYPE_B_W]
             "They can be queried from the digested result"
         TypeC : Scalar[7]
+            """
+            Multiline comments can be used for long descriptions.
+            Use triple quotes for these like with Python docstrings.
+            """
     }
     ```
 

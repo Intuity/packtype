@@ -43,6 +43,7 @@ nav:
     - Scalars: syntax/scalar.md
     - Structs: syntax/struct.md
     - Unions: syntax/union.md
+    - Docstrings: syntax/docstrings.md
   - Utilities:
     - Basic: utilities/basic.md
     - Constants: utilities/constant.md

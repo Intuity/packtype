@@ -8,7 +8,7 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from lark import Lark
-from lark.exceptions import UnexpectedToken
+from lark.exceptions import UnexpectedToken, VisitError
 
 from ..common.logging import get_log
 from ..types.base import Base
@@ -93,6 +93,9 @@ def parse_string(
             f"Failed to parse {source.name if source else 'input'} on line {exc.line}: "
             f"\n\n{exc.get_context(definition)}\n{exc}"
         ) from exc
+    except VisitError as exc:
+        raise exc.orig_exc from exc
+
     # Gather declarations
     known_entities: dict[str, tuple[type[Base] | Constant, Position]] = {}
 

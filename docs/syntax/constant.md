@@ -27,6 +27,11 @@ custom grammar:
             "Comments may be attached to values with a string following the definition"
         VALUE_B : constant[16] = 234
             "These are attached to the constant definitions"
+        VALUE_C: constant[2] = 3
+            """
+            Multiline comments can be used for long descriptions.
+            Use triple quotes for these like with Python docstrings.
+            """
     }
     ```
 
