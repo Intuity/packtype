@@ -6,6 +6,7 @@ import inspect
 import math
 
 from ..types.alias import Alias
+from ..types.array import ArraySpec
 from ..types.assembly import PackedAssembly
 from ..types.base import Base
 from ..types.enum import Enum
@@ -120,6 +121,8 @@ def unpack(ptype: type[Base], value: int) -> Base:
     :param value: The value to unpack
     :return: An instance of the Packtype definition with the unpacked value
     """
+    if isinstance(ptype, ArraySpec):
+        return ptype._pt_unpack(value)
     if not inspect.isclass(ptype):
         raise TypeError(f"{ptype} is an instance of a Packtype definition")
     if not issubclass(ptype, Base):

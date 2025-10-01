@@ -3,6 +3,7 @@
 #
 
 import functools
+import inspect
 import math
 from collections.abc import Callable, Iterable
 from typing import Any, Self
@@ -68,6 +69,11 @@ class ArraySpec:
 
     def as_unpacked(self, **kwds) -> "PackedArray":
         return UnpackedArray(self, **kwds)
+
+    def _pt_unpack(self, packed: int) -> "PackedArray":
+        inst = PackedArray(self)
+        inst._pt_set(packed)
+        return inst
 
     def __call__(self, **kwds) -> "PackedArray":
         return self.as_packed(**kwds)
@@ -170,12 +176,6 @@ class PackedArray:
 
     def _pt_pack(self) -> int:
         return int(self._pt_bv)
-
-    @classmethod
-    def _pt_unpack(cls, packed: int) -> "PackedArray":
-        inst = cls()
-        inst._pt_set(packed)
-        return inst
 
     def __int__(self) -> int:
         return self._pt_pack()
