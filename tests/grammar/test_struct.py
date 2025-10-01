@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import random
+
 import pytest
 
 from packtype.grammar import ParseError, UnknownEntityError, parse_string
 from packtype.types.assembly import Packing, WidthError
 from packtype.types.struct import Struct
-from packtype.utils import get_width
+from packtype.utils import get_width, unpack
 
 from ..fixtures import reset_registry
 
@@ -227,3 +229,56 @@ def test_parse_struct_bad_field_ref():
             """
             )
         )
+
+
+def test_parse_struct_nested():
+    """Parse a multiply-nested arrayed structure"""
+    # Declare a nested and arrayed structure
+    pkg = next(
+        parse_string(
+            """
+            package the_package {
+                // Implicit width, implicitly packed from LSB
+                struct lowest {
+                    a : scalar[2]
+                    b : scalar[2]
+                }
+                struct middle {
+                    c : lowest[2]
+                    d : scalar[2]
+                }
+                struct top {
+                    e : middle[2]
+                    f : scalar[2]
+                }
+                an_array : top[2]
+            }
+            """
+        )
+    )
+    # Unpack a value
+    the_value = random.getrandbits(44)
+    inst = unpack(pkg.an_array, the_value)
+    # Check values
+    assert inst[0].e[0].c[0].a == (the_value >> 0) & 0b11
+    assert inst[0].e[0].c[0].b == (the_value >> 2) & 0b11
+    assert inst[0].e[0].c[1].a == (the_value >> 4) & 0b11
+    assert inst[0].e[0].c[1].b == (the_value >> 6) & 0b11
+    assert inst[0].e[0].d == (the_value >> 8) & 0b11
+    assert inst[0].e[1].c[0].a == (the_value >> 10) & 0b11
+    assert inst[0].e[1].c[0].b == (the_value >> 12) & 0b11
+    assert inst[0].e[1].c[1].a == (the_value >> 14) & 0b11
+    assert inst[0].e[1].c[1].b == (the_value >> 16) & 0b11
+    assert inst[0].e[1].d == (the_value >> 18) & 0b11
+    assert inst[0].f == (the_value >> 20) & 0b11
+    assert inst[1].e[0].c[0].a == (the_value >> 22) & 0b11
+    assert inst[1].e[0].c[0].b == (the_value >> 24) & 0b11
+    assert inst[1].e[0].c[1].a == (the_value >> 26) & 0b11
+    assert inst[1].e[0].c[1].b == (the_value >> 28) & 0b11
+    assert inst[1].e[0].d == (the_value >> 30) & 0b11
+    assert inst[1].e[1].c[0].a == (the_value >> 32) & 0b11
+    assert inst[1].e[1].c[0].b == (the_value >> 34) & 0b11
+    assert inst[1].e[1].c[1].a == (the_value >> 36) & 0b11
+    assert inst[1].e[1].c[1].b == (the_value >> 38) & 0b11
+    assert inst[1].e[1].d == (the_value >> 40) & 0b11
+    assert inst[1].f == (the_value >> 42) & 0b11
