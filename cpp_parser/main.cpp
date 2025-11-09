@@ -3,8 +3,7 @@
 //
 
 #include <iostream>
-
-int yyparse();
+#include "y.tab.h"
 
 void yyerror(char const* s)
 {
