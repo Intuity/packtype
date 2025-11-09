@@ -1,4 +1,5 @@
 %{
+  #define YYDEBUG 1
   #include <iostream>
   #include "y.tab.h"
   using namespace std;

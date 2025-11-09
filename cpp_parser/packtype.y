@@ -12,6 +12,7 @@
 %}
 
 %start package
+%define parse.error verbose
 
 // Keywords
 %token T_PACKAGE
@@ -125,7 +126,8 @@ package : T_PACKAGE T_IDENTIFIER T_LBRACE descr package_body T_RBRACE
         | T_PACKAGE T_IDENTIFIER T_LBRACE package_body T_RBRACE
         ;
 
-package_body : import
+package_body :
+             | import
              | alias
              | constant
              | scalar
@@ -362,7 +364,3 @@ expr : expr_term
      ;
 
 %%
-
-int main() {
-  return yyparse();
-}
