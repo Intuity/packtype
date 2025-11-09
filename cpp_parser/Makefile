@@ -1,3 +1,7 @@
+# Copyright 2023-2025, Peter Birch, mailto:peter@intuity.io
+# SPDX-License-Identifier: Apache-2.0
+#
+
 .DEFAULT_GOAL := all
 
 PATH := /opt/homebrew/opt/bison/bin:$(PATH)
