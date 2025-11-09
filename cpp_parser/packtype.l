@@ -1,5 +1,6 @@
 %{
   #include <iostream>
+  #include "y.tab.h"
   using namespace std;
   extern int yylex();
 %}
