@@ -5,18 +5,24 @@
 
   #include <cstdio>
   #include <iostream>
+  #include "y.tab.h"
   using namespace std;
 
   // Declare stuff from Flex that Bison needs to know about:
-  extern int yylex();
+  extern int yylex ();
   extern int yyparse();
   extern FILE *yyin;
 
   void yyerror(const char *s);
 %}
 
-%start package
 %define parse.error verbose
+%locations
+%start package
+%union {
+  char *  as_str;
+  int64_t as_int;
+}
 
 // Keywords
 %token T_PACKAGE
@@ -34,12 +40,12 @@
 %token T_FROM_MSB
 %token T_FROM_LSB
 %token T_UNION
-%token T_IDENTIFIER
-%token T_INTEGER
+%token <as_str> T_IDENTIFIER
+%token <as_int> T_INTEGER
 %token T_HEX
 %token T_BINARY
-%token T_SINGLE_LINE_STRING
-%token T_MULTI_LINE_STRING
+%token <as_str> T_SINGLE_LINE_STRING
+%token <as_str> T_MULTI_LINE_STRING
 %token T_LBRACE
 %token T_RBRACE
 %token T_LBRACKET
@@ -77,7 +83,15 @@
  * ========================================================================== */
 
 descr : T_SINGLE_LINE_STRING
+        {
+          char * description = $1;
+          std::cout << "Parsed SL description: " << description << std::endl;
+        }
       | T_MULTI_LINE_STRING
+        {
+          char * description = $1;
+          std::cout << "Parsed ML description: " << description << std::endl;
+        }
       ;
 
 dimension : T_LBRACKET expr T_RBRACKET
@@ -127,7 +141,17 @@ flex_field : T_IDENTIFIER T_TYPE flex_ref
  * ========================================================================== */
 
 package : T_PACKAGE T_IDENTIFIER T_LBRACE descr package_body T_RBRACE
+          {
+            char * pkg = $2;
+            std::cout << "Parsed package called " << pkg
+                      << std::endl;
+          }
         | T_PACKAGE T_IDENTIFIER T_LBRACE package_body T_RBRACE
+          {
+            char * pkg = $2;
+            std::cout << "Parsed package called " << pkg
+                      << std::endl;
+          }
         ;
 
 package_body :

@@ -4,6 +4,7 @@
   //
   #define YYDEBUG 1
   #include <iostream>
+  #include <string>
   #include "y.tab.h"
   using namespace std;
   extern int yylex();
@@ -20,6 +21,8 @@ SIGN     [+-]
 
 %%
 
+"//"       { /* Single line comment */ }
+"//".*     { /* Single line comment */ }
 [ \t\r]+   {             }
 \n         { yylineno++; }
 
@@ -41,13 +44,16 @@ SIGN     [+-]
 "from_lsb" { return T_FROM_LSB; }
 "union"    { return T_UNION;    }
 
-{STRING}        { return T_IDENTIFIER; }
+{STRING}        { yylval.as_str = strdup(yytext);
+                  return T_IDENTIFIER; }
 {SIGN}?{DIGIT}+ { return T_INTEGER;    }
 0[x]{HEXDIGIT}+ { return T_HEX;        }
 0[b]{BINDIGIT}+ { return T_BINARY;     }
 
-\"[^"]*\"           { return T_SINGLE_LINE_STRING; }
-\"\"\"([^"])*\"\"\" { return T_MULTI_LINE_STRING;  }
+\"[^"]*\"           { yylval.as_str = strdup(yytext);
+                      return T_SINGLE_LINE_STRING; }
+\"\"\"([^"])*\"\"\" { yylval.as_str = strdup(yytext);
+                      return T_MULTI_LINE_STRING;  }
 
 "@"  { return T_MODIFIER; }
 "{"  { return T_LBRACE;   }

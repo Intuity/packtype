@@ -41,7 +41,7 @@ all: $(OUT_DIR)/parser
 
 test: $(OUT_DIR)/parser
 	@echo "# Running tests"
-	echo "package test { my_type_t : signed scalar[3] }" | ./$(OUT_DIR)/parser
+	./$(OUT_DIR)/parser ./tests/simple.pt
 
 clean:
 	rm -rf $(OUT_DIR)
