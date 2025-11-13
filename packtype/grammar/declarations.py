@@ -426,7 +426,6 @@ class DeclNormative:
     ) -> type[NormativePoint]:
         entity = build_from_fields(NormativePoint, self.name, {}, {"priority": self.priority})
         entity.__doc__ = str(self.description) if self.description else None
-        entity.priority = self.priority
         return entity
 
 

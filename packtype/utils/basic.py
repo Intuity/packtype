@@ -189,14 +189,18 @@ def is_scalar(ptype: type[Base] | Base) -> bool:
 
 def diff_table(value_a: type[Base], value_b: type[Base], verbose: bool = False) -> str:
     """
-    Generate a diff between to Packtype instances. This is a recursive function that generates a
-    :param value_a: Item to be compared
-    :param value_b: Other item to be compared
-    :param verbose: Show all fields in complex objects and do not filter matching objects
-    :return: A tabulate table containing differing fields. If the objects are the same an empty
-            string is returned. This function should not be used to check the equality of two
-            objects as it is orders of magnitude slower than the __eq__ operation added to all
-            Numeric types
+    Generate a diff between two Packtype instances. This is a recursive function
+    that walks through the hierarchy and compares all fields, tabulating where
+    differences occur.
+
+    :param value_a: First item to be compared
+    :param value_b: Second item to be compared
+    :param verbose: Show all fields in complex objects and do not filter matching
+                    objects (default: False)
+    :return: A tabulate table containing differing fields. If the objects are the
+             same an empty string is returned. This function should not be used
+             to check the equality of two objects as it is orders of magnitude
+             slower than the __eq__ operation added to all Numeric types
     """
     # Check that the values are the same type
     if not isinstance(value_b, type(value_a)):
@@ -215,6 +219,7 @@ def diff_table(value_a: type[Base], value_b: type[Base], verbose: bool = False) 
 def _format_value(value: type[Base] | Base) -> str:
     """
     Format a Packtype value for display in diffs
+
     :param value: The Packtype value to format
     :return: The formatted string
     """
