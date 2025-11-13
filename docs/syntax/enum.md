@@ -15,10 +15,10 @@ custom grammar:
     from packtype import Constant
 
     @packtype.package()
-    class MyPackage:
+    class ThePackage:
         ...
 
-    @MyPackage.enum()
+    @ThePackage.enum()
     class Fruit:
         """Description of the enumeration can go here"""
         APPLE  : Constant
@@ -30,7 +30,7 @@ custom grammar:
 === "Packtype (.pt)"
 
     ```sv linenums="1"
-    package my_package {
+    package the_package {
         enum fruit_t {
             "Description of the enumeration can go here"
             @prefix=FRUIT
@@ -45,7 +45,7 @@ custom grammar:
 As rendered to SystemVerilog:
 
 ```sv linenums="1"
-package my_package;
+package the_package;
 
 typedef enum logic [1:0] {
     FRUIT_APPLE,
@@ -54,7 +54,7 @@ typedef enum logic [1:0] {
     FRUIT_BANANA
 } fruit_t;
 
-endpackage : my_package
+endpackage : the_package
 ```
 
 
@@ -151,7 +151,7 @@ values and continue to enumerate from that point:
     import packtype
     from packtype import Constant
 
-    @MyPackage.enum(width=8)
+    @ThePackage.enum(width=8)
     class Opcodes:
         ALU_ADD : Constant = 0x10
         ALU_SUB : Constant # Infers 0x11
@@ -167,7 +167,7 @@ values and continue to enumerate from that point:
 === "Packtype (.pt)"
 
     ```sv linenums="1"
-    package my_package {
+    package the_package {
         enum [8] opcodes_t {
           ALU_ADD : constant = 0x10
           ALU_SUB : constant // Infers 0x11

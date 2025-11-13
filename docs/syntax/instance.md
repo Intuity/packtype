@@ -13,31 +13,31 @@ custom grammar:
     from packtype import Constant, Scalar
 
     @packtype.package()
-    class MyPackage:
+    class ThePackage:
         pass
 
-    @MyPackage.enum()
+    @ThePackage.enum()
     class Month:
         JAN : Constant
         FEB : Constant
         ...
         DEC : Constant
 
-    @MyPackage.struct()
+    @ThePackage.struct()
     class Date:
         year  : Scalar[12]
         month : Month
         day   : Scalar[5]
 
-    MyPackage._pt_attach_instance("SUMMER_START", Month.JUN)
-    MyPackage._pt_attach_instance("SUMMER_END", Month.AUG)
-    MyPackage._pt_attach_instance("CHRISTMAS", Date(year=2025, month=Month.DEC, day=25))
+    ThePackage._pt_attach_instance("SUMMER_START", Month.JUN)
+    ThePackage._pt_attach_instance("SUMMER_END", Month.AUG)
+    ThePackage._pt_attach_instance("CHRISTMAS", Date(year=2025, month=Month.DEC, day=25))
     ```
 
 === "Packtype (.pt)"
 
     ```sv linenums="1"
-    package my_package {
+    package the_package {
         enum month_e {
             JAN : constant
             FEB : constant
@@ -64,7 +64,7 @@ custom grammar:
 As rendered to SystemVerilog:
 
 ```sv linenums="1"
-package my_package;
+package the_package;
 
 localparam month_e SUMMER_START = month_e'(7);
 
@@ -77,5 +77,5 @@ localparam date_t CHRISTMAS = '{
     , year: 12'h7E9
 };
 
-endpackage : my_package
+endpackage : the_package
 ```

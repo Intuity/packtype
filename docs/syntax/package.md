@@ -13,7 +13,7 @@ custom grammar:
     import packtype
 
     @packtype.package()
-    class MyPackage:
+    class ThePackage:
         """Description of what purpose this package serves"""
         ...
     ```
@@ -21,7 +21,7 @@ custom grammar:
 === "Packtype (.pt)"
 
     ```sv linenums="1"
-    package my_package {
+    package the_package {
         """Description of what purpose this package serves"""
         // ...
     }
@@ -30,11 +30,11 @@ custom grammar:
 As rendered to SystemVerilog:
 
 ```sv linenums="1"
-package my_package;
+package the_package;
 
 // ...attached definitions...
 
-endpackage : my_package
+endpackage : the_package
 ```
 
 ## Imports

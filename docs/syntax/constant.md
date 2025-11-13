@@ -14,7 +14,7 @@ custom grammar:
     from packtype import Constant
 
     @packtype.package()
-    class MyPackage:
+    class ThePackage:
         VALUE_A : Constant = 123
         VALUE_B : Constant[16] = 234
     ```
@@ -22,7 +22,7 @@ custom grammar:
 === "Packtype (.pt)"
 
     ```sv linenums="1"
-    package my_package {
+    package the_package {
         VALUE_A : constant = 123
             "Comments may be attached to values with a string following the definition"
         VALUE_B : constant[16] = 234
@@ -38,12 +38,12 @@ custom grammar:
 As rendered to SystemVerilog:
 
 ```sv linenums="1"
-package my_package;
+package the_package;
 
 localparam VALUE_A = 123;
 localparam bit [15:0] VALUE_B = 234;
 
-endpackage : my_package
+endpackage : the_package
 ```
 
 ## Syntax
@@ -58,7 +58,7 @@ allocate it.
 
     ```python linenums="1"
     @packtype.package()
-    class MyPackage:
+    class ThePackage:
         # Format: <NAME> : Constant = <VALUE>
         MY_CONSTANT : Constant = 123
     ```
@@ -66,7 +66,7 @@ allocate it.
 === "Packtype (.pt)"
 
     ```sv linenums="1"
-    package my_package {
+    package the_package {
         // Format: <NAME> : constant = <VALUE>
         MY_CONSTANT : constant = 123
     }
@@ -79,7 +79,7 @@ from the declaration:
 
 ```python linenums="1"
 @packtype.package()
-class MyPackage:
+class ThePackage:
     # Format: <NAME> = <VALUE>
     MY_CONSTANT = 123
 ```
@@ -99,7 +99,7 @@ number of bits.
 
     ```python linenums="1"
     @packtype.package()
-    class MyPackage:
+    class ThePackage:
         # Format: <NAME> : Constant[<WIDTH>] = <VALUE>
         MY_CONSTANT : Constant[8] = 123
     ```
@@ -107,7 +107,7 @@ number of bits.
 === "Packtype (.pt)"
 
     ```sv linenums="1"
-    package my_package {
+    package the_package {
         // Format: <NAME> : constant[<WIDTH>] = <VALUE>
         MY_CONSTANT : constant[8] = 123
     }
@@ -122,7 +122,7 @@ from other constant definitions within the package.
 
     ```python linenums="1"
     @packtype.package()
-    class MyPackage:
+    class ThePackage:
         DOUBLE_WIDTH : Constant = 32
         VALUE_A      : Constant = 9
         VALUE_B      : Constant = 3
@@ -132,7 +132,7 @@ from other constant definitions within the package.
 === "Packtype (.pt)"
 
     ```sv linenums="1"
-    package my_package {
+    package the_package {
         DOUBLE_WIDTH : constant = 32
         VALUE_A      : constant = 9
         VALUE_B      : constant = 3
@@ -154,7 +154,7 @@ that is outside the legal range a `ValueError` will be raised:
 
     ```python linenums="1"
     @packtype.package()
-    class MyPackage:
+    class ThePackage:
         # Attempt to store 123 in a 4 bit value
         MY_CONSTANT : Constant[4] = 123
     ```
@@ -162,7 +162,7 @@ that is outside the legal range a `ValueError` will be raised:
 === "Packtype (.pt)"
 
     ```sv linenums="1"
-    package my_package {
+    package the_package {
         // Attempt to store 123 in a 4 bit value
         MY_CONSTANT : constant[4] = 123
     }

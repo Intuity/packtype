@@ -3,6 +3,7 @@
 #
 
 import subprocess
+import sys
 from pathlib import Path
 
 resources = Path(__file__).parent.absolute() / "resources"
@@ -12,7 +13,7 @@ def test_sv(tmp_path):
     # Wrap around the CLI
     result = subprocess.run(
         (
-            "python3",
+            sys.executable,
             "-m",
             "packtype",
             "--debug",
@@ -34,7 +35,7 @@ def test_sv_only(tmp_path):
     # Wrap around the CLI
     result = subprocess.run(
         (
-            "python3",
+            sys.executable,
             "-m",
             "packtype",
             "--debug",

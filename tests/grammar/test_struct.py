@@ -9,7 +9,8 @@ import pytest
 from packtype.grammar import ParseError, UnknownEntityError, parse_string
 from packtype.types.assembly import Packing, WidthError
 from packtype.types.struct import Struct
-from packtype.utils import get_width, unpack
+from packtype.utils import get_width, pack, unpack
+from packtype.utils.basic import copy
 
 from ..fixtures import reset_registry
 
@@ -282,3 +283,31 @@ def test_parse_struct_nested():
     assert inst[1].e[1].c[1].b == (the_value >> 38) & 0b11
     assert inst[1].e[1].d == (the_value >> 40) & 0b11
     assert inst[1].f == (the_value >> 42) & 0b11
+
+
+def test_parse_struct_copy():
+    """Test copying a struct instance."""
+    pkg = next(
+        parse_string(
+            """
+        package the_package {
+            struct my_struct {
+                a: scalar[4]
+                b: scalar[4]
+            }
+        }
+        """
+        )
+    )
+    inst = unpack(pkg.my_struct, 0x48)
+    inst_copy = copy(inst)
+
+    assert isinstance(inst_copy, pkg.my_struct)
+    assert pack(inst_copy) == pack(inst)
+    assert inst_copy is not inst
+    assert inst_copy._pt_bv is not inst._pt_bv
+
+    # Verify independence by mutating copy
+    inst_copy.a = 0x1
+    assert inst.a == 0x8
+    assert inst_copy.a == 0x1

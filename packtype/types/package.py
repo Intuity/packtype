@@ -3,7 +3,7 @@
 #
 
 import inspect
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from typing import Any
 
 from ordered_set import OrderedSet as OSet
@@ -13,6 +13,7 @@ from .array import ArraySpec
 from .base import Base
 from .constant import Constant
 from .enum import Enum
+from .normative import NormativePoint
 from .primitive import NumericType
 from .scalar import ScalarType
 from .struct import Struct
@@ -23,11 +24,13 @@ from .wrap import get_wrapper
 class Package(Base):
     _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant]
     _PT_FIELDS: dict
+    _PT_NORMS: dict
 
     @classmethod
     def _pt_construct(cls, parent: Base) -> None:
         super()._pt_construct(parent)
         cls._PT_FIELDS = {}
+        cls._PT_NORMS = {}
         for fname, ftype, fval in cls._pt_definitions():
             if inspect.isclass(ftype) and issubclass(ftype, Constant):
                 cls._pt_attach_constant(fname, ftype(default=fval))
@@ -39,6 +42,14 @@ class Package(Base):
         setattr(cls, fname, finst)
         finst._PT_ATTACHED_TO = cls
         cls._PT_FIELDS[finst] = fname
+        return finst
+
+    @classmethod
+    def _pt_attach_norm(cls, fname: str, finst: NormativePoint) -> NormativePoint:
+        finst._PT_ATTACHED_TO = cls
+        cls._PT_NORMS[fname] = finst
+        cls._PT_FIELDS[finst] = finst
+        setattr(cls, fname, finst)
         return finst
 
     @classmethod
@@ -113,20 +124,34 @@ class Package(Base):
             if isinstance(x, Base) and not isinstance(x, Constant)
         )
 
-    def _pt_filter_for_class(self, ctype: type[Base]) -> Iterable[tuple[str, type[Base]]]:
-        return (
-            (y, x)
-            for x, y in self._pt_fields.items()
-            if (inspect.isclass(x) and issubclass(x, ctype))
-        )
+    def _pt_filter_for[T: Base | ArraySpec | ScalarType](
+        self, type_filter: Callable[[T], bool]
+    ) -> Iterable[tuple[str, T]]:
+        return ((y, x) for x, y in self._pt_fields.items() if type_filter(x))
+
+    def _pt_filter_for_class[T: Base | ScalarType | Alias](
+        self, ctype: type[T]
+    ) -> Iterable[tuple[str, T]]:
+        return self._pt_filter_for(lambda x: inspect.isclass(x) and issubclass(x, ctype))
 
     @property
     def _pt_scalars(self) -> Iterable[tuple[str, ScalarType]]:
         return self._pt_filter_for_class(ScalarType)
 
     @property
+    def _pt_all_types(
+        self,
+    ) -> Iterable[tuple[str, type[ScalarType | Enum | Struct | Union | ArraySpec]]]:
+        return self._pt_filter_for(
+            lambda x: (
+                isinstance(x, ArraySpec)
+                or (inspect.isclass(x) and issubclass(x, ScalarType | Enum | Struct | Union))
+            )
+        )
+
+    @property
     def _pt_arrays(self) -> Iterable[tuple[str, ArraySpec]]:
-        return ((y, x) for x, y in self._pt_fields.items() if isinstance(x, ArraySpec))
+        return self._pt_filter_for(lambda x: isinstance(x, ArraySpec))
 
     @property
     def _pt_aliases(self) -> Iterable[Alias]:
@@ -143,6 +168,10 @@ class Package(Base):
     @property
     def _pt_unions(self) -> Iterable[tuple[str, Union]]:
         return self._pt_filter_for_class(Union)
+
+    @property
+    def _pt_norms(self) -> Iterable[tuple[str, NormativePoint]]:
+        return ((vnorm_name, vnorm_inst) for vnorm_name, vnorm_inst in self._PT_NORMS.items())
 
     @property
     def _pt_structs_and_unions(self) -> Iterable[tuple[str, Struct | Union]]:

@@ -117,3 +117,13 @@ class Base(metaclass=MetaBase):
                     print(f"{cnt:10d}: {obj}")  # noqa: T201
 
         atexit.register(_list_objs)
+
+    def __copy__(self) -> Self:
+        raise NotImplementedError(
+            "Please use packtype.utils.basic.copy() to copy a Packtype definition"
+        )
+
+    def __deepcopy__(self, _memo: dict[int, Any]) -> Self:
+        raise NotImplementedError(
+            "Please use packtype.utils.basic.copy() to copy a Packtype definition"
+        )

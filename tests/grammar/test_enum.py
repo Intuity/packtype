@@ -7,7 +7,8 @@ import pytest
 from packtype.grammar import ParseError, parse_string
 from packtype.types.enum import Enum, EnumError, EnumMode
 from packtype.types.wrap import BadAttributeError
-from packtype.utils import get_width
+from packtype.utils import get_width, pack, unpack
+from packtype.utils.basic import copy
 
 from ..fixtures import reset_registry
 
@@ -288,3 +289,38 @@ def test_parse_enum_bad_modifier():
             """
             )
         )
+
+
+def test_parse_enum_copy():
+    """Test copying an enum instance."""
+    pkg = next(
+        parse_string(
+            """
+        package the_package {
+            enum my_enum {
+                A
+                B
+                C
+            }
+        }
+        """
+        )
+    )
+    # For known enum values, copy returns the singleton instance
+    inst = unpack(pkg.my_enum, 0x1)
+    inst_copy = copy(inst)
+
+    assert isinstance(inst_copy, pkg.my_enum)
+    assert pack(inst_copy) == pack(inst)
+    assert inst_copy is inst  # Enum values are singletons
+    assert inst_copy == pkg.my_enum.B
+
+    # For unknown enum values, copy creates a new instance
+    inst_unknown = unpack(pkg.my_enum, 0x3)  # 3 is within 2-bit range but not A/B/C
+    inst_unknown_copy = copy(inst_unknown)
+
+    assert isinstance(inst_unknown_copy, pkg.my_enum)
+    assert pack(inst_unknown_copy) == pack(inst_unknown)
+    assert inst_unknown_copy is not inst_unknown  # Unknown values are not singletons
+    assert inst_unknown_copy._pt_bv.value == inst_unknown._pt_bv.value
+    assert inst_unknown_copy._pt_bv is not inst_unknown._pt_bv

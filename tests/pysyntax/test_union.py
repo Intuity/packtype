@@ -153,13 +153,13 @@ def test_union_unpack():
     assert int(inst.header.flags) == hdr_flags_val
 
     assert str(inst) == (
-        f"Packet: 0x{value:08X} (union):\n"
-        f" |- raw    -> Unsigned Scalar[32]: 0x{value:08X}\n"
-        f" |- header -> Header: 0x{value:08X}\n"
-        f"               |- [15: 0] address = 0x{hdr_addr_val:04X}\n"
-        f"               |- [23:16] length  = 0x{hdr_len_val:02X}\n"
-        f"               |- [27:24] mode    = 0x{hdr_mode_val:01X}\n"
-        f"               |- [31:28] flags   = 0x{hdr_flags_val:01X}"
+        f"Packet: 0x{value:X} (union):\n"
+        f" |- raw    -> Unsigned Scalar[32]: 0x{value:X}\n"
+        f" |- header -> Header: 0x{value:X}\n"
+        f"                [31:28] ├─ flags   = 0x{hdr_flags_val:01X}\n"
+        f"                [27:24] ├─ mode    = 0x{hdr_mode_val:01X}\n"
+        f"                [23:16] ├─ length  = 0x{hdr_len_val:02X}\n"
+        f"                [15: 0] └─ address = 0x{hdr_addr_val:04X}"
     )
 
 

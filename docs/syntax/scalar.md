@@ -14,7 +14,7 @@ custom grammar:
     from packtype import Constant, Scalar
 
     @packtype.package()
-    class MyPackage:
+    class ThePackage:
         # Constants
         TYPE_A_W : Constant = 29
         TYPE_B_W : Constant = 13
@@ -28,7 +28,7 @@ custom grammar:
 === "Packtype (.pt)"
 
     ```sv linenums="1"
-    package my_package {
+    package the_package {
         // Constants
         TYPE_A_W : constant = 29
         TYPE_B_W : constant = 13
@@ -49,7 +49,7 @@ custom grammar:
 As rendered to SystemVerilog:
 
 ```sv linenums="1"
-package my_package;
+package the_package;
 
 localparam TYPE_A_W = 29;
 localparam TYPE_B_W = 13;
@@ -58,7 +58,7 @@ typedef logic [28:0] type_a_t;
 typedef logic [12:0] type_b_t;
 typedef logic [6:0] type_c_t;
 
-endpackage : my_package
+endpackage : the_package
 ```
 
 !!! note
@@ -78,7 +78,7 @@ to unsigned.
 
 ```python
 @packtype.package()
-class MyPackage:
+class ThePackage:
     # Format: <NAME> : Scalar[<WIDTH>, <SIGNED>]
     MyType : Scalar[123, False]
 ```

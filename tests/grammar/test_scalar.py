@@ -6,7 +6,8 @@ import pytest
 
 from packtype.grammar import ParseError, parse_string
 from packtype.types.scalar import ScalarType
-from packtype.utils import get_width
+from packtype.utils import get_width, pack, unpack
+from packtype.utils.basic import copy
 
 from ..fixtures import reset_registry
 
@@ -56,3 +57,25 @@ def test_parse_scalar_bad_assign():
             """
             )
         )
+
+
+def test_parse_scalar_copy():
+    """Test copying a scalar instance."""
+    pkg = next(
+        parse_string(
+            """
+        package the_package {
+            my_scalar: scalar[8]
+        }
+        """
+        )
+    )
+    inst = unpack(pkg.my_scalar, 0x7B)
+    inst_copy = copy(inst)
+
+    assert isinstance(inst_copy, ScalarType)
+    assert inst_copy == inst
+    assert inst_copy is not inst
+    assert pack(inst_copy) == pack(inst)
+    assert inst_copy._pt_bv.value == inst._pt_bv.value
+    assert inst_copy._pt_bv is not inst._pt_bv

@@ -13,14 +13,14 @@ Descriptions can be added with normal [Python docstrings]((https://peps.python.o
     from packtype import Constant
 
     @packtype.package()
-    class MyPackage:
+    class ThePackage:
         """
         Package decription,
         using normal Python docstrings
         """
         ...
 
-    @MyPackage.enum()
+    @ThePackage.enum()
     class Fruit:
         """
         Class description,
@@ -35,7 +35,7 @@ Descriptions can be added with normal [Python docstrings]((https://peps.python.o
 === "Packtype (.pt)"
 
     ```sv linenums="1"
-    package my_package {
+    package the_package {
         """
         Package description
         using multiline docstring syntax

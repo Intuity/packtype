@@ -4,10 +4,11 @@
 
 from collections.abc import Iterable
 
+from ..types.array import ArraySpec
 from ..types.constant import Constant
 from ..types.enum import Enum
 from ..types.package import Package
-from ..types.scalar import Scalar
+from ..types.scalar import ScalarType
 from ..types.struct import Struct
 from ..types.union import Union
 from .basic import get_name
@@ -43,7 +44,18 @@ def get_constants(pkg: Package | type[Package]) -> Iterable[tuple[str, Constant]
     return pkg._pt_constants
 
 
-def get_scalars(pkg: Package | type[Package]) -> Iterable[tuple[str, type[Scalar]]]:
+def get_all_types(
+    pkg: Package | type[Package],
+) -> Iterable[tuple[str, type[ScalarType | Enum | Struct | Union | ArraySpec]]]:
+    """
+    Get the scalars defined in a Packtype package.
+    :return: Iterable of tuples of the scalar name and definition
+    """
+    pkg = _normalise_package(pkg)
+    return pkg._pt_all_types
+
+
+def get_scalars(pkg: Package | type[Package]) -> Iterable[tuple[str, type[ScalarType]]]:
     """
     Get the scalars defined in a Packtype package.
     :return: Iterable of tuples of the scalar name and definition

@@ -101,10 +101,10 @@ def test_struct_unpacking():
     assert inst.ef.value == (ef_value := 39)
 
     assert str(inst) == (
-        f"TestStruct: 0x{value:06X}\n"
-        f" |- [11: 0] ab = 0x{ab_value:03X}\n"
-        f" |- [14:12] cd = 0x{cd_value:01X}\n"
-        f" |- [23:15] ef = 0x{ef_value:03X}"
+        f"TestStruct: 0x{value:X}\n"
+        f"  [23:15] ├─ ef = 0x{ef_value:03X}\n"
+        f"  [14:12] ├─ cd = 0x{cd_value:01X}\n"
+        f"  [11: 0] └─ ab = 0x{ab_value:03X}"
     )
 
 
@@ -384,3 +384,49 @@ def test_struct_bad_constructor():
         TestStruct(ab=123, cd=[4, 5, 6], ef=41, gh=3)
 
     assert str(e.value) == "TestStruct does not contain a field called 'gh'"
+
+
+def test_struct_tree_printing_max_depth():
+    """Test tree printing max_depth parameter with nested structures"""
+
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.struct()
+    class Level3:
+        a: Scalar[4]
+        b: Scalar[4]
+
+    @TestPkg.struct()
+    class Level2:
+        x: Scalar[8]
+        nested: Level3
+
+    @TestPkg.struct()
+    class Level1:
+        y: Scalar[8]
+        nested: Level2
+
+    @TestPkg.struct()
+    class Level0:
+        z: Scalar[8]
+        nested: Level1
+
+    inst = Level0._pt_unpack(0x12345678)
+
+    # max_depth=1: only top level (2 fields)
+    output1 = inst._str_tree(max_depth=1)
+    assert "Level0: 0x12345678" in output1
+    assert output1.count("├─") + output1.count("└─") == 2  # Only 2 top-level fields
+
+    # max_depth=2: top level + one level (2 + 2 = 4 fields total)
+    output2 = inst._str_tree(max_depth=2)
+    assert "Level0: 0x12345678" in output2
+    assert output2.count("├─") + output2.count("└─") == 4  # 2 top + 2 nested
+
+    # max_depth=0: unlimited (all 4 levels: 2+2+2+2 = 8 fields)
+    output0 = inst._str_tree(max_depth=0)
+    assert "Level0: 0x12345678" in output0
+    assert output0.count("├─") + output0.count("└─") == 8  # All fields visible
+    assert "│  │" in output0  # Should have 3-level nesting indicators

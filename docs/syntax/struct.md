@@ -15,30 +15,30 @@ custom grammar:
     from packtype import Constant, Scalar
 
     @packtype.package()
-    class MyPackage:
+    class ThePackage:
         INSTR_W : Constant = 32
         RegSel  : Scalar[5]
 
-    @MyPackage.enum(width=8)
+    @ThePackage.enum(width=8)
     class Opcode:
         ADD : Constant = 0
         SUB : Constant = 1
         ...
 
-    @MyPackage.struct(width=MyPackage.INSTR_W)
+    @ThePackage.struct(width=ThePackage.INSTR_W)
     class Instruction:
         """Encodes an instruction to the CPU"""
         opcode : Opcode
-        rd     : MyPackage.RegSel
-        rs1    : MyPackage.RegSel
-        rs2    : MyPackage.RegSel
+        rd     : ThePackage.RegSel
+        rs1    : ThePackage.RegSel
+        rs2    : ThePackage.RegSel
         imm    : Scalar[9]
     ```
 
 === "Packtype (.pt)"
 
     ```sv linenums="1"
-    package my_package {
+    package the_package {
         INSTR_W : constant = 32
 
         reg_sel_t : scalar[5]
@@ -63,7 +63,7 @@ custom grammar:
 As rendered to SystemVerilog
 
 ```sv linenums="1"
-package my_package;
+package the_package;
 
 // ...supporting declarations...
 
@@ -75,7 +75,7 @@ typedef struct packed {
     opcode_t opcode;
 } instruction_t;
 
-endpackage : my_package
+endpackage : the_package
 ```
 
 !!! warning

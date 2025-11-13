@@ -6,7 +6,8 @@ import pytest
 
 from packtype.grammar import UnknownEntityError, parse_string
 from packtype.types.union import Union, UnionError
-from packtype.utils import get_width
+from packtype.utils import get_width, pack, unpack
+from packtype.utils.basic import copy
 
 from ..fixtures import reset_registry
 
@@ -121,3 +122,28 @@ def test_parse_union_bad_field_ref():
             """
             )
         )
+
+
+def test_parse_union_copy():
+    """Test copying a union instance."""
+    pkg = next(
+        parse_string(
+            """
+        package the_package {
+            union my_union {
+                a: scalar[8]
+                b: scalar[8]
+            }
+        }
+        """
+        )
+    )
+    inst = unpack(pkg.my_union, 0x42)
+    inst_copy = copy(inst)
+
+    assert isinstance(inst_copy, pkg.my_union)
+    assert pack(inst_copy) == pack(inst)
+    assert inst_copy is not inst
+    assert inst_copy._pt_bv is not inst._pt_bv
+    assert inst_copy.a == 0x42
+    assert inst_copy.b == 0x42

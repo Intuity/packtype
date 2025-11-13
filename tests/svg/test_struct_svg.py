@@ -3,6 +3,7 @@
 #
 
 import subprocess
+import sys
 from pathlib import Path
 
 import packtype
@@ -96,7 +97,7 @@ def test_struct_svg_command(tmp_path):
     # Wrap around the CLI
     result = subprocess.run(
         (
-            "python3",
+            sys.executable,
             "-m",
             "packtype",
             "svg",

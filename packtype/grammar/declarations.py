@@ -4,7 +4,9 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
 from .. import utils
 from ..common.expression import Expression
@@ -14,6 +16,7 @@ from ..types.assembly import Packing
 from ..types.base import Base
 from ..types.constant import Constant
 from ..types.enum import Enum, EnumMode
+from ..types.normative import NormativePoint, Priority
 from ..types.scalar import Scalar
 from ..types.struct import Struct
 from ..types.union import Union
@@ -49,6 +52,9 @@ class Modifier:
 class Position:
     line: int
     column: int
+
+    def to_line_pointer(self, file: Path | None) -> str:
+        return f"{file.as_posix() if file else 'N/A'}:{self.line}"
 
 
 @dataclass()
@@ -400,6 +406,30 @@ class DeclUnion:
         )
 
 
+@dataclass
+class DeclNormative:
+    """Represents a normative point declaration."""
+
+    position: Position
+    name: str
+    priority: Priority
+    description: Description | None
+
+    def to_class(
+        self,
+        cb_resolve: Callable[
+            [
+                str,
+            ],
+            int | type[Base],
+        ],
+    ) -> type[NormativePoint]:
+        entity = build_from_fields(NormativePoint, self.name, {}, {"priority": self.priority})
+        entity.__doc__ = str(self.description) if self.description else None
+        entity.priority = self.priority
+        return entity
+
+
 @dataclass()
 class DeclPackage:
     position: Position
@@ -410,3 +440,90 @@ class DeclPackage:
 
     def get_modifiers(self) -> dict[str, str]:
         return {mod.option: mod.value for mod in (self.modifiers or {})}
+
+
+class VariantOperator(StrEnum):
+    OR = "or"
+    AND = "and"
+
+
+@dataclass()
+class VariantCondition:
+    conditions: tuple["str | VariantOperator | VariantCondition"] | None
+
+    @property
+    def is_default(self) -> bool:
+        return self.conditions is None
+
+    def evaluate(self, conditions: list[str]) -> bool:
+        """
+        Evaluate the condition terms and operators, prioritising AND over OR as
+        per Python's operator precedence.
+
+        :param conditions: List of active condition strings
+        :return: Evaluation result
+        """
+        if self.conditions is None:
+            return True
+        # Flatten nested VariantConditions and evaluate terms
+        flattened: list[bool | VariantOperator] = []
+        for term in self.conditions:
+            match term:
+                case VariantCondition():
+                    flattened.append(term.evaluate(conditions))
+                case VariantOperator():
+                    flattened.append(term)
+                case str():
+                    flattened.append(term in conditions)
+        # Collapse terms
+        while len(flattened) > 1:
+            lhs, op, rhs, *remainder = flattened
+            replacement = []
+            match op:
+                case VariantOperator.AND:
+                    replacement.append(lhs and rhs)
+                case VariantOperator.OR:
+                    replacement.append(lhs or rhs)
+            flattened = replacement + remainder
+        # Return final result
+        assert isinstance(flattened[0], bool)
+        return flattened[0]
+
+
+@dataclass()
+class DeclVariant:
+    position: Position
+    condition: VariantCondition
+    description: Description | None
+    declarations: list
+
+    def matches(self, conditions: list[str]) -> bool:
+        return self.condition.evaluate(conditions)
+
+
+class VariantError(Exception):
+    pass
+
+
+@dataclass()
+class DeclVariantSet:
+    position: Position
+    description: Description | None
+    variants: list[DeclVariant]
+
+    def to_declarations(self, conditions: list[str]) -> list[Any]:
+        default = None
+        for variant in self.variants:
+            # Pickup the default as we go past
+            if variant.condition.is_default:
+                if default is not None:
+                    raise VariantError("Multiple default variants defined")
+                default = variant
+            # Check if the variant matches the requested conditions
+            elif variant.matches(conditions):
+                return variant.declarations
+        # If we get here, return the default if it exists
+        if default is not None:
+            return default.declarations
+        # Otherwise, raise an exception that a scenario can't be matched
+        raise VariantError("No matching variant can be determined")

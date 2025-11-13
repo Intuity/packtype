@@ -2,14 +2,23 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import inspect
 from collections.abc import Iterable
 
 from ..types.enum import Enum
-from ..types.package import Package
 
 
-def _normalise_enum(enum: Enum | type[Enum]) -> Package:
-    assert isinstance(enum, Enum) or issubclass(enum, Enum)
+def is_enum(enum: Enum | type[Enum]) -> bool:
+    """
+    Check if a Packtype definition is an enum.
+    :param enum: The Packtype definition to inspect
+    :return: True if the definition is an enum, False otherwise
+    """
+    return isinstance(enum, Enum) or (inspect.isclass(enum) and issubclass(enum, Enum))
+
+
+def _normalise_enum(enum: Enum | type[Enum]) -> Enum:
+    assert is_enum(enum), "Input must be an Enum or subclass thereof."
     if not isinstance(enum, Enum):
         enum = enum()
     return enum

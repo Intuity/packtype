@@ -3,7 +3,8 @@
 #
 
 from packtype.grammar import parse_string
-from tests.fixtures import reset_registry
+
+from ..fixtures import reset_registry
 
 assert reset_registry
 

@@ -62,19 +62,61 @@ modifier: "@" name "=" (name | ESCAPED_STRING | NUMERIC)
     // | decl_regblock
 
 // =============================================================================
+// Common list of declaration types
+// NOTE: This excludes variants as we don't support nested variants
+// =============================================================================
+
+?common_body: decl_import
+            | decl_alias
+            | decl_constant
+            | decl_scalar
+            | decl_enum
+            | decl_struct
+            | decl_union
+            | decl_normative
+
+// =============================================================================
 // Package
 // =============================================================================
 
 // Define package outer
 decl_package: "package"i name "{" descr? modifier* package_body* "}"
 
-?package_body: decl_import
-             | decl_alias
-             | decl_constant
-             | decl_scalar
-             | decl_enum
-             | decl_struct
-             | decl_union
+?package_body: decl_variant_set
+             | common_body
+
+// =============================================================================
+// Variants
+//
+// variants {
+//   "Description of why variants are necessary"
+//   default {
+//     "Without overrides, use this type"
+//     my_type_t : scalar[4]
+//   }
+//   FEATURE_A and FEATURE_B {
+//     "When FEATURE_A and FEATURE_B are enabled, use this type"
+//     my_type_t : scalar[8]
+//   }
+// }
+//
+// =============================================================================
+
+variant_operator_or: "or"i
+variant_operator_and: "and"i
+
+variant_default: "default"i
+
+// NOTE: AND takes precendence over OR (matches Python's behaviour)
+variant_condition_and: name
+                     | variant_condition_and variant_operator_and name
+
+variant_condition_or: variant_condition_and
+                    | variant_condition_or variant_operator_or variant_condition_and
+
+decl_variant: (variant_default | variant_condition_or) "{" descr? common_body* "}"
+
+decl_variant_set: "variants"i "{" descr? decl_variant* "}"
 
 // =============================================================================
 // Imports
@@ -168,6 +210,19 @@ packing_mode_lsb: "lsb"i
 // =============================================================================
 
 decl_union: "union"i name "{" descr? modifier* field* "}"
+
+
+// =============================================================================
+// Normative Points
+//
+// vnorm my_feature : P1 "This feature is high priority"
+//
+// =============================================================================
+
+// Priority keywords
+PRIORITY: /P[0-9]+/
+
+decl_normative: "vnorm"i name ":" PRIORITY descr?
 
 // =============================================================================
 // Expressions

@@ -2,17 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import inspect
+
 from ..types.base import Base
 from ..types.scalar import ScalarType
 from ..types.struct import Struct
 from .basic import get_name
-
-
-def _normalise_struct(struct: Struct | type[Struct]) -> Struct:
-    assert isinstance(struct, Struct) or issubclass(struct, Struct)
-    if not isinstance(struct, Struct):
-        struct = struct()
-    return struct
 
 
 def is_struct(ptype: type[Base] | Base) -> bool:
@@ -21,7 +16,20 @@ def is_struct(ptype: type[Base] | Base) -> bool:
     :param ptype: The Packtype definition to check
     :return: True if the definition is a struct, False otherwise
     """
-    return isinstance(ptype, Struct) or issubclass(ptype, Struct)
+    return isinstance(ptype, Struct) or (inspect.isclass(ptype) and issubclass(ptype, Struct))
+
+
+def _normalise_struct(inst_or_type: Struct | type[Struct]) -> Struct:
+    """
+    Utility functions may be called with a type instance or the type definition,
+    and certain operations require an instance. This function ensures that the
+    input is 'normalised' to be an instance.
+
+    :param struct: The struct instance or struct type definition
+    :return: A struct instance
+    """
+    assert is_struct(inst_or_type), "Input must be a Struct or subclass thereof."
+    return inst_or_type if isinstance(inst_or_type, Struct) else inst_or_type()
 
 
 def get_fields_msb_desc(struct: Struct | type[Struct]) -> list[tuple[int, int, tuple[str, Base]]]:

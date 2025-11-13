@@ -31,7 +31,7 @@ from .types.wrap import Registry
 
 
 def resolve_to_object(
-    baseline: list[Package],
+    baseline: list[Package | File],
     *path: str,
     acceptable: tuple[type[Base]] | None = None,
 ) -> Base:
@@ -60,7 +60,9 @@ def resolve_to_object(
     return resolved
 
 
-def load_specification(spec_files: list[str], keep_expression: bool) -> list[Base]:
+def load_specification(
+    spec_files: list[str], variant: list[str] | None, keep_expression: bool
+) -> list[Package | File]:
     log = get_log()
 
     # If multiple specifications are provided, check they all use .pt format
@@ -76,7 +78,7 @@ def load_specification(spec_files: list[str], keep_expression: bool) -> list[Bas
         get_log().debug(f"Loading specification: {item}")
         # Packtype grammar files
         if item.lower().endswith((".pt", ".packtype", ".ptype")):
-            for package in parse(Path(item), namespaces, keep_expression=keep_expression):
+            for package in parse(Path(item), namespaces, variant, keep_expression=keep_expression):
                 namespaces[package.__name__] = package
         # If it ends with `.py` assume it's Python
         elif item.endswith(".py"):
@@ -108,18 +110,19 @@ def main(debug: bool):
 
 
 @main.command()
-@click.argument("spec_files", type=str, nargs=-1)
+@click.option("--variant", type=str, multiple=True, default=[], help="Variant conditions to apply")
 @click.option("--keep-expression", is_flag=True, help="Attach parsed expressions to constants")
-def inspect(spec_files: list[str], keep_expression: bool):
+@click.argument("spec_files", type=str, nargs=-1)
+def inspect(keep_expression: bool, variant: list[str], spec_files: list[str]):
     log = get_log()
-    baseline = load_specification(spec_files, keep_expression)
+    baseline = load_specification(spec_files, variant, keep_expression)
     log.warning("Use the 'baseline' namespace to inspect Packtype definitions")
     breakpoint()  # noqa: T100
     del baseline
 
 
 @main.command()
-@click.argument("selection", type=str)
+@click.option("--variant", type=str, multiple=True, default=[], help="Variant conditions to apply")
 @click.option(
     "-o",
     "--output",
@@ -128,11 +131,12 @@ def inspect(spec_files: list[str], keep_expression: bool):
     required=False,
     help="Output file to write the SVG to. If not provided, prints to stdout.",
 )
+@click.argument("selection", type=str)
 @click.argument("spec_files", type=str, nargs=-1)
-def svg(selection: str, output: Path | None, spec_files: list[str]):
+def svg(variant: list[str], output: Path | None, selection: str, spec_files: list[str]):
     # Resolve selection to a struct
     resolved = resolve_to_object(
-        load_specification(spec_files, keep_expression=False),
+        load_specification(spec_files, variant, keep_expression=False),
         *selection.split("."),
         acceptable=(Struct,),
     )
@@ -199,6 +203,7 @@ def svg(selection: str, output: Path | None, spec_files: list[str]):
     help="Select filters to apply to type names",
 )
 @click.option("--keep-expression", is_flag=True, help="Attach parsed expressions to constants")
+@click.option("--variant", type=str, multiple=True, default=[], help="Variant conditions to apply")
 @click.argument("mode", type=click.Choice(("package", "register"), case_sensitive=False))
 @click.argument(
     "language",
@@ -216,17 +221,18 @@ def code(
     package_filter: list[str],
     constant_filter: list[str],
     type_filter: list[str],
+    keep_expression: bool,
+    variant: list[str],
     mode: str,
     language: str,
     outdir: Path,
     spec_files: list[str],
-    keep_expression: bool,
 ):
     """Render Packtype package definitions using a language template"""
     log = get_log()
 
     # Load the baseline
-    resolved = load_specification(spec_files, keep_expression)
+    resolved = load_specification(spec_files, variant, keep_expression)
 
     # Deferred imports for optional libraries
     from mako import exceptions

@@ -4,6 +4,7 @@
 
 import math
 import textwrap
+from pathlib import Path
 
 from lark import Transformer, v_args
 
@@ -11,6 +12,7 @@ from .. import utils
 from ..common.expression import Expression, ExpressionFunction
 from ..types.assembly import Packing
 from ..types.enum import EnumMode
+from ..types.normative import Priority
 from .declarations import (
     DeclAlias,
     DeclConstant,
@@ -19,10 +21,13 @@ from .declarations import (
     DeclField,
     DeclImport,
     DeclInstance,
+    DeclNormative,
     DeclPackage,
     DeclScalar,
     DeclStruct,
     DeclUnion,
+    DeclVariant,
+    DeclVariantSet,
     Description,
     FieldAssignment,
     FieldAssignments,
@@ -31,10 +36,20 @@ from .declarations import (
     Position,
     Signed,
     Unsigned,
+    VariantCondition,
+    VariantOperator,
 )
 
 
+class TransformerError(Exception):
+    pass
+
+
 class PacktypeTransformer(Transformer):
+    def __init__(self, file_path: Path | None = None) -> None:
+        super().__init__()
+        self.file_path = file_path
+
     def DECIMAL(self, body):  # noqa: N802
         return int(body, 10)
 
@@ -290,6 +305,60 @@ class PacktypeTransformer(Transformer):
         while remainder and isinstance(remainder[0], Modifier):
             mods.append(remainder.pop(0))
         return DeclUnion(Position(meta.line, meta.column), name, description, mods, remainder)
+
+    @v_args(meta=True)
+    def decl_normative(self, meta, body):
+        """Transform a normative point declaration."""
+        name, priority_token, *remainder = body
+        if remainder and isinstance(remainder[0], Description):
+            descr, *remainder = remainder
+        else:
+            descr = None
+
+        priority = Priority[priority_token.value.upper()]
+
+        return DeclNormative(Position(meta.line, meta.column), name, priority, descr)
+
+    def variant_default(self, body):
+        return VariantCondition(conditions=None)
+
+    def variant_operator_or(self, body):
+        return VariantOperator.OR
+
+    def variant_operator_and(self, body):
+        return VariantOperator.AND
+
+    def variant_condition_and(self, body):
+        return VariantCondition(conditions=tuple(body))
+
+    def variant_condition_or(self, body):
+        return VariantCondition(conditions=tuple(body))
+
+    def variant_condition(self, body):
+        return VariantCondition(conditions=tuple(body))
+
+    @v_args(meta=True)
+    def decl_variant(self, meta, body):
+        return DeclVariant(
+            Position(meta.line, meta.column),
+            condition=body.pop(0),
+            description=body.pop(0) if body and isinstance(body[0], Description) else None,
+            declarations=body,
+        )
+
+    @v_args(meta=True)
+    def decl_variant_set(self, meta, body):
+        position = Position(meta.line, meta.column)
+        # Check for a default case
+        if not any((isinstance(x, DeclVariant) and x.condition.is_default) for x in body):
+            raise TransformerError(
+                f"Variant at {position.to_line_pointer(self.file_path)} is missing a default case."
+            )
+        return DeclVariantSet(
+            position=position,
+            description=body.pop(0) if body and isinstance(body[0], Description) else None,
+            variants=body,
+        )
 
     @v_args(meta=True)
     def decl_package(self, meta, body):

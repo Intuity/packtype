@@ -8,13 +8,15 @@ from collections.abc import Callable, Iterable
 from typing import Any, Self
 
 from .bitvector import BitVector, BitVectorWindow
+from .numeric import Numeric
 from .packing import Packing
 
 
 class ArraySpec:
-    def __init__(self, base: Any, dimensions: int | tuple[int]) -> None:
+    def __init__(self, base: Any, dimensions: int | tuple[int], attached_to: Any = None) -> None:
         self.base = base
         self.dimensions = dimensions if isinstance(dimensions, list | tuple) else (dimensions,)
+        self._PT_ATTACHED_TO = attached_to
 
     @property
     def _pt_flat_dimension(self) -> int:
@@ -81,7 +83,7 @@ class ArraySpec:
         return type(self)(self.base, (key, *self.dimensions))
 
 
-class PackedArray:
+class PackedArray(Numeric):
     def __init__(
         self,
         spec: ArraySpec,
@@ -181,6 +183,12 @@ class PackedArray:
 
     def _pt_set(self, value: int) -> None:
         self._pt_bv.set(value)
+
+    def __str__(self) -> str:
+        lines = [f"{type(self).__name__} - {len(self)} entries: 0x{int(self):X}"]
+        for i in range(len(self)):
+            lines.append(f"- Entry[{i}]: {self._pt_entries[i]!s}")
+        return "\n".join(lines)
 
 
 class UnpackedArray:

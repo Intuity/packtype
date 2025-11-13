@@ -5,6 +5,7 @@
 import functools
 import math
 from collections.abc import Iterable
+from textwrap import indent
 from typing import Any
 
 from ..svg.render import ElementStyle, SvgConfig, SvgField, SvgRender
@@ -129,19 +130,104 @@ class PackedAssembly(Assembly):
             else:
                 raise e
 
-    def __str__(self) -> str:
-        lines = [f"{type(self).__name__}: 0x{int(self):X}"]
-        max_bits = math.ceil(math.log(self._PT_WIDTH, 10))
-        max_name = max(map(len, self._PT_DEF.keys()))
-        for fname in self._PT_DEF.keys():
-            finst = getattr(self, fname)
-            lsb, msb = self._PT_RANGES[fname]
-            width = msb - lsb + 1
+    def _gather_str_tree_fields(
+        self, max_depth: int = 0, *, offset: int = 0, depth: int = 0, prefix: str = ""
+    ) -> list[tuple[int, int, str, int, str, bool]]:
+        """Recursively gather all fields with their hierarchy information.
+
+        Used internally by _str_tree().
+
+        Returns list of (msb, lsb, name, value, tree_prefix, is_last) tuples.
+        """
+        fields = []
+        # Get fields sorted by MSB in descending order (higher bits first)
+        fields_msb_desc = self._pt_fields_msb_desc
+
+        for idx, (lsb, msb, (fname, finst)) in enumerate(fields_msb_desc):
+            abs_msb, abs_lsb = msb + offset, lsb + offset
+            is_last = idx == len(fields_msb_desc) - 1
+
+            fields.append((abs_msb, abs_lsb, fname, int(finst), prefix, is_last))
+
+            if isinstance(finst, PackedAssembly):
+                if (max_depth <= 0) or (depth + 1 < max_depth):
+                    # Extend the tree prefix: add │ if more siblings to connect to, else add spaces
+                    child_prefix = prefix + ("   " if is_last else "│  ")
+                    fields.extend(
+                        finst._gather_str_tree_fields(
+                            max_depth, offset=abs_lsb, depth=depth + 1, prefix=child_prefix
+                        )
+                    )
+
+        return fields
+
+    def _format_str_tree_fields(
+        self,
+        fields: list[tuple[int, int, str, int, str, bool]],
+    ) -> list[str]:
+        """Format fields as aligned tree-style lines.
+
+        Used internally by _str_tree().
+
+        Args:
+            fields: List of (msb, lsb, name, value, tree_prefix, is_last) tuples
+        """
+        if not fields:
+            return []
+
+        # How many decimal digits to represent the field bit ranges with
+        max_bit_idx_digits = math.ceil(math.log(self._PT_WIDTH, 10))
+
+        # First pass: build line parts as tuples
+        line_parts = []
+        for msb, lsb, name, value, prefix, is_last in fields:
+            branch = "└─" if is_last else "├─"
+            bit_range = f"[{msb:{max_bit_idx_digits}}:{lsb:>{max_bit_idx_digits}}]"
+            branch_name = f"{prefix}{branch} {name}"
+            # Calculate number of hex digits needed for the field width
+            width = (msb - lsb) + 1
+            hex_width = (width + 3) // 4
+            hex_value = f"0x{value:0{hex_width}X}"
+            line_parts.append((bit_range, branch_name, hex_value))
+
+        # Second pass: find max widths of columns to align them
+        max_bit_width = max(len(bits) for bits, _, _ in line_parts)
+        max_name_width = max(len(name) for _, name, _ in line_parts)
+
+        # Third pass: format with aligned columns
+        lines = []
+        for bit_range, branch_name, hex_value in line_parts:
             lines.append(
-                f" |- [{msb:{max_bits}}:{lsb:{max_bits}}] {fname:{max_name}} "
-                f"= 0x{int(finst):0{(width + 3) // 4}X}"
+                f"{bit_range:<{max_bit_width}} {branch_name:<{max_name_width}} = {hex_value}"
             )
-        return "\n".join(lines)
+
+        return lines
+
+    def _str_tree(self, max_depth: int = 0) -> str:
+        """Return tree-style string representation with optional depth limit.
+
+        Args:
+            max_depth: Maximum nesting depth (0=unlimited, 1=top-level only, etc.)
+
+        Example:
+            BUS_DATA_T: 0x123456789ABCDEF0
+              [1110:1097] ├─ checksum = 0x0000
+              [1096:  57] └─ payload  = 0x...
+              [1096:1081] │  ├─ header = 0x...
+              [1080:  57] │  └─ length = 0x0000
+              ...
+        """
+        header_str = f"{type(self).__name__}: 0x{int(self):X}"
+
+        fields = self._gather_str_tree_fields(max_depth)
+        if not fields:
+            return header_str
+
+        body = indent("\n".join(self._format_str_tree_fields(fields)), "  ")
+        return f"{header_str}\n{body}"
+
+    def __str__(self) -> str:
+        return self._str_tree(max_depth=1)
 
     def __repr__(self) -> str:
         return self.__str__()

@@ -4,7 +4,7 @@
 
 import functools
 import inspect
-from collections.abc import Iterable
+from collections.abc import Iterator
 from pathlib import Path
 
 from lark import Lark
@@ -21,10 +21,12 @@ from .declarations import (
     DeclEnum,
     DeclImport,
     DeclInstance,
+    DeclNormative,
     DeclPackage,
     DeclScalar,
     DeclStruct,
     DeclUnion,
+    DeclVariantSet,
     ForeignRef,
     Position,
 )
@@ -64,9 +66,10 @@ def parse_string(
     definition: str,
     namespaces: dict[str, Package] | None = None,
     constant_overrides: dict[str, int] | None = None,
+    variants: list[str] | None = None,
     source: Path | None = None,
     keep_expression: bool = False,
-) -> Iterable[Package]:
+) -> Iterator[Package]:
     """
     Parse a Packtype definition from a string producing a Package object.
 
@@ -75,6 +78,7 @@ def parse_string(
     :param constant_overrides: Optional overrides for constants defined within
                                the package, where the key must precisely match
                                the constant's name
+    :param variants:           An optional list of variant conditions to apply.
     :param source:             An optional source path for error reporting and
                                associating each declaration with its source file.
     :param keep_expression:    If True, expressions will be attached to constants
@@ -87,7 +91,7 @@ def parse_string(
     constant_overrides = constant_overrides or {}
     # Parse the definition
     try:
-        definitions = PacktypeTransformer().transform(create_parser().parse(definition))
+        definitions = PacktypeTransformer(source).transform(create_parser().parse(definition))
     except UnexpectedToken as exc:
         raise ParseError(
             f"Failed to parse {source.name if source else 'input'} on line {exc.line}: "
@@ -134,8 +138,17 @@ def parse_string(
             source=(source.as_posix() if source else "N/A", defn.position.line),
         )
 
-        # Run through the declarations
+        # First flatten variants to primary definitions if any exist
+        declarations = []
         for decl in defn.declarations:
+            match decl:
+                case DeclVariantSet():
+                    declarations.extend(decl.to_declarations(variants or []))
+                case _:
+                    declarations.append(decl)
+
+        # Run through the flattened declarations
+        for decl in declarations:
             match decl:
                 # Imports
                 case DeclImport():
@@ -214,6 +227,12 @@ def parse_string(
                     package._pt_attach(obj := decl.to_class(source, _resolve))
                     # Remember this type
                     known_entities[decl.name] = (obj, decl.position)
+                case DeclNormative():
+                    # Check for name collisions
+                    _check_collision(decl.name)
+                    obj = decl.to_class(_resolve)
+                    package._pt_attach_norm(decl.name, obj)
+                    known_entities[decl.name] = (obj, decl.position)
                 case _:
                     raise Exception(f"Unhandled declaration: {decl}")
 
@@ -240,14 +259,16 @@ def parse_string(
 def parse(
     path: Path,
     namespaces: dict[str, Package] | None = None,
+    variants: list[str] | None = None,
     constant_overrides: dict[str, int] | None = None,
     keep_expression: bool = False,
-) -> Iterable[Package]:
+) -> Iterator[Package]:
     """
     Parse a Packtype definition from a file path producing a Package object.
 
     :param path:               The path to the Packtype definition file.
     :param namespaces:         A dictionary of known packages to resolve imports.
+    :param variants:           An optional list of variant conditions to apply.
     :param constant_overrides: Optional overrides for constants defined within
                                the package, where the key must precisely match
                                the constant's name.
@@ -259,6 +280,7 @@ def parse(
         yield from parse_string(
             definition=fh.read(),
             namespaces=namespaces,
+            variants=variants,
             constant_overrides=constant_overrides,
             source=path,
             keep_expression=keep_expression,

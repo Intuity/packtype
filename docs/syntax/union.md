@@ -15,10 +15,10 @@ custom grammar:
     from packtype import Constant, Scalar
 
     @packtype.package()
-    class MyPackage:
+    class ThePackage:
         PACKET_W : Constant = 33
 
-    @MyPackage.struct(width=MyPackage.PACKET_W)
+    @ThePackage.struct(width=ThePackage.PACKET_W)
     class Header:
         command : Scalar[8]
         source  : Scalar[8]
@@ -26,14 +26,14 @@ custom grammar:
         length  : Scalar[8]
         parity  : Scalar[1]
 
-    @MyPackage.struct(width=MyPackage.PACKET_W)
+    @ThePackage.struct(width=ThePackage.PACKET_W)
     class Body:
         data   : Scalar[32]
         parity : Scalar[1]
 
-    @MyPackage.union()
+    @ThePackage.union()
     class Packet:
-        raw    : Scalar[MyPackage.PACKET_W]
+        raw    : Scalar[ThePackage.PACKET_W]
         header : Header
         body   : Body
     ```
@@ -41,7 +41,7 @@ custom grammar:
 === "Packtype (.pt)"
 
     ```sv linenums="1"
-    package my_package {
+    package the_package {
         PACKET_W : Constant = 33
 
         struct [PACKET_W] header_t {
@@ -68,7 +68,7 @@ custom grammar:
 As rendered to SystemVerilog
 
 ```sv linenums="1"
-package my_package;
+package the_package;
 
 // ...supporting declarations...
 
@@ -78,7 +78,7 @@ typedef union packed {
     body_t       body;
 } packet_t;
 
-endpackage : my_package
+endpackage : the_package
 ```
 
 !!! note

@@ -1,0 +1,64 @@
+// Copyright 2023-2025, Peter Birch, mailto:peter@intuity.io
+// SPDX-License-Identifier: Apache-2.0
+//
+
+package bus_defs {
+    "Definitions for a bus that demonstrate variants"
+
+    variants {
+        default {
+            "Default bus configuration"
+            DATA_WIDTH  : constant = 64
+                "Bus data width in bits"
+            MAX_STRIDES : constant = 16
+                "Maximum number of transaction strides"
+        }
+        NARROW {
+            "Used for narrow bus configuration"
+            DATA_WIDTH  : constant = 16
+                "Bus data width in bits"
+            MAX_STRIDES : constant = 64
+                "Maximum number of transaction strides"
+        }
+    }
+
+    TARGET_ID_W : constant = 4
+        "Width of the target ID field"
+    SOURCE_ID_W : constant = 4
+        "Width of the source ID field"
+    STRIDE_LEN_W : constant = clog2(MAX_STRIDES)
+        "Width of the stride length field"
+
+    struct [DATA_WIDTH] header_t {
+        "Packet header"
+        source : scalar[SOURCE_ID_W]
+            "Source identifier"
+        target : scalar[TARGET_ID_W]
+            "Target identifier"
+        strides : scalar[STRIDE_LEN_W]
+            "Number of strides in the transaction"
+    }
+
+    variants {
+        default {
+            "Default bus configuration does not offer a checksum"
+            union packet_u {
+                "Union of types carried on the bus"
+                header : header_t
+                body : scalar[DATA_WIDTH]
+            }
+        }
+        HAS_CHECKSUM {
+            "Bus configured to carry a checksum"
+            checksum_t : scalar[DATA_WIDTH]
+                "Checksum field"
+            union packet_u {
+                "Union of types carried on the bus (with checksum)"
+                header : header_t
+                body : scalar[DATA_WIDTH]
+                checksum : checksum_t
+            }
+        }
+    }
+
+}

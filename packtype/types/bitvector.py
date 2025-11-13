@@ -85,18 +85,17 @@ class BitVector:
         # Otherwise mask and insert the value
         else:
             # If width is not set, attempt to infer it
-            width = self.__width
-            if width is None:
-                width = ceil(log2(max(value, self.__value)))
+            if self.__width is None:
+                self.__width = ceil(log2(max(value, self.__value)))
             # Default LSB/MSB
             lsb = lsb if lsb is not None else 0
-            msb = msb if msb is not None else (width - 1)
-            # Sanity chedck arguments
-            assert msb < width, f"MSB of {msb} exceeds width {width}"
+            msb = msb if msb is not None else (self.__width - 1)
+            # Sanity check arguments
+            assert msb < self.__width, f"MSB of {msb} exceeds width {self.__width}"
             assert lsb >= 0, f"LSB of {lsb} is not supported"
             # Update value with masking
             mask = ((1 << (msb - lsb + 1)) - 1) << lsb
-            inv_mask = ((1 << width) - 1) ^ mask
+            inv_mask = ((1 << self.__width) - 1) ^ mask
             self.__value = (self.__value & inv_mask) | ((value << lsb) & mask)
 
 
@@ -114,6 +113,7 @@ class BitVectorWindow:
         self.__bitvector = bitvector
         self.__msb = msb
         self.__lsb = lsb
+        self.__width = (msb - lsb) + 1
 
     @property
     def msb(self) -> int:
@@ -128,7 +128,7 @@ class BitVectorWindow:
     @property
     def width(self) -> int:
         """Return the window's width"""
-        return (self.__msb - self.__lsb) + 1
+        return self.__width
 
     def __int__(self) -> int:
         """Cast the window to an int by extracting the right bit range"""
@@ -155,8 +155,11 @@ class BitVectorWindow:
         :param msb:   MSB of the sub-window, defaults to width - 1
         :param lsb:   LSB of the sub-window, defaults to 0
         """
-        msb = (self.width - 1) if msb is None else msb
-        lsb = 0 if lsb is None else lsb
-        assert lsb >= 0, f"LSB of {lsb} is not supported"
-        assert msb < self.width, f"MSB of {msb} is not supported"
-        return self.__bitvector.set(value, msb + self.__lsb, lsb + self.__lsb)
+        if msb is None and lsb is None:
+            return self.__bitvector.set(value, self.__msb, self.__lsb)
+        else:
+            msb = (self.__width - 1) if msb is None else msb
+            lsb = 0 if lsb is None else lsb
+            assert lsb >= 0, f"LSB of {lsb} is not supported"
+            assert msb < self.__width, f"MSB of {msb} is not supported"
+            return self.__bitvector.set(value, msb + self.__lsb, lsb + self.__lsb)
