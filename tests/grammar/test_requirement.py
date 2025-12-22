@@ -43,7 +43,7 @@ def test_parse_erroneous_priority():
 
 
 def test_parse_priority_typo():
-    """Check that a typo for unsupporter Priority is caught"""
+    """Check that a typo for unsupported Priority is caught"""
     with pytest.raises(KeyError, match="P5"):
         next(
             parse_string(
