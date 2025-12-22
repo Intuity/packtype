@@ -12,7 +12,7 @@ from .. import utils
 from ..common.expression import Expression, ExpressionFunction
 from ..types.assembly import Packing
 from ..types.enum import EnumMode
-from ..types.normative import Priority
+from ..types.requirement import Priority
 from .declarations import (
     DeclAlias,
     DeclConstant,
@@ -21,8 +21,8 @@ from .declarations import (
     DeclField,
     DeclImport,
     DeclInstance,
-    DeclNormative,
     DeclPackage,
+    DeclRequirement,
     DeclScalar,
     DeclStruct,
     DeclUnion,
@@ -307,8 +307,8 @@ class PacktypeTransformer(Transformer):
         return DeclUnion(Position(meta.line, meta.column), name, description, mods, remainder)
 
     @v_args(meta=True)
-    def decl_normative(self, meta, body):
-        """Transform a normative point declaration."""
+    def decl_requirement(self, meta, body):
+        """Transform a requirement tag declaration."""
         name, priority_token, *remainder = body
         if remainder and isinstance(remainder[0], Description):
             descr, *remainder = remainder
@@ -317,7 +317,7 @@ class PacktypeTransformer(Transformer):
 
         priority = Priority[priority_token.value.upper()]
 
-        return DeclNormative(Position(meta.line, meta.column), name, priority, descr)
+        return DeclRequirement(Position(meta.line, meta.column), name, priority, descr)
 
     def variant_default(self, body):
         return VariantCondition(conditions=None)

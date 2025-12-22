@@ -5,26 +5,26 @@
 import pytest
 
 from packtype.grammar import ParseError, parse_string
-from packtype.types.normative import Priority
+from packtype.types.requirement import Priority
 
 from ..fixtures import reset_registry
 
 assert reset_registry
 
 
-def test_parse_norm():
-    """Test that normative point attributes are correctly set."""
+def test_parse_req():
+    """Test that requirement tag attributes are correctly set."""
     pkg = next(
         parse_string(
             """
         package the_package {
-            vnorm my_feature : P1 "This feature is high priority"
+            requirement my_feature : P1 "This feature is high priority"
         }
         """
         )
     )
-    assert "my_feature" in pkg._PT_NORMS
-    assert pkg._PT_NORMS["my_feature"]._PT_ATTRIBUTES["priority"] == Priority.P1
+    assert "my_feature" in pkg._PT_REQUIREMENTS
+    assert pkg._PT_REQUIREMENTS["my_feature"]._PT_ATTRIBUTES["priority"] == Priority.P1
     assert pkg.my_feature._PT_ATTRIBUTES["priority"] == Priority.P1
 
 
@@ -35,7 +35,7 @@ def test_parse_erroneous_priority():
             parse_string(
                 """
                 package the_package {
-                vnorm my_feature : P "This feature is high priority"
+                requirement my_feature : P "This feature is high priority"
                 }
                 """
             )
@@ -43,13 +43,13 @@ def test_parse_erroneous_priority():
 
 
 def test_parse_priority_typo():
-    """Check that a typo for unsupported Priority is caught"""
+    """Check that a typo for unsupporter Priority is caught"""
     with pytest.raises(KeyError, match="P5"):
         next(
             parse_string(
                 """
                 package the_package {
-                vnorm my_feature : P5 "This feature's priority is wrong!"
+                requirement my_feature : P5 "This feature's priority is wrong!"
                 }
                 """
             )

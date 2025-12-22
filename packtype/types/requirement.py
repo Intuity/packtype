@@ -5,7 +5,7 @@ from .base import Base
 
 
 class Priority(Enum):
-    """Priority levels for normative points."""
+    """Priority levels for requirement tags."""
 
     P0 = "P0"
     P1 = "P1"
@@ -17,12 +17,12 @@ class Priority(Enum):
         return self.value
 
 
-class NormativePoint(Base):
+class RequirementTag(Base):
     """
-    Represents a normative point declaration inside a Packtype package.
+    Represents a RequirementTag declaration inside a Packtype package.
 
-    A NormativePoint marks an element with a defined priority level
-    (P0-P3) and optional description. Created when parsing `vnorm`
+    A RequirementTag marks an element with a defined priority level
+    (P0-P3) and optional description. Created when parsing `requirement`
     declarations.
     """
 
@@ -39,8 +39,8 @@ class NormativePoint(Base):
     def __repr__(self) -> str:
         """Compact debug-friendly representation."""
         if self.description:
-            return f"<NormativePoint {self.name}: {self.priority.value} — {self.description}>"
-        return f"<NormativePoint {self.name}: {self.priority.value}>"
+            return f"<RequirementTag {self.name}: {self.priority.value} — {self.description}>"
+        return f"<RequirementTag {self.name}: {self.priority.value}>"
 
     def __str__(self) -> str:
         """Human-readable string representation."""

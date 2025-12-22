@@ -81,10 +81,10 @@ class NumericType(Base, Numeric):
         return int(self._pt_bv)
 
     @value.setter
-    def value(self, value: int) -> int:
+    def value(self, value: int) -> None:
         self._pt_set(value)
 
-    def _pt_set(self, value: int) -> int:
+    def _pt_set(self, value: int) -> None:
         value = int(value)
         if value < 0 or (self._pt_width > 0 and value > self._pt_mask):
             raise PrimitiveValueError(
@@ -97,6 +97,10 @@ class NumericType(Base, Numeric):
 
     def __float__(self) -> float:
         return float(int(self))
+
+    @classmethod
+    def _pt_unpack(cls, packed: int) -> Self:
+        return cls(packed)
 
 
 class NumericPrimitive(NumericType, metaclass=MetaPrimitive):

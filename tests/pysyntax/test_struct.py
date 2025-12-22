@@ -430,3 +430,19 @@ def test_struct_tree_printing_max_depth():
     assert "Level0: 0x12345678" in output0
     assert output0.count("├─") + output0.count("└─") == 8  # All fields visible
     assert "│  │" in output0  # Should have 3-level nesting indicators
+
+
+def test_struct_padding():
+    """Test that the padding field captures data correctly"""
+
+    @packtype.package()
+    class TestPkg:
+        pass
+
+    @TestPkg.struct(width=8)
+    class TestStruct:
+        a: Scalar[4]
+
+    inst = TestStruct._pt_unpack(0xAB)
+    assert inst.a.value == 0xB
+    assert inst._padding.value == 0xA

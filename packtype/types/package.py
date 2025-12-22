@@ -13,8 +13,8 @@ from .array import ArraySpec
 from .base import Base
 from .constant import Constant
 from .enum import Enum
-from .normative import NormativePoint
 from .primitive import NumericType
+from .requirement import RequirementTag
 from .scalar import ScalarType
 from .struct import Struct
 from .union import Union
@@ -24,13 +24,13 @@ from .wrap import get_wrapper
 class Package(Base):
     _PT_ALLOW_DEFAULTS: list[type[Base]] = [Constant]
     _PT_FIELDS: dict
-    _PT_NORMS: dict
+    _PT_REQUIREMENTS: dict
 
     @classmethod
     def _pt_construct(cls, parent: Base) -> None:
         super()._pt_construct(parent)
         cls._PT_FIELDS = {}
-        cls._PT_NORMS = {}
+        cls._PT_REQUIREMENTS = {}
         for fname, ftype, fval in cls._pt_definitions():
             if inspect.isclass(ftype) and issubclass(ftype, Constant):
                 cls._pt_attach_constant(fname, ftype(default=fval))
@@ -45,9 +45,9 @@ class Package(Base):
         return finst
 
     @classmethod
-    def _pt_attach_norm(cls, fname: str, finst: NormativePoint) -> NormativePoint:
+    def _pt_attach_norm(cls, fname: str, finst: RequirementTag) -> RequirementTag:
         finst._PT_ATTACHED_TO = cls
-        cls._PT_NORMS[fname] = finst
+        cls._PT_REQUIREMENTS[fname] = finst
         cls._PT_FIELDS[finst] = finst
         setattr(cls, fname, finst)
         return finst
@@ -170,8 +170,11 @@ class Package(Base):
         return self._pt_filter_for_class(Union)
 
     @property
-    def _pt_norms(self) -> Iterable[tuple[str, NormativePoint]]:
-        return ((vnorm_name, vnorm_inst) for vnorm_name, vnorm_inst in self._PT_NORMS.items())
+    def _pt_reqs(self) -> Iterable[tuple[str, RequirementTag]]:
+        return (
+            (requirement_name, requirement_inst)
+            for requirement_name, requirement_inst in self._PT_REQUIREMENTS.items()
+        )
 
     @property
     def _pt_structs_and_unions(self) -> Iterable[tuple[str, Struct | Union]]:

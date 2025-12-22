@@ -5,7 +5,12 @@
 import functools
 import math
 from collections.abc import Callable, Iterable
-from typing import Any, Self
+from typing import Any
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self  # noqa: UP035
 
 from .bitvector import BitVector, BitVectorWindow
 from .numeric import Numeric
@@ -189,6 +194,20 @@ class PackedArray(Numeric):
         for i in range(len(self)):
             lines.append(f"- Entry[{i}]: {self._pt_entries[i]!s}")
         return "\n".join(lines)
+
+    def __copy__(self) -> "PackedArray":
+        """
+        Copy this object by unpacking and then packing it again.
+        :return: A copy of this object
+        """
+        return self._pt_spec._pt_unpack(self._pt_pack())
+
+    def __deepcopy__(self, _memo: dict) -> "PackedArray":
+        """
+        Reuse __copy__,
+        which should already be a deep copy for objects that pack and unpack cleanly.
+        """
+        return self.__copy__()
 
 
 class UnpackedArray:

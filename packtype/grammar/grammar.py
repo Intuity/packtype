@@ -21,8 +21,8 @@ from .declarations import (
     DeclEnum,
     DeclImport,
     DeclInstance,
-    DeclNormative,
     DeclPackage,
+    DeclRequirement,
     DeclScalar,
     DeclStruct,
     DeclUnion,
@@ -227,7 +227,7 @@ def parse_string(
                     package._pt_attach(obj := decl.to_class(source, _resolve))
                     # Remember this type
                     known_entities[decl.name] = (obj, decl.position)
-                case DeclNormative():
+                case DeclRequirement():
                     # Check for name collisions
                     _check_collision(decl.name)
                     obj = decl.to_class(_resolve)

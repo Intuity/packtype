@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import copy
 import math
 
 import pytest
@@ -418,7 +419,7 @@ def test_copy_enum():
         C: Constant = 0x3
 
     enum_a = TestEnum.A
-    enum_a_copy = utils.copy(enum_a)
+    enum_a_copy = copy.copy(enum_a)
     assert enum_a == enum_a_copy
     enum_a += 1
     assert enum_a != enum_a_copy
@@ -439,7 +440,7 @@ def test_copy_struct():
         high: TestPkg.nibble
 
     struct_a = utils.unpack(TestByte, 0xFF)
-    struct_a_copy = utils.copy(struct_a)
+    struct_a_copy = copy.copy(struct_a)
     struct_a_equals = struct_a
     assert struct_a == struct_a_copy == struct_a_copy
     # Mutate original struct a
@@ -464,7 +465,7 @@ def test_copy_union():
         raw: Scalar[8]
 
     union_a = utils.unpack(TestUnion, 0xFF)
-    union_a_copy = utils.copy(union_a)
+    union_a_copy = copy.copy(union_a)
     union_a_equals = union_a
     assert union_a == union_a_copy == union_a_copy
     # Mutate original struct a
@@ -492,11 +493,13 @@ def test_copy_array():
     byte_2d_array = utils.unpack(ArrayPkg.Byte2DArray, 0x12345678)
 
     byte_array_equals = byte_array
-    byte_array_copy = utils.copy(byte_array)
+    byte_array_copy = copy.copy(byte_array)
+    assert byte_array is not byte_array_copy
     assert byte_array == byte_array_copy == byte_array_equals
 
     byte_2d_array_equals = byte_2d_array
-    byte_2d_array_copy = utils.copy(byte_2d_array)
+    byte_2d_array_copy = copy.copy(byte_2d_array)
+    assert byte_2d_array is not byte_2d_array_copy
     assert byte_2d_array == byte_2d_array_copy == byte_2d_array_equals
 
     # Mutate arrays
@@ -508,3 +511,156 @@ def test_copy_array():
 
     assert byte_2d_array == byte_2d_array_equals
     assert byte_2d_array_copy != byte_2d_array
+
+
+def test_deepcopy_enum():
+    """
+    Test deep copying an enum instance
+    """
+
+    @packtype.package()
+    class TestPkg:
+        nibble: Scalar[4]
+
+    @TestPkg.enum()
+    class TestEnum:
+        A: Constant = 0x1
+        B: Constant = 0x2
+        C: Constant = 0x3
+
+    enum_a = TestEnum.A
+    enum_a_deepcopy = copy.deepcopy(enum_a)
+    assert enum_a == enum_a_deepcopy
+    enum_a += 1
+    assert enum_a != enum_a_deepcopy
+
+
+def test_deepcopy_struct():
+    """
+    Test that deepcopy works for structs
+    """
+
+    @packtype.package()
+    class TestPkg:
+        nibble: Scalar[4]
+
+    @TestPkg.struct()
+    class TestByte:
+        low: TestPkg.nibble
+        high: TestPkg.nibble
+
+    struct_a = utils.unpack(TestByte, 0xFF)
+    struct_a_deepcopy = copy.deepcopy(struct_a)
+    struct_a_equals = struct_a
+    assert struct_a == struct_a_deepcopy == struct_a_equals
+    # Mutate original struct a
+    struct_a.low = 0x0
+    assert struct_a_equals == struct_a
+    assert struct_a_deepcopy != struct_a
+
+
+def test_deepcopy_union():
+    @packtype.package()
+    class TestPkg:
+        nibble: Scalar[4]
+
+    @TestPkg.struct()
+    class TestByte:
+        low: TestPkg.nibble
+        high: TestPkg.nibble
+
+    @TestPkg.union()
+    class TestUnion:
+        struct: TestByte
+        raw: Scalar[8]
+
+    union_a = utils.unpack(TestUnion, 0xFF)
+    union_a_deepcopy = copy.deepcopy(union_a)
+    union_a_equals = union_a
+    assert union_a == union_a_deepcopy == union_a_equals
+    # Mutate original struct a
+    union_a.struct.low = 0x0
+    assert union_a_equals == union_a
+    assert union_a_deepcopy != union_a
+
+
+def test_deepcopy_array():
+    @packtype.package()
+    class TestPkg:
+        nibble: Scalar[4]
+
+    @TestPkg.struct()
+    class TestByte:
+        low: TestPkg.nibble
+        high: TestPkg.nibble
+
+    @packtype.package()
+    class ArrayPkg:
+        ByteArray: TestPkg.TestByte[4]
+        Byte2DArray: TestPkg.TestByte[2][2]
+
+    byte_array = utils.unpack(ArrayPkg.ByteArray, 0x12345678)
+    byte_2d_array = utils.unpack(ArrayPkg.Byte2DArray, 0x12345678)
+
+    byte_array_equals = byte_array
+    byte_array_deepcopy = copy.deepcopy(byte_array)
+    assert byte_array is not byte_array_deepcopy
+    assert byte_array == byte_array_deepcopy == byte_array_equals
+
+    byte_2d_array_equals = byte_2d_array
+    byte_2d_array_deepcopy = copy.deepcopy(byte_2d_array)
+    assert byte_2d_array is not byte_2d_array_deepcopy
+    assert byte_2d_array == byte_2d_array_deepcopy == byte_2d_array_equals
+
+    # Mutate arrays
+    byte_array[0] = 0x00
+    byte_2d_array[1][0] = 0x00
+
+    assert byte_array == byte_array_equals
+    assert byte_array != byte_array_deepcopy
+
+    assert byte_2d_array == byte_2d_array_equals
+    assert byte_2d_array_deepcopy != byte_2d_array
+
+
+def test_deepcopy_unpacked_array():
+    @packtype.package()
+    class TestPkg:
+        nibble: Scalar[4]
+
+    @TestPkg.struct()
+    class TestByte:
+        low: TestPkg.nibble
+        high: TestPkg.nibble
+
+    @packtype.package()
+    class ArrayPkg:
+        ByteArray: TestPkg.TestByte[4]
+
+    byte_array_spec = ArrayPkg.ByteArray
+    unpacked_array = byte_array_spec.as_unpacked()
+
+    # Set some initial values
+    unpacked_array[0] = utils.unpack(TestByte, 0x12)
+    unpacked_array[1] = utils.unpack(TestByte, 0x34)
+    unpacked_array[2] = utils.unpack(TestByte, 0x56)
+    unpacked_array[3] = utils.unpack(TestByte, 0x78)
+
+    unpacked_array_equals = unpacked_array
+    unpacked_array_deepcopy = copy.deepcopy(unpacked_array)
+    assert unpacked_array is not unpacked_array_deepcopy
+    assert unpacked_array[0] == unpacked_array_deepcopy[0]
+    assert unpacked_array[1] == unpacked_array_deepcopy[1]
+    assert unpacked_array[2] == unpacked_array_deepcopy[2]
+    assert unpacked_array[3] == unpacked_array_deepcopy[3]
+
+    # Mutate original array
+    unpacked_array[0] = utils.unpack(TestByte, 0x00)
+    unpacked_array[1] = utils.unpack(TestByte, 0x00)
+
+    assert unpacked_array[0] == unpacked_array_equals[0]
+    assert unpacked_array[1] == unpacked_array_equals[1]
+    assert unpacked_array[0] != unpacked_array_deepcopy[0]
+    assert unpacked_array[1] != unpacked_array_deepcopy[1]
+    assert unpacked_array[2] == unpacked_array_deepcopy[2]
+    assert unpacked_array[3] == unpacked_array_deepcopy[3]

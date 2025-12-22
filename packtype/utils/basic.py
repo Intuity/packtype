@@ -12,6 +12,7 @@ from ..types.array import ArraySpec, PackedArray, UnpackedArray
 from ..types.assembly import PackedAssembly
 from ..types.base import Base
 from ..types.enum import Enum
+from ..types.numeric import Numeric
 from ..types.primitive import NumericType
 from ..types.scalar import ScalarType
 from ..types.union import Union
@@ -143,12 +144,10 @@ def unpack[T: Base](ptype: type[T], value: int) -> T:
         raise TypeError(f"{ptype} is an instance of a Packtype definition")
     if not issubclass(ptype, Base):
         raise TypeError(f"{ptype} is not a Packtype definition")
-    if issubclass(ptype, NumericType):
-        return ptype(value)
-    elif issubclass(ptype, Enum):
-        return ptype._pt_cast(value)
-    else:
+    if issubclass(ptype, Numeric):
         return ptype._pt_unpack(value)
+
+    raise TypeError(f"{ptype} (type {type(ptype)}) does not support unpacking")
 
 
 def pack(pinst: Base) -> int:

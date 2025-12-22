@@ -3,6 +3,12 @@
 #
 
 
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self  # noqa: UP035
+
+
 class Numeric:
     def __int__(self) -> int:
         raise NotImplementedError("Subclass must implement __int__")
@@ -248,3 +254,26 @@ class Numeric:
 
     def __hash__(self) -> int:
         return id(self)
+
+    @classmethod
+    def _pt_unpack(cls, _packed: int) -> Self:
+        """
+        Unpack the object from an integer
+        :param packed: The value to unpack
+        :return: The unpacked object
+        """
+        raise NotImplementedError
+
+    def __copy__(self) -> Self:
+        """
+        Copy this object by unpacking and then packing it again
+        :return: A copy of this object
+        """
+        return self._pt_unpack(int(self))
+
+    def __deepcopy__(self, _memo: dict) -> Self:
+        """
+        Reuse __copy__,
+        which should already be a deep copy for objects that pack and unpack cleanly.
+        """
+        return self.__copy__()

@@ -16,7 +16,7 @@ from ..types.assembly import Packing
 from ..types.base import Base
 from ..types.constant import Constant
 from ..types.enum import Enum, EnumMode
-from ..types.normative import NormativePoint, Priority
+from ..types.requirement import Priority, RequirementTag
 from ..types.scalar import Scalar
 from ..types.struct import Struct
 from ..types.union import Union
@@ -407,8 +407,8 @@ class DeclUnion:
 
 
 @dataclass
-class DeclNormative:
-    """Represents a normative point declaration."""
+class DeclRequirement:
+    """Represents a requirement tag declaration."""
 
     position: Position
     name: str
@@ -423,9 +423,10 @@ class DeclNormative:
             ],
             int | type[Base],
         ],
-    ) -> type[NormativePoint]:
-        entity = build_from_fields(NormativePoint, self.name, {}, {"priority": self.priority})
+    ) -> type[RequirementTag]:
+        entity = build_from_fields(RequirementTag, self.name, {}, {"priority": self.priority})
         entity.__doc__ = str(self.description) if self.description else None
+        entity.priority = self.priority
         return entity
 
 

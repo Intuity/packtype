@@ -6,6 +6,11 @@ import enum
 import math
 from typing import Any
 
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self  # noqa: UP035
+
 from .base import Base
 from .bitvector import BitVector, BitVectorWindow
 from .constant import Constant
@@ -154,8 +159,12 @@ class Enum(Base, Numeric):
         return {n: int(v) for v, n in cls._PT_LKP_INST.items()}
 
     @classmethod
-    def _pt_cast(cls, value: int) -> None:
+    def _pt_cast(cls, value: int) -> Self:
         if value in cls._PT_LKP_VALUE:
             return cls._PT_LKP_VALUE[value]
         else:
             return cls(value)
+
+    @classmethod
+    def _pt_unpack(cls, packed: int) -> Self:
+        return cls._pt_cast(packed)

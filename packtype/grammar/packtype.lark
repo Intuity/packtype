@@ -73,7 +73,7 @@ modifier: "@" name "=" (name | ESCAPED_STRING | NUMERIC)
             | decl_enum
             | decl_struct
             | decl_union
-            | decl_normative
+            | decl_requirement
 
 // =============================================================================
 // Package
@@ -213,16 +213,16 @@ decl_union: "union"i name "{" descr? modifier* field* "}"
 
 
 // =============================================================================
-// Normative Points
+// Requirement Tags
 //
-// vnorm my_feature : P1 "This feature is high priority"
+// requirement my_feature : P1 "This feature is high priority"
 //
 // =============================================================================
 
 // Priority keywords
 PRIORITY: /P[0-9]+/
 
-decl_normative: "vnorm"i name ":" PRIORITY descr?
+decl_requirement: "requirement"i name ":" PRIORITY descr?
 
 // =============================================================================
 // Expressions
@@ -241,7 +241,10 @@ expr: expr_term (OPERATOR expr_term)*
 expr_funcs: name "(" (expr ","?)* ")"
 
 NUMERIC: HEX | BINARY | DECIMAL
-HEX: (/\b0x[0-9a-f]+\b/i)
+
+// Allowing the following format 0x0000_0000_...
+HEX: (/\b0x[0-9a-f]+(?:_[0-9a-f]+)*\b/i)
+
 BINARY: (/\b0b[0-1]+\b/)
 DECIMAL: SIGN? /\b[0-9]+\b/
 OPERATOR: SIGN

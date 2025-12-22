@@ -8,6 +8,11 @@ from collections.abc import Iterable
 from textwrap import indent
 from typing import Any
 
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self  # noqa: UP035
+
 from ..svg.render import ElementStyle, SvgConfig, SvgField, SvgRender
 from .array import ArraySpec, PackedArray
 from .base import Base
@@ -123,7 +128,8 @@ class PackedAssembly(Assembly):
                 return finst
             # Is this the padding field?
             elif fname == "_padding" and self._PT_PADDING > 0:
-                padding = Scalar[self._PT_PADDING](_pt_bv=self._pt_bv)
+                lsb, msb = self._PT_RANGES["_padding"]
+                padding = Scalar[self._PT_PADDING](_pt_bv=self._pt_bv.create_window(msb, lsb))
                 self._pt_force_set("_padding", padding)
                 return padding
             # If not resolved, forward the attribute error
@@ -382,7 +388,7 @@ class PackedAssembly(Assembly):
         return int(self._pt_bv)
 
     @classmethod
-    def _pt_unpack(cls, packed: int) -> "PackedAssembly":
+    def _pt_unpack(cls, packed: int) -> Self:
         inst = cls()
         inst._pt_set(packed)
         return inst
