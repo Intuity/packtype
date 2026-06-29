@@ -218,3 +218,32 @@ def test_parse_constant_expression():
         )
     )
     assert int(pkg.F) == (32 * 9) ** 2 // -4 + 43
+
+
+def test_parse_constant_operator_associativity():
+    """Co-equal operators (+/-, * / // %, << >>) must evaluate left-to-right.
+
+    Regression for digest() collapsing a higher-listed operator before a
+    co-equal one (e.g. `a - b + c` -> `a - (b + c)`), which made mixed
+    subtract/add width expressions evaluate to the wrong (often negative) value.
+    """
+    pkg = next(
+        parse_string(
+            """
+        package the_package {
+            SUB_THEN_ADD : constant = 14 - 6 - 8 + 6 - 2 - 1
+            ADD_THEN_SUB : constant = 2 + 3 - 4 + 5
+            DIV_THEN_MUL : constant = 20 / 2 * 5
+            MUL_BINDS    : constant = 100 - 10 * 3
+            MUL_THEN_ADD : constant = 1 + 2 * 3 - 4
+            SHIFTS       : constant = 64 >> 2 << 1
+        }
+        """
+        )
+    )
+    assert pkg.SUB_THEN_ADD.value == 14 - 6 - 8 + 6 - 2 - 1 == 3
+    assert pkg.ADD_THEN_SUB.value == 2 + 3 - 4 + 5 == 6
+    assert pkg.DIV_THEN_MUL.value == 20 / 2 * 5 == 50
+    assert pkg.MUL_BINDS.value == 100 - 10 * 3 == 70
+    assert pkg.MUL_THEN_ADD.value == 1 + 2 * 3 - 4 == 3
+    assert pkg.SHIFTS.value == 64 >> 2 << 1 == 32
