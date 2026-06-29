@@ -202,6 +202,11 @@ def svg(variant: list[str], output: Path | None, selection: str, spec_files: lis
     default=["snake", "lower", "suffix"],
     help="Select filters to apply to type names",
 )
+@click.option(
+    "--template-dir",
+    type=str,
+    help="Specify custom template directory",
+)
 @click.option("--keep-expression", is_flag=True, help="Attach parsed expressions to constants")
 @click.option("--variant", type=str, multiple=True, default=[], help="Variant conditions to apply")
 @click.argument("mode", type=click.Choice(("package", "register"), case_sensitive=False))
@@ -221,6 +226,7 @@ def code(
     package_filter: list[str],
     constant_filter: list[str],
     type_filter: list[str],
+    template_dir: str,
     keep_expression: bool,
     variant: list[str],
     mode: str,
@@ -325,7 +331,10 @@ def code(
     log.debug(f"Using output directory: {outdir.absolute()}")
 
     # Render
-    tmpl_dir = Path(__file__).absolute().parent / "templates"
+    if template_dir is None:
+        tmpl_dir = Path(__file__).absolute().parent / "templates"
+    else:
+        tmpl_dir = Path(template_dir).absolute()
     lookup = TemplateLookup(
         directories=[tmpl_dir],
         imports=[
