@@ -30,26 +30,17 @@ class Expression:
     OP_GE = ">="
 
     # Matched to: https://docs.python.org/3/reference/expressions.html#operator-precedence
+    # The groups at each tier cover equal precedence (where order is LR parsed)
     OP_PRECEDENCE = [
-        OP_POW,
-        OP_INV,
-        OP_MUL,
-        OP_TRUEDIV,
-        OP_FLOORDIV,
-        OP_MOD,
-        OP_ADD,
-        OP_SUB,
-        OP_LSHIFT,
-        OP_RSHIFT,
-        OP_AND,
-        OP_XOR,
-        OP_OR,
-        OP_LT,
-        OP_LE,
-        OP_GT,
-        OP_GE,
-        OP_NE,
-        OP_EQ,
+        [OP_POW],
+        [OP_INV],
+        [OP_MUL, OP_TRUEDIV, OP_FLOORDIV, OP_MOD],
+        [OP_ADD, OP_SUB],
+        [OP_LSHIFT, OP_RSHIFT],
+        [OP_AND],
+        [OP_XOR],
+        [OP_OR],
+        [OP_LT, OP_LE, OP_GT, OP_GE, OP_NE, OP_EQ],
     ]
 
     def __init__(
@@ -121,18 +112,21 @@ class Expression:
         """
         # Take a copy so as not to mutate the original
         expr = list(expr)
-        # Search for each operator in precedence order
-        for search_op in cls.OP_PRECEDENCE:
+        # Reduce one precedence tier at a time; within a tier, collapse co-equal
+        # operators left-to-right so associativity matches Python's.
+        for op_group in cls.OP_PRECEDENCE:
             # If only a single term remains, break out early
             if len(expr) == 1:
                 break
-            # Look for every position an operator could exist (every other term)
+            # Look for every position an operator from this tier could exist (every other term)
             offset = 0
-            for op_pos in [x for x in range(1, len(expr), 2) if expr[x] == search_op]:
-                # Replace the term with a Expression instance
-                *before, lhs = expr[: op_pos + offset]
-                rhs, *after = expr[op_pos + offset + 1 :]
-                expr = [*before, cls.operate(lhs, search_op, rhs), *after]
+            for op_pos in [x for x in range(1, len(expr), 2) if expr[x] in op_group]:
+                # Replace the term with a Expression instance, using the actual
+                # operator at this (offset-adjusted) position within the tier.
+                pos = op_pos + offset
+                *before, lhs = expr[:pos]
+                rhs, *after = expr[pos + 1 :]
+                expr = [*before, cls.operate(lhs, expr[pos], rhs), *after]
                 offset -= 2
         # Ensure that even a single term is returned as a Expression instance
         expr = expr[0]
